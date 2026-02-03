@@ -1,0 +1,68 @@
+/**
+ * @file example_numerical_utils.cpp
+ * @brief Examples of numerical utilities
+ */
+
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include "numerical_utils.hpp"
+
+int main()
+{
+    std::cout << std::fixed << std::setprecision(10);
+
+    std::cout << "=== Numerical Utilities Examples ===\n\n";
+
+    // Floating-point comparison
+    std::cout << "1. Floating-point Comparison\n";
+    double a = 0.1 + 0.2;
+    double b = 0.3;
+    std::cout << "   0.1 + 0.2 == 0.3? " << (a == b ? "true" : "false") << "\n";
+    std::cout << "   approx_equal(0.1+0.2, 0.3)? "
+              << (statcpp::approx_equal(a, b) ? "true" : "false") << "\n";
+    std::cout << "   Value of 0.1 + 0.2: " << a << "\n\n";
+
+    // Convergence checking
+    std::cout << "2. Convergence Checking\n";
+    double x_old = 1.0;
+    double x_new = 1.0000001;
+    std::cout << "   has_converged(" << x_new << ", " << x_old << ")? "
+              << (statcpp::has_converged(x_new, x_old) ? "true" : "false") << "\n\n";
+
+    // Safe mathematical functions
+    std::cout << "3. Safe Mathematical Functions\n";
+    double small_x = 1e-10;
+    std::cout << "   log1p(" << small_x << ") = " << statcpp::log1p_safe(small_x) << "\n";
+    std::cout << "   expm1(" << small_x << ") = " << statcpp::expm1_safe(small_x) << "\n\n";
+
+    // Kahan summation
+    std::cout << "4. Kahan Summation (High Precision)\n";
+    std::vector<double> values = {1e10, 1.0, 1.0, -1e10};
+
+    // Naive summation
+    double naive_sum = 0.0;
+    for (double v : values) naive_sum += v;
+
+    // Kahan summation
+    double kahan = statcpp::kahan_sum(values.begin(), values.end());
+
+    std::cout << "   Values: [1e10, 1, 1, -1e10]\n";
+    std::cout << "   Naive sum: " << naive_sum << "\n";
+    std::cout << "   Kahan sum: " << kahan << " (correct: 2.0)\n\n";
+
+    // Safe division
+    std::cout << "5. Safe Division\n";
+    std::cout << "   10 / 2 = " << statcpp::safe_divide(10.0, 2.0) << "\n";
+    std::cout << "   10 / 0 (default NaN) = " << statcpp::safe_divide(10.0, 0.0) << "\n";
+    std::cout << "   10 / 0 (default 0) = " << statcpp::safe_divide(10.0, 0.0, 0.0) << "\n\n";
+
+    // Clamping
+    std::cout << "6. Clamping and Range Checking\n";
+    std::cout << "   clamp(5, 0, 10) = " << statcpp::clamp(5.0, 0.0, 10.0) << "\n";
+    std::cout << "   clamp(-5, 0, 10) = " << statcpp::clamp(-5.0, 0.0, 10.0) << "\n";
+    std::cout << "   clamp(15, 0, 10) = " << statcpp::clamp(15.0, 0.0, 10.0) << "\n";
+    std::cout << "   in_range(5, 0, 10)? " << (statcpp::in_range(5.0, 0.0, 10.0) ? "true" : "false") << "\n\n";
+
+    return 0;
+}

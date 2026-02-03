@@ -1,0 +1,78 @@
+/**
+ * @file example_resampling.cpp
+ * @brief Examples of resampling methods
+ */
+
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include "resampling.hpp"
+#include "basic_statistics.hpp"
+
+int main()
+{
+    std::cout << std::fixed << std::setprecision(4);
+
+    std::cout << "=== Resampling Methods Examples ===\n\n";
+
+    // Sample data
+    std::vector<double> data = {12.5, 13.2, 11.8, 12.9, 13.5, 12.1, 13.8, 12.7};
+
+    // Bootstrap for Mean
+    std::cout << "1. Bootstrap Confidence Interval for Mean\n";
+    statcpp::set_seed(123);  // For reproducibility
+
+    auto boot_result = statcpp::bootstrap_mean(
+        data.begin(), data.end(),
+        1000,  // number of bootstrap samples
+        0.95   // confidence level
+    );
+
+    std::cout << "   Original mean: " << statcpp::mean(data.begin(), data.end()) << "\n";
+    std::cout << "   Bootstrap estimate: " << boot_result.estimate << "\n";
+    std::cout << "   Bootstrap SE: " << boot_result.standard_error << "\n";
+    std::cout << "   Bootstrap CI: [" << boot_result.ci_lower << ", " << boot_result.ci_upper << "]\n\n";
+
+    // Permutation Test
+    std::cout << "2. Permutation Test (Two-sample Mean Difference)\n";
+    std::vector<double> group1 = {12.5, 13.2, 11.8, 12.9};
+    std::vector<double> group2 = {14.1, 15.3, 14.8, 15.0};
+
+    double observed_diff = statcpp::mean(group2.begin(), group2.end()) -
+                          statcpp::mean(group1.begin(), group1.end());
+
+    auto perm_result = statcpp::permutation_test_two_sample(
+        group1.begin(), group1.end(),
+        group2.begin(), group2.end(),
+        1000  // number of permutations
+    );
+
+    std::cout << "   Observed difference: " << observed_diff << "\n";
+    std::cout << "   Permutation p-value: " << perm_result.p_value << "\n\n";
+
+    // Bootstrap for Median
+    std::cout << "3. Bootstrap for Median\n";
+    auto boot_median = statcpp::bootstrap_median(
+        data.begin(), data.end(),
+        1000,  // number of bootstrap samples
+        0.95   // confidence level
+    );
+
+    std::cout << "   Bootstrap estimate: " << boot_median.estimate << "\n";
+    std::cout << "   Bootstrap SE: " << boot_median.standard_error << "\n";
+    std::cout << "   Bootstrap CI: [" << boot_median.ci_lower << ", " << boot_median.ci_upper << "]\n\n";
+
+    // Bootstrap for Standard Deviation
+    std::cout << "4. Bootstrap for Standard Deviation\n";
+    auto boot_sd = statcpp::bootstrap_stddev(
+        data.begin(), data.end(),
+        1000,  // number of bootstrap samples
+        0.95   // confidence level
+    );
+
+    std::cout << "   Bootstrap estimate: " << boot_sd.estimate << "\n";
+    std::cout << "   Bootstrap SE: " << boot_sd.standard_error << "\n";
+    std::cout << "   Bootstrap CI: [" << boot_sd.ci_lower << ", " << boot_sd.ci_upper << "]\n\n";
+
+    return 0;
+}
