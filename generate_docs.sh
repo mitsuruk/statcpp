@@ -34,9 +34,9 @@ if [ ! -f "Doxyfile" ]; then
 fi
 
 # Clean previous documentation
-if [ -d "docs" ]; then
+if [ -d "doxydocs" ]; then
     echo -e "${YELLOW}Cleaning previous documentation...${NC}"
-    rm -rf docs
+    rm -rf doxydocs
 fi
 
 # Generate documentation
@@ -44,14 +44,14 @@ echo -e "${GREEN}Generating documentation...${NC}"
 doxygen Doxyfile
 
 # Check if generation was successful
-if [ -d "docs/html" ]; then
+if [ -d "doxydocs/html" ]; then
     echo ""
     echo -e "${GREEN}✓ Documentation generated successfully!${NC}"
     echo ""
-    echo "HTML documentation: docs/html/index.html"
+    echo "HTML documentation: doxydocs/html/index.html"
     echo ""
     echo "To view the documentation:"
-    echo "  open docs/html/index.html"
+    echo "  open doxydocs/html/index.html"
     echo ""
 else
     echo -e "${RED}Error: Documentation generation failed${NC}"
