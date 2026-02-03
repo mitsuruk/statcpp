@@ -42,7 +42,7 @@ statcpp is a header-only statistics library written in C++17. It provides a wide
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/statcpp.git
+git clone https://github.com/mitsuruk/statcpp.git
 
 # Add header files to include path
 # Method 1: Install to system (English version - default)
@@ -257,8 +257,8 @@ See the [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 ## Support
 
-- **Issues**: Report bugs and feature requests on [GitHub Issues](https://github.com/yourusername/statcpp/issues)
-- **Discussions**: Questions and discussions on [GitHub Discussions](https://github.com/yourusername/statcpp/discussions)
+- **Issues**: Report bugs and feature requests on [GitHub Issues](https://github.com/mitsuruk/statcpp/issues)
+- **Discussions**: Questions and discussions on [GitHub Discussions](https://github.com/mitsuruk/statcpp/discussions)
 
 ## Acknowledgments
 
