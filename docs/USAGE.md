@@ -24,11 +24,11 @@ int main() {
 
 ### Iterator Interface
 
-All functions accept ranges via an iterator pair `(first, last)` representing the half-open interval $[first,\, last)$.
+All functions accept ranges via an iterator pair `(first, last)` representing the half-open interval $\,[first,\, last)$.
 They work with any sequence that provides RandomAccessIterator, including `std::vector`, `std::array`, built-in arrays (`T a[N]`), and raw pointer ranges (`T* first, T* last`).
 
 **Iterator Category**: All functions require **RandomAccessIterator**.
-This is because they assume random access via `*(first + i)` and $O(1)$ computation of `std::distance`.
+This is because they assume random access via `*(first + i)` and $\,O(1)$ computation of `std::distance`.
 Non-RandomAccessIterators such as `std::forward_list` or input stream iterators are not supported.
 
 ```cpp
@@ -52,7 +52,7 @@ double m3 = statcpp::mean(data, data + 3);
 ### Projection
 
 Many functions have overloads that accept a projection function (callable such as a lambda) as an additional argument.
-When a projection function $f$ is provided, the function evaluates $f(x_i)$ for each element $x_i$ and computes statistics on the results.
+When a projection function $\,f$ is provided, the function evaluates $\,f(x_i)$ for each element $\,x_i$ and computes statistics on the results.
 
 Supported functions:
 - `sum`, `mean`, `median`, `mode`, `geometric_mean`, `harmonic_mean`, `trimmed_mean`
@@ -134,7 +134,7 @@ std::sort(data.begin(), data.end());
 double med = statcpp::median(data.begin(), data.end());
 ```
 
-For projection versions, the elements must be arranged so that the **return values of projection function $f$** are in ascending order.
+For projection versions, the elements must be arranged so that the **return values of projection function $\,f$** are in ascending order.
 
 ```cpp
 struct Product {
@@ -160,7 +160,7 @@ auto q = statcpp::quartiles(products.begin(), products.end(),
 
 Quantile computation in `iqr`, `quartiles`, `percentile`, and `five_number_summary` is based on linear interpolation (equivalent to R `type=7` / Excel `QUARTILE.INC` / `PERCENTILE.INC`).
 
-For parameter $p\ （0 \leq p \leq 1）$, using 0-based index:
+For parameter $\,p\ （0 \leq p \leq 1）$, using 0-based index:
 
 $$
 \text{index} = p \times (n - 1)
@@ -174,8 +174,8 @@ $$
 Q = x[lo] \times (1 - frac) + x[lo + 1] \times frac
 $$
 
-**Endpoint handling**: When $lo + 1 \geq n$ (including $p = 1$ i.e., $lo = n - 1$), returns $Q = x[lo]$.
-This ensures $p = 0$ returns the minimum and $p = 1$ returns the maximum.
+**Endpoint handling**: When $\,lo + 1 \geq n$ (including $\,p = 1$ i.e., $\,lo = n - 1$), returns $\,Q = x[lo]$.
+This ensures $\,p = 0$ returns the minimum and $\,p = 1$ returns the maximum.
 
 ### Exception Handling
 

@@ -24,11 +24,11 @@ int main() {
 
 ### イテレータインターフェース
 
-すべての関数は、半開区間 $[first,\, last)$ を表すイテレータペア `(first, last)` により範囲を受け取ります。
+すべての関数は、半開区間 $\,[first,\, last)$ を表すイテレータペア `(first, last)` により範囲を受け取ります。
 `std::vector`、`std::array`、組み込み配列（`T a[N]`）、生ポインタ範囲（`T* first, T* last`）など、RandomAccessIterator を提供する任意のシーケンスで使用可能です。
 
 **イテレータカテゴリ**: すべての関数は **RandomAccessIterator** を要求します。
-これは `*(first + i)` によるランダムアクセスや `std::distance` の $O(1)$ 計算を前提としているためです。
+これは `*(first + i)` によるランダムアクセスや `std::distance` の $\,O(1)$ 計算を前提としているためです。
 `std::forward_list` や入力ストリームイテレータなど、RandomAccessIterator でないイテレータは使用できません。
 
 ```cpp
@@ -52,7 +52,7 @@ double m3 = statcpp::mean(data, data + 3);
 ### 射影 (Projection)
 
 多くの関数は射影関数（ラムダ式等の callable）を追加引数として受け取るオーバーロードを持ちます。
-射影関数 $f$ が渡された場合、各要素 $x_i$ に対して $f(x_i)$ を評価し、その結果に対して統計量を計算します。
+射影関数 $\,f$ が渡された場合、各要素 $\,x_i$ に対して $\,f(x_i)$ を評価し、その結果に対して統計量を計算します。
 
 対応する関数:
 - `sum`, `mean`, `median`, `mode`, `geometric_mean`, `harmonic_mean`, `trimmed_mean`
@@ -134,7 +134,7 @@ std::sort(data.begin(), data.end());
 double med = statcpp::median(data.begin(), data.end());
 ```
 
-射影版では、**射影関数 $f$ の戻り値**が昇順となるように要素が並んでいる必要があります。
+射影版では、**射影関数 $\,f$ の戻り値**が昇順となるように要素が並んでいる必要があります。
 
 ```cpp
 struct Product {
@@ -161,7 +161,7 @@ auto q = statcpp::quartiles(products.begin(), products.end(),
 `iqr`, `quartiles`, `percentile`, `five_number_summary` で用いる分位点の計算は、
 線形補間法（R `type=7` / Excel `QUARTILE.INC` / `PERCENTILE.INC` 相当）に基づきます。
 
-パラメータ $p\ （0 \leq p \leq 1）$に対し、0始まりインデックスで:
+パラメータ $\,p\ （0 \leq p \leq 1）$に対し、0始まりインデックスで:
 
 $$
 \text{index} = p \times (n - 1)
@@ -175,8 +175,8 @@ $$
 Q = x[lo] \times (1 - frac) + x[lo + 1] \times frac
 $$
 
-**端点の取り扱い**: $lo + 1 \geq n$ の場合（$p = 1$ すなわち $lo = n - 1$ を含む）、$Q = x[lo]$ を返します。
-これにより $p = 0$ で最小値、$p = 1$ で最大値が返されます。
+**端点の取り扱い**: $\,lo + 1 \geq n$ の場合（$\,p = 1$ すなわち $\,lo = n - 1$ を含む）、$\,Q = x[lo]$ を返します。
+これにより $\,p = 0$ で最小値、$\,p = 1$ で最大値が返されます。
 
 ### 例外処理
 
