@@ -161,7 +161,7 @@ auto q = statcpp::quartiles(products.begin(), products.end(),
 `iqr`, `quartiles`, `percentile`, `five_number_summary` で用いる分位点の計算は、
 線形補間法（R `type=7` / Excel `QUARTILE.INC` / `PERCENTILE.INC` 相当）に基づきます。
 
-パラメータ $p$（$0 \leq p \leq 1$）に対し、0始まりインデックスで:
+パラメータ $p\ （0 \leq p \leq 1）$に対し、0始まりインデックスで:
 
 $$
 \text{index} = p \times (n - 1)

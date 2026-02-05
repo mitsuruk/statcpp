@@ -160,7 +160,7 @@ auto q = statcpp::quartiles(products.begin(), products.end(),
 
 Quantile computation in `iqr`, `quartiles`, `percentile`, and `five_number_summary` is based on linear interpolation (equivalent to R `type=7` / Excel `QUARTILE.INC` / `PERCENTILE.INC`).
 
-For parameter $p$ ($0 \leq p \leq 1$), using 0-based index:
+For parameter $p\ （0 \leq p \leq 1）$, using 0-based index:
 
 $$
 \text{index} = p \times (n - 1)
