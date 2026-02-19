@@ -1,0 +1,238 @@
+=== PARAMETRIC TESTS ===
+
+t_test(one-sample): t  = 0.629465181796684 
+t_test(one-sample): df = 7 
+t_test(one-sample): p  = 0.549029332103621 
+
+t_test_two_sample: t  = 4.81070235442364 
+t_test_two_sample: df = 8 
+t_test_two_sample: p  = 0.0013371323791155 
+
+t_test_welch: t  = 4.81070235442364 
+t_test_welch: df = 7.67327211213147 
+t_test_welch: p  = 0.00150312345551601 
+
+t_test_paired: t  = -9.21954445729289 
+t_test_paired: df = 5 
+t_test_paired: p  = 0.000252066258824605 
+
+f_test: F = 1.52 
+f_test: p = 0.694869364559463 
+
+chisq_gof: X2 = 2 
+chisq_gof: df = 5 
+chisq_gof: p  = 0.84914503608461 
+
+chisq_independence: X2 = 0.793650793650794 
+chisq_independence: df = 1 
+chisq_independence: p  = 0.372998483613487 
+
+z_test_prop: X2 (=z^2) = 0.78125 
+z_test_prop: p          = 0.376759117811582 
+
+z_test_prop_two: X2 (=z^2) = 0.0160714285714285 
+z_test_prop_two: p          = 0.899119956774098 
+
+bonferroni: 0.06, 0.24, 0.18, 0.03, 0.9, 0.48 
+BH:         0.03, 0.06, 0.06, 0.03, 0.15, 0.096 
+
+=== NONPARAMETRIC TESTS ===
+
+Warning messages:
+1: In wilcox.test.default(x, mu = 5) :
+  cannot compute exact p-value with ties
+2: In wilcox.test.default(x, mu = 5) :
+  cannot compute exact p-value with zeroes
+wilcoxon_signed_rank: V = 17.5 
+wilcoxon_signed_rank: p = 0.604907154892759 
+
+Warning message:
+In wilcox.test.default(g1, g2) : cannot compute exact p-value with ties
+mann_whitney_u: W = 25 
+mann_whitney_u: p = 0.0119252335930176 
+
+kruskal_wallis: H  = 12.5 
+kruskal_wallis: df = 2 
+kruskal_wallis: p  = 0.00193045413622771 
+
+shapiro_wilk: W = 0.947279275479796 
+shapiro_wilk: p = 0.636436237100185 
+
+levene: F = 0.250000000000002 
+levene: p = 0.782757789695999 
+
+bartlett: K2 = 0.611636532463432 
+bartlett: p  = 0.736520457932485 
+
+fisher_exact: p = 0.0253276870336761 
+
+=== ANOVA ===
+
+anova: F   = 45.5000000000001 
+anova: p   = 2.50071459070926e-06 
+anova: MSb = 1.51666666666667 
+anova: MSw = 0.0333333333333333 
+
+eta_squared   = 0.883495145631068 
+omega_squared = 0.855769230769231 
+cohens_f      = 2.75378527364305 
+
+Tukey HSD:
+  Tukey multiple comparisons of means
+    95% family-wise confidence level
+
+Fit: aov(formula = vals ~ grp)
+
+$grp
+    diff        lwr        upr     p adj
+2-1 -0.6 -0.9080584 -0.2919416 0.0006043
+3-1 -1.1 -1.4080584 -0.7919416 0.0000017
+3-2 -0.5 -0.8080584 -0.1919416 0.0025998
+
+
+=== LINEAR REGRESSION ===
+
+simple_reg: intercept = 0.0133333333333324 
+simple_reg: slope     = 1.99939393939394 
+simple_reg: R2        = 0.999366775763783 
+simple_reg: se_b0     = 0.110407875579141 
+simple_reg: se_b1     = 0.0177938403101857 
+
+multi_reg: b0 = -1.26233009708738 
+multi_reg: b1 = 1.25701534606953 
+multi_reg: b2 = 0.792499217037269 
+multi_reg: R2 = 0.992021201971393 
+
+=== GLM (Logistic & Poisson) ===
+
+logistic: intercept     = -5.82460070576831 
+logistic: slope         = 1.29543707708647 
+logistic: deviance      = 5.01379227698863 
+logistic: null_deviance = 13.4602333401851 
+logistic: AIC           = 9.01379227698863 
+
+poisson: intercept = -0.0639958806670219 
+poisson: slope     = 0.245869417195599 
+poisson: deviance  = 4.29551375075109 
+poisson: AIC       = 38.2076555825617 
+
+=== EFFECT SIZE ===
+
+cohens_d_two_sample = 3.04255531702266 
+hedges_g_two_sample = 2.74811447989144 
+eta_squared(2.5, 5.0) = 0.333333333333333 
+
+=== ESTIMATION (CI) ===
+
+ci_mean: lower = 23.5733278883029 
+ci_mean: upper = 24.8466721116971 
+
+=== CATEGORICAL ===
+
+odds_ratio          = 6 
+odds_ratio: CI lower = 2.45259331002879 
+odds_ratio: CI upper = 14.678340617172 
+
+relative_risk          = 2.25 
+relative_risk: CI lower = 1.50809443689666 
+relative_risk: CI upper = 3.35688526934531 
+
+risk_difference          = 0.416666666666667 
+risk_difference: CI lower = 0.237123780012396 
+risk_difference: CI upper = 0.596209553320937 
+
+NNT = 2.4 
+
+=== SHAPE OF DISTRIBUTION ===
+
+population_skewness (type 1) = 0.0409311186796388 
+sample_skewness (type 2)     = 0.048538335827371 
+population_kurtosis (type 1) = 0.870400914658122 
+
+=== SURVIVAL ===
+
+Kaplan-Meier:
+Call: survfit(formula = Surv(times, status) ~ 1)
+
+ time n.risk n.event survival std.err lower 95% CI upper 95% CI
+    1     10       1    0.900  0.0949       0.7320        1.000
+    3      8       1    0.787  0.1340       0.5641        1.000
+    4      7       1    0.675  0.1551       0.4303        1.000
+    6      5       1    0.540  0.1731       0.2881        1.000
+    8      3       1    0.360  0.1869       0.1302        0.996
+    9      2       1    0.180  0.1579       0.0323        1.000
+
+km: median survival =  
+
+Nelson-Aalen cumulative hazard (manual):
+  H( 1 ) = 0.1 
+  H( 3 ) = 0.225 
+  H( 4 ) = 0.367857142857143 
+  H( 6 ) = 0.567857142857143 
+  H( 8 ) = 0.901190476190476 
+  H( 9 ) = 1.40119047619048 
+
+logrank: chisq = 0.300011688806271 
+logrank: p     = 0.583875093032456 
+logrank: obs1  = 6 
+logrank: obs2  = 5 
+logrank: exp1  = 5.0989898989899 
+logrank: exp2  = 5.9010101010101 
+
+=== MODEL SELECTION ===
+
+AIC  = 106 
+BIC  = 113.815510557964 
+AICc = 106.25 
+
+=== POWER ANALYSIS ===
+
+SKIP: pwr package not installed (range checks used in C++)
+
+=== ROBUST STATISTICS ===
+
+mad (unscaled, constant=1) = 0.6 
+mad_scaled (default)       = 0.88956 
+
+winsorize 10% boundaries: lo = 2.19  hi = 5.1 
+winsorize result (sorted):   2.19, 2.3, 2.5, 2.8, 3.1, 3.3, 3.5, 3.7, 4, 5.1 
+
+=== TIME SERIES ===
+
+acf lag0 = 1 
+acf lag1 = 0.561038961038961 
+acf lag2 = 0.373160173160173 
+acf lag3 = 0.148484848484848 
+
+pacf lag1 = 0.561038961038961 
+pacf lag2 = 0.0852195715884439 
+pacf lag3 = -0.133541371654217 
+
+diff: 1, 1, -0.5, 1.5, -0.5, 1.5, -0.5, 1.5, -0.5 
+
+MAE  = 0.5 
+MSE  = 0.375 
+RMSE = 0.612372435695794 
+
+=== MULTIVARIATE ===
+
+Covariance matrix:
+                  [,1]              [,2]              [,3]
+[1,]  1.66666666666667 -0.50000000000000  1.83333333333333
+[2,] -0.50000000000000  2.91666666666667 -4.41666666666667
+[3,]  1.83333333333333 -4.41666666666667  7.58333333333333
+
+Correlation matrix:
+                   [,1]               [,2]               [,3]
+[1,]  1.000000000000000 -0.226778683805536  0.515687954032345
+[2,] -0.226778683805536  1.000000000000000 -0.939120133318293
+[3,]  0.515687954032345 -0.939120133318293  1.000000000000000
+
+=== DATA WRANGLING ===
+
+log_transform: 0, 0.693147180559945, 1.09861228866811, 1.38629436111989, 1.6094379124341 
+sqrt_transform: 1, 2, 3, 4, 5 
+
+========================================
+Reference value generation complete.
+========================================
