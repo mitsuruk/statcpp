@@ -4,6 +4,16 @@ statcpp ライブラリの変更履歴を記録します。
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います。
 
+## [0.1.1] - 2026-02-20
+
+### Fixed (修正)
+
+- 統合ヘッダー `statcpp.hpp` に欠落していた 9 モジュールのインクルードを追加: `categorical.hpp`, `clustering.hpp`, `data_wrangling.hpp`, `missing_data.hpp`, `multivariate.hpp`, `power_analysis.hpp`, `robust.hpp`, `survival.hpp`, `time_series.hpp`
+  - これらのモジュールは個別ヘッダーとしては利用可能でしたが、`#include <statcpp/statcpp.hpp>` 使用時にインクルードされていませんでした
+  - 英語版 (`include/`) および日本語版 (`include-ja/`) の両方の統合ヘッダーを更新
+
+---
+
 ## [0.1.0] - 2025-02-19
 
 ### 初回リリース
@@ -220,4 +230,5 @@ C++17 ヘッダーオンリー統計ライブラリ。758 件の単体テスト�
 
 ---
 
+[0.1.1]: https://github.com/yourusername/statcpp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/yourusername/statcpp/releases/tag/v0.1.0

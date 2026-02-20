@@ -37,6 +37,17 @@
 
 // Module 5: Applied Analysis
 #include "statcpp/distance_metrics.hpp"
+#include "statcpp/multivariate.hpp"
+#include "statcpp/clustering.hpp"
+#include "statcpp/time_series.hpp"
+#include "statcpp/categorical.hpp"
+#include "statcpp/survival.hpp"
+#include "statcpp/robust.hpp"
+#include "statcpp/power_analysis.hpp"
+
+// Module 6: Data Handling
+#include "statcpp/data_wrangling.hpp"
+#include "statcpp/missing_data.hpp"
 
 // Module 8: Development Infrastructure
 #include "statcpp/numerical_utils.hpp"

@@ -4,6 +4,16 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-02-20
+
+### Fixed
+
+- Added 9 missing module headers to the umbrella header `statcpp.hpp`: `categorical.hpp`, `clustering.hpp`, `data_wrangling.hpp`, `missing_data.hpp`, `multivariate.hpp`, `power_analysis.hpp`, `robust.hpp`, `survival.hpp`, `time_series.hpp`
+  - These modules were available as individual headers but were not included when using `#include <statcpp/statcpp.hpp>`
+  - Both English (`include/`) and Japanese (`include-ja/`) umbrella headers have been updated
+
+---
+
 ## [0.1.0] - 2025-02-19
 
 ### Initial Release
@@ -220,4 +230,5 @@ Security-related changes
 
 ---
 
+[0.1.1]: https://github.com/yourusername/statcpp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/yourusername/statcpp/releases/tag/v0.1.0
