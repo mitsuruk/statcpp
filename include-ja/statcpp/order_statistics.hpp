@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -432,15 +433,19 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
         throw std::invalid_argument("statcpp::weighted_median: sum of weights is zero");
     }
 
-    // 累積重みを計算して中央値を見つける
+    // 累積重みを計算して中央値を見つける。
+    // 浮動小数点数の累積加算では、数学的に half_weight と等しいはずの値が
+    // 丸め誤差により bit-identical にならない場合がある。
+    // そのため == ではなく相対許容誤差 tol を用いて比較する。
     double cumulative = 0.0;
     double half_weight = total_weight / 2.0;
+    const double tol = std::numeric_limits<double>::epsilon() * half_weight;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= half_weight) {
-            // 累積重みがちょうど半分の場合は次の値との平均を取る
-            if (cumulative == half_weight && i + 1 < pairs.size()) {
+            // 累積重みがほぼちょうど半分の場合は次の値との平均を取る
+            if (std::abs(cumulative - half_weight) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;
@@ -499,15 +504,19 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
         throw std::invalid_argument("statcpp::weighted_median: sum of weights is zero");
     }
 
-    // 累積重みを計算して中央値を見つける
+    // 累積重みを計算して中央値を見つける。
+    // 浮動小数点数の累積加算では、数学的に half_weight と等しいはずの値が
+    // 丸め誤差により bit-identical にならない場合がある。
+    // そのため == ではなく相対許容誤差 tol を用いて比較する。
     double cumulative = 0.0;
     double half_weight = total_weight / 2.0;
+    const double tol = std::numeric_limits<double>::epsilon() * half_weight;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= half_weight) {
-            // 累積重みがちょうど半分の場合は次の値との平均を取る
-            if (cumulative == half_weight && i + 1 < pairs.size()) {
+            // 累積重みがほぼちょうど半分の場合は次の値との平均を取る
+            if (std::abs(cumulative - half_weight) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;

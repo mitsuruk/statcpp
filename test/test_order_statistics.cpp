@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include "statcpp/order_statistics.hpp"
 #include <vector>
-#include <cmath>
 
 // ============================================================================
 // Minimum Tests
@@ -303,4 +302,75 @@ TEST(OrderStatisticsProjectionTest, FiveNumberSummaryWithProjection) {
     EXPECT_DOUBLE_EQ(result.min, 1.0);
     EXPECT_DOUBLE_EQ(result.max, 5.0);
     EXPECT_DOUBLE_EQ(result.median, 3.0);
+}
+
+// ============================================================================
+// Weighted Median Tests
+// ============================================================================
+
+/**
+ * @brief Test weighted median with odd number of uniform weights
+ * @test Verify weighted_median returns the middle value when all weights are equal
+ */
+TEST(WeightedMedianTest, UniformWeights) {
+    std::vector<double> data    = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> weights = {1.0, 1.0, 1.0, 1.0, 1.0};
+    EXPECT_DOUBLE_EQ(statcpp::weighted_median(data.begin(), data.end(), weights.begin()), 3.0);
+}
+
+/**
+ * @brief Test weighted median where a single large weight dominates
+ * @test Verify weighted_median returns the element with the dominant weight
+ */
+TEST(WeightedMedianTest, DominantWeight) {
+    std::vector<double> data    = {1.0, 2.0, 3.0};
+    std::vector<double> weights = {1.0, 10.0, 1.0};
+    // Sum = 12, half = 6; after element 0 cumulative = 1, after element 1 cumulative = 11 >= 6
+    EXPECT_DOUBLE_EQ(statcpp::weighted_median(data.begin(), data.end(), weights.begin()), 2.0);
+}
+
+/**
+ * @brief Test weighted median when cumulative weight lands exactly on half (floating-point)
+ * @test Verify the half-weight boundary case averages the two straddling values.
+ *       This exercises the tolerance-based comparison that replaced exact == .
+ */
+TEST(WeightedMedianTest, ExactHalfWeightBoundary) {
+    // weights {1, 1, 1, 1}: total = 4, half = 2.0
+    // After element[1] cumulative = 2.0 exactly; should average elements[1] and [2]
+    std::vector<double> data    = {10.0, 20.0, 30.0, 40.0};
+    std::vector<double> weights = {1.0,  1.0,  1.0,  1.0};
+    EXPECT_DOUBLE_EQ(statcpp::weighted_median(data.begin(), data.end(), weights.begin()), 25.0);
+}
+
+/**
+ * @brief Test weighted median throws for empty range
+ * @test Verify weighted_median throws std::invalid_argument for empty input
+ */
+TEST(WeightedMedianTest, EmptyRange) {
+    std::vector<double> data;
+    std::vector<double> weights;
+    EXPECT_THROW(statcpp::weighted_median(data.begin(), data.end(), weights.begin()),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Test weighted median throws for negative weight
+ * @test Verify weighted_median throws std::invalid_argument for negative weight
+ */
+TEST(WeightedMedianTest, NegativeWeight) {
+    std::vector<double> data    = {1.0, 2.0, 3.0};
+    std::vector<double> weights = {1.0, -1.0, 1.0};
+    EXPECT_THROW(statcpp::weighted_median(data.begin(), data.end(), weights.begin()),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Test weighted median throws when all weights are zero
+ * @test Verify weighted_median throws std::invalid_argument when sum of weights is zero
+ */
+TEST(WeightedMedianTest, AllZeroWeights) {
+    std::vector<double> data    = {1.0, 2.0, 3.0};
+    std::vector<double> weights = {0.0, 0.0, 0.0};
+    EXPECT_THROW(statcpp::weighted_median(data.begin(), data.end(), weights.begin()),
+                 std::invalid_argument);
 }

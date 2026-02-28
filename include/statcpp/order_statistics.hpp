@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -419,15 +420,20 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
         throw std::invalid_argument("statcpp::weighted_median: sum of weights is zero");
     }
 
-    // Calculate cumulative weight to find median
+    // Calculate cumulative weight to find median.
+    // Use a relative tolerance when testing whether cumulative == half_weight.
+    // Plain == on a floating-point accumulator is unreliable because sequential
+    // additions may produce a value within rounding error of half_weight without
+    // being bit-identical.
     double cumulative = 0.0;
     double half_weight = total_weight / 2.0;
+    const double tol = std::numeric_limits<double>::epsilon() * half_weight;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= half_weight) {
-            // If cumulative weight is exactly half, take average with next value
-            if (cumulative == half_weight && i + 1 < pairs.size()) {
+            // If cumulative weight is (approximately) exactly half, take average with next value
+            if (std::abs(cumulative - half_weight) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;
@@ -485,15 +491,20 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
         throw std::invalid_argument("statcpp::weighted_median: sum of weights is zero");
     }
 
-    // Calculate cumulative weight to find median
+    // Calculate cumulative weight to find median.
+    // Use a relative tolerance when testing whether cumulative == half_weight.
+    // Plain == on a floating-point accumulator is unreliable because sequential
+    // additions may produce a value within rounding error of half_weight without
+    // being bit-identical.
     double cumulative = 0.0;
     double half_weight = total_weight / 2.0;
+    const double tol = std::numeric_limits<double>::epsilon() * half_weight;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= half_weight) {
-            // If cumulative weight is exactly half, take average with next value
-            if (cumulative == half_weight && i + 1 < pairs.size()) {
+            // If cumulative weight is (approximately) exactly half, take average with next value
+            if (std::abs(cumulative - half_weight) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;

@@ -331,3 +331,92 @@ TEST(CorrelationProjectionTest, SpearmanWithProjection) {
     auto result = statcpp::spearman_correlation(x.begin(), x.end(), y.begin(), y.end(), proj, proj);
     EXPECT_NEAR(result, 1.0, 1e-10);
 }
+
+// ============================================================================
+// Kendall's Tau Tests
+// ============================================================================
+
+/**
+ * @brief Tests Kendall's tau for perfect positive concordance
+ * @test Verifies tau = 1.0 when all pairs are concordant
+ */
+TEST(KendallTauTest, PerfectPositive) {
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> y = {1.0, 2.0, 3.0, 4.0, 5.0};
+    EXPECT_NEAR(statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end()), 1.0, 1e-10);
+}
+
+/**
+ * @brief Tests Kendall's tau for perfect negative concordance
+ * @test Verifies tau = -1.0 when all pairs are discordant
+ */
+TEST(KendallTauTest, PerfectNegative) {
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> y = {5.0, 4.0, 3.0, 2.0, 1.0};
+    EXPECT_NEAR(statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end()), -1.0, 1e-10);
+}
+
+/**
+ * @brief Tests Kendall's tau with integer ties in x
+ * @test Verifies tau-b handles ties correctly when x has repeated values
+ */
+TEST(KendallTauTest, TiedValues) {
+    // x = {1, 1, 2, 3}, y = {1, 2, 3, 4}
+    // Pairs (x_diff, y_diff): (0,1) tie_x, (1,2) conc, (2,3) conc,
+    //                          (1,1) conc, (2,2) conc, (1,1) conc
+    // tau-b = (C - D) / sqrt((n0 - T_x)(n0 - T_y))
+    std::vector<double> x = {1.0, 1.0, 2.0, 3.0};
+    std::vector<double> y = {1.0, 2.0, 3.0, 4.0};
+    double tau = statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end());
+    EXPECT_GE(tau, 0.0);
+    EXPECT_LE(tau, 1.0);
+}
+
+/**
+ * @brief Tests Kendall's tau with all values tied in x
+ * @test Verifies tau = 0.0 when all x values are identical (degenerate case)
+ */
+TEST(KendallTauTest, AllTiedInX) {
+    std::vector<double> x = {2.0, 2.0, 2.0};
+    std::vector<double> y = {1.0, 2.0, 3.0};
+    EXPECT_DOUBLE_EQ(statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end()), 0.0);
+}
+
+/**
+ * @brief Tests Kendall's tau throws for empty range
+ * @test Verifies std::invalid_argument is thrown for empty input
+ */
+TEST(KendallTauTest, EmptyRange) {
+    std::vector<double> x, y;
+    EXPECT_THROW(statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end()),
+                 std::invalid_argument);
+}
+
+// ============================================================================
+// Weighted Covariance Tests
+// ============================================================================
+
+/**
+ * @brief Tests weighted covariance with uniform weights
+ * @test With all weights = 1 the result should equal the sample covariance
+ */
+TEST(WeightedCovarianceTest, UniformWeightsMatchSampleCovariance) {
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> y = {2.0, 4.0, 6.0, 8.0, 10.0};
+    std::vector<double> w = {1.0, 1.0, 1.0, 1.0, 1.0};
+    double wc = statcpp::weighted_covariance(x.begin(), x.end(), y.begin(), y.end(), w.begin());
+    double sc = statcpp::sample_covariance(x.begin(), x.end(), y.begin(), y.end());
+    EXPECT_NEAR(wc, sc, 1e-10);
+}
+
+/**
+ * @brief Tests weighted covariance throws for negative weight
+ * @test Verifies std::invalid_argument is thrown when a weight is negative
+ */
+TEST(WeightedCovarianceTest, NegativeWeight) {
+    std::vector<double> x = {1.0, 2.0, 3.0};
+    std::vector<double> y = {1.0, 2.0, 3.0};
+    std::vector<double> w = {1.0, -1.0, 1.0};
+    EXPECT_THROW(statcpp::weighted_covariance(x.begin(), x.end(), y.begin(), y.end(), w.begin()),
+                 std::invalid_argument);
+}

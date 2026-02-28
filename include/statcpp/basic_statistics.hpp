@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <stdexcept>
@@ -465,8 +466,12 @@ double harmonic_mean(Iterator first, Iterator last)
     double reciprocal_sum = 0.0;
     for (auto it = first; it != last; ++it) {
         double val = static_cast<double>(*it);
-        if (val == 0.0) {
-            throw std::invalid_argument("statcpp::harmonic_mean: zero value encountered");
+        // Reject both exact zero and values so small that 1/val overflows to infinity.
+        // std::numeric_limits<double>::min() is the smallest positive normal double (~2.2e-308),
+        // so checking |val| < min() catches subnormals and zero without false positives on
+        // legitimate small values that are still representable.
+        if (std::abs(val) < std::numeric_limits<double>::min()) {
+            throw std::invalid_argument("statcpp::harmonic_mean: zero or near-zero value encountered");
         }
         reciprocal_sum += 1.0 / val;
     }
@@ -497,8 +502,8 @@ double harmonic_mean(Iterator first, Iterator last, Projection proj)
     double reciprocal_sum = 0.0;
     for (auto it = first; it != last; ++it) {
         double val = static_cast<double>(std::invoke(proj, *it));
-        if (val == 0.0) {
-            throw std::invalid_argument("statcpp::harmonic_mean: zero value encountered");
+        if (std::abs(val) < std::numeric_limits<double>::min()) {
+            throw std::invalid_argument("statcpp::harmonic_mean: zero or near-zero value encountered");
         }
         reciprocal_sum += 1.0 / val;
     }
@@ -705,12 +710,14 @@ double logarithmic_mean(T1 a, T2 b)
         throw std::invalid_argument("statcpp::logarithmic_mean: arguments must be positive");
     }
 
-    // If values are equal
-    if (std::abs(x - y) < 1e-10) {
+    // If values are approximately equal, return x directly.
+    // Use relative difference to avoid misclassifying large values as distinct
+    // when the relative gap is tiny (e.g., x = 1e15, y = 1e15 + 1e5).
+    if (std::abs(x - y) <= 1e-10 * std::max(x, y)) {
         return x;
     }
 
-    // Standard logarithmic mean
+    // Standard logarithmic mean: (y - x) / (ln(y) - ln(x))
     return (y - x) / (std::log(y) - std::log(x));
 }
 

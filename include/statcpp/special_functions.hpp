@@ -189,6 +189,9 @@ inline double lbeta(double a, double b)
 inline double betainc_impl(double a, double b, double x, int recursion_depth)
 {
     // Recursion depth check (prevent infinite recursion)
+    // At most 1 recursive call is made via the symmetry relation I_x(a,b) = 1 - I_{1-x}(b,a).
+    // After that single redirect the continued fraction always converges, so depth > 1 is unreachable.
+    // We keep the guard at depth > 1 to be safe and ensure we never loop.
     if (recursion_depth > 1) {
         throw std::runtime_error("statcpp::betainc: maximum recursion depth exceeded");
     }

@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 #include "statcpp/basic_statistics.hpp"
-#include <vector>
 #include <array>
 #include <cmath>
+#include <limits>
+#include <vector>
 
 // ============================================================================
 // Sum Tests
@@ -389,6 +390,62 @@ TEST(HarmonicMeanTest, EmptyRange) {
 TEST(HarmonicMeanTest, ZeroValue) {
     std::vector<double> data = {1.0, 0.0, 2.0};
     EXPECT_THROW(statcpp::harmonic_mean(data.begin(), data.end()), std::invalid_argument);
+}
+
+/**
+ * @brief Test harmonic mean calculation with a near-zero value (subnormal)
+ * @test Verify harmonic mean function throws exception for subnormal values
+ *       that would cause 1/val to overflow to infinity
+ */
+TEST(HarmonicMeanTest, NearZeroValue) {
+    // std::numeric_limits<double>::min() / 2 is a subnormal, smaller than the
+    // smallest positive normal double, so 1/val would overflow.
+    std::vector<double> data = {1.0, std::numeric_limits<double>::min() / 2.0, 2.0};
+    EXPECT_THROW(statcpp::harmonic_mean(data.begin(), data.end()), std::invalid_argument);
+}
+
+// ============================================================================
+// Logarithmic Mean Tests
+// ============================================================================
+
+/**
+ * @brief Test logarithmic mean calculation for distinct positive values
+ * @test Verify logarithmic mean formula (y - x) / (ln(y) - ln(x))
+ */
+TEST(LogarithmicMeanTest, DistinctValues) {
+    // L(1, e) = (e - 1) / (ln(e) - ln(1)) = (e - 1) / 1 = e - 1
+    EXPECT_NEAR(statcpp::logarithmic_mean(1.0, std::exp(1.0)), std::exp(1.0) - 1.0, 1e-10);
+}
+
+/**
+ * @brief Test logarithmic mean calculation when both values are equal
+ * @test Verify logarithmic mean returns the value itself when x == y
+ */
+TEST(LogarithmicMeanTest, EqualValues) {
+    EXPECT_DOUBLE_EQ(statcpp::logarithmic_mean(3.0, 3.0), 3.0);
+}
+
+/**
+ * @brief Test logarithmic mean for large equal values (relative near-equality check)
+ * @test Verify that values very close in relative terms are handled without 0/0 computation.
+ *       Previously, an absolute threshold would fail for large magnitudes.
+ */
+TEST(LogarithmicMeanTest, LargeNearlyEqualValues) {
+    // x and y differ by a relative amount smaller than 1e-10, so the function
+    // should return a value very close to x without computing (y-x)/(ln y - ln x).
+    double x = 1e15;
+    double y = x + x * 5e-11;  // relative difference ~5e-11 < 1e-10
+    double result = statcpp::logarithmic_mean(x, y);
+    EXPECT_NEAR(result, x, x * 1e-9);
+}
+
+/**
+ * @brief Test logarithmic mean throws for non-positive arguments
+ * @test Verify that non-positive arguments raise std::invalid_argument
+ */
+TEST(LogarithmicMeanTest, NonPositiveArgument) {
+    EXPECT_THROW(statcpp::logarithmic_mean(0.0, 1.0), std::invalid_argument);
+    EXPECT_THROW(statcpp::logarithmic_mean(1.0, -1.0), std::invalid_argument);
 }
 
 // ============================================================================

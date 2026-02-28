@@ -757,7 +757,12 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
         pairs.push_back({static_cast<double>(*it1), static_cast<double>(*it2)});
     }
 
-    // 一致・不一致・同順位のペア数をカウント
+    // 一致・不一致・同順位のペア数をカウント。
+    //
+    // 同順位（タイ）の検出には厳密な等値比較（diff == 0.0）を使用する。
+    // これは入力が整数や bit-identical な double の場合に正確に動作する。
+    // 浮動小数点演算の結果を入力とする場合、丸め誤差により数学的に等しい値が
+    // 等しいと判定されない可能性があるため、呼び出し元で事前に丸め処理を行うこと。
     std::size_t concordant = 0;
     std::size_t discordant = 0;
     std::size_t tie_x = 0;
@@ -845,7 +850,11 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
                          static_cast<double>(std::invoke(proj2, *it2))});
     }
 
-    // 一致・不一致・同順位のペア数をカウント
+    // 一致・不一致・同順位のペア数をカウント。
+    //
+    // 同順位（タイ）の検出には厳密な等値比較（diff == 0.0）を使用する。
+    // 射影後の値が整数や bit-identical な double の場合に正確に動作する。
+    // 浮動小数点演算の結果を射影する場合、丸め誤差に注意すること。
     std::size_t concordant = 0;
     std::size_t discordant = 0;
     std::size_t tie_x = 0;
@@ -966,7 +975,10 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
         sum_w_sq += w * w;
     }
 
-    // Bessel補正
+    // 頻度重み (frequency weights) に対する Bessel 補正。
+    // 式  W / (W^2 - sum(w_i^2))  は、重みが繰り返し回数を表す場合に
+    // 不偏推定量を与える。すべての重みが 1 のとき n/(n-1) と一致する。
+    // 精度重み（逆分散重み）を用いる場合は補正式が異なる点に注意すること。
     double correction = sum_weights / (sum_weights * sum_weights - sum_w_sq);
     return cov * correction;
 }
@@ -1052,7 +1064,10 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
         sum_w_sq += w * w;
     }
 
-    // Bessel補正
+    // 頻度重み (frequency weights) に対する Bessel 補正。
+    // 式  W / (W^2 - sum(w_i^2))  は、重みが繰り返し回数を表す場合に
+    // 不偏推定量を与える。すべての重みが 1 のとき n/(n-1) と一致する。
+    // 精度重み（逆分散重み）を用いる場合は補正式が異なる点に注意すること。
     double correction = sum_weights / (sum_weights * sum_weights - sum_w_sq);
     return cov * correction;
 }

@@ -254,6 +254,7 @@ xdg-open doc/html/index.html  # Linux
 
 このプロジェクトの開発には以下のツールと AI を活用しています:
 
+- **R version 4.4.2** Rによって計算結果との比較テスト
 - **OpenAI ChatGPT 5.2** - ドキュメント類の構文確認、説明不足の確認
 - **Claude Code for VS Code Opus 4.5** - Google Test 用コードの生成、サンプルコードの修正、リファクタリング
 - **LM Studio google/gemma-2-27b** - ドキュメント類の構文確認、説明不足の確認

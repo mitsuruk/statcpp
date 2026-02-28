@@ -4,6 +4,34 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-02-28
+
+### Fixed
+
+- **`basic_statistics.hpp` — `harmonic_mean`**: Changed zero-value detection from exact `val == 0.0` to `std::abs(val) < std::numeric_limits<double>::min()`.
+  Subnormal values that would cause `1/val` to overflow to infinity are now also rejected.
+  Error message updated to `"zero or near-zero value encountered"`.
+- **`basic_statistics.hpp` — `logarithmic_mean`**: Replaced absolute-difference equality test `std::abs(x - y) < 1e-10` with relative-difference test `std::abs(x - y) <= 1e-10 * std::max(x, y)`.
+  Prevents incorrect evaluation of `(y - x) / (ln y - ln x)` for very large but nearly-equal inputs (e.g., `x = 1e15`).
+- **`order_statistics.hpp` — `weighted_median`**: Replaced exact `cumulative == half_weight` floating-point comparison with a tolerance-based check `std::abs(cumulative - half_weight) <= eps * half_weight`.
+  Avoids missed boundary detection caused by floating-point accumulation rounding errors.
+- **`correlation_covariance.hpp` — `weighted_covariance`**: Added clarifying comments that the Bessel correction formula `W / (W² − Σwᵢ²)` applies to **frequency weights**.
+  For precision weights (inverse-variance), a different correction factor is required.
+- **`correlation_covariance.hpp` — `kendall_tau`**: Added clarifying comments that tie detection uses exact equality (`diff == 0.0`), which is correct for integer or bit-identical double inputs.
+  Callers passing computed floating-point values should round/quantise data beforehand.
+- Added `<limits>` include to `basic_statistics.hpp` and `order_statistics.hpp` (both `include/` and `include-ja/`).
+
+### Tests
+
+- Added 18 new unit tests (758 → 776 total):
+  - `HarmonicMeanTest.NearZeroValue` — subnormal value detection
+  - `LogarithmicMeanTest.DistinctValues`, `.EqualValues`, `.LargeNearlyEqualValues`, `.NonPositiveArgument` — logarithmic mean coverage
+  - `WeightedMedianTest.UniformWeights`, `.DominantWeight`, `.ExactHalfWeightBoundary`, `.EmptyRange`, `.NegativeWeight`, `.AllZeroWeights` — weighted median coverage
+  - `KendallTauTest.PerfectPositive`, `.PerfectNegative`, `.TiedValues`, `.AllTiedInX`, `.EmptyRange` — Kendall's τ coverage
+  - `WeightedCovarianceTest.UniformWeightsMatchSampleCovariance`, `.NegativeWeight` — weighted covariance coverage
+
+---
+
 ## [0.1.1] - 2026-02-20
 
 ### Fixed

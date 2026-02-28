@@ -197,6 +197,10 @@ inline double lbeta(double a, double b)
 inline double betainc_impl(double a, double b, double x, int recursion_depth)
 {
     // 再帰深さチェック（無限再帰防止）
+    // 対称変換 I_x(a,b) = 1 - I_{1-x}(b,a) による再帰呼び出しは最大1回だけ発生する。
+    // depth=1 で渡された (b, a, 1-x) に対して再び対称変換が必要になることは
+    // 数学的にあり得ないため、depth > 1 は実際には到達不可能だが、
+    // 安全ガードとして保持する。
     if (recursion_depth > 1) {
         throw std::runtime_error("statcpp::betainc: maximum recursion depth exceeded");
     }

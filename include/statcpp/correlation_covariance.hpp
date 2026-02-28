@@ -759,7 +759,15 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
         pairs.push_back({static_cast<double>(*it1), static_cast<double>(*it2)});
     }
 
-    // Count concordant, discordant, and tied pairs
+    // Count concordant, discordant, and tied pairs.
+    //
+    // Tie detection uses exact equality (diff == 0.0).
+    // This is correct when the input values are integers or bit-identical doubles
+    // (the common case for statistical data).
+    // If the inputs are the result of floating-point computations, two values that
+    // are mathematically equal may differ by a rounding error and thus not be
+    // detected as tied.  Callers should round or quantise such data before passing
+    // it to this function.
     std::size_t concordant = 0;
     std::size_t discordant = 0;
     std::size_t tie_x = 0;
@@ -847,7 +855,12 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
                          static_cast<double>(std::invoke(proj2, *it2))});
     }
 
-    // Count concordant, discordant, and tied pairs
+    // Count concordant, discordant, and tied pairs.
+    //
+    // Tie detection uses exact equality (diff == 0.0).
+    // This is correct when the projected values are integers or bit-identical doubles.
+    // For inputs derived from floating-point computations, callers should round or
+    // quantise the data before passing it to this function.
     std::size_t concordant = 0;
     std::size_t discordant = 0;
     std::size_t tie_x = 0;
@@ -968,7 +981,11 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
         sum_w_sq += w * w;
     }
 
-    // Bessel correction
+    // Bessel correction for frequency weights.
+    // The formula  W / (W^2 - sum(w_i^2))  yields the unbiased estimate when weights
+    // represent repeat counts (frequency weights).  It reduces to n/(n-1) when all
+    // weights equal 1.
+    // For precision weights (inverse-variance), a different correction is required.
     double correction = sum_weights / (sum_weights * sum_weights - sum_w_sq);
     return cov * correction;
 }
@@ -1054,7 +1071,11 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
         sum_w_sq += w * w;
     }
 
-    // Bessel correction
+    // Bessel correction for frequency weights.
+    // The formula  W / (W^2 - sum(w_i^2))  yields the unbiased estimate when weights
+    // represent repeat counts (frequency weights).  It reduces to n/(n-1) when all
+    // weights equal 1.
+    // For precision weights (inverse-variance), a different correction is required.
     double correction = sum_weights / (sum_weights * sum_weights - sum_w_sq);
     return cov * correction;
 }

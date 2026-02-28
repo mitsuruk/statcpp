@@ -266,6 +266,7 @@ See the [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 This project was developed using the following tools and AI:
 
+- **R version 4.4.2** - Numerical verification tests comparing results computed by R
 - **OpenAI ChatGPT 5.2** - Document syntax checking, identifying missing explanations
 - **Claude Code for VS Code Opus 4.5** - Google Test code generation, sample code fixes, refactoring
 - **LM Studio google/gemma-2-27b** - Document syntax checking, identifying missing explanations

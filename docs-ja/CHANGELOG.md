@@ -4,6 +4,34 @@ statcpp ライブラリの変更履歴を記録します。
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います。
 
+## [0.1.2] - 2026-02-28
+
+### Fixed (修正)
+
+- **`basic_statistics.hpp` — `harmonic_mean`**: ゼロ値の検出を厳密比較 `val == 0.0` から `std::abs(val) < std::numeric_limits<double>::min()` に変更。
+  `1/val` が無限大へオーバーフローするほど小さい非正規化数もエラー扱いにするようになった。
+  エラーメッセージを `"zero or near-zero value encountered"` に更新。
+- **`basic_statistics.hpp` — `logarithmic_mean`**: 等値判定を絶対差分 `std::abs(x - y) < 1e-10` から相対差分 `std::abs(x - y) <= 1e-10 * std::max(x, y)` に変更。
+  `x = 1e15` のような大きな値どうしの場合に `(y - x) / (ln y - ln x)` が不正に評価される問題を修正。
+- **`order_statistics.hpp` — `weighted_median`**: 浮動小数点の厳密比較 `cumulative == half_weight` を許容誤差付き比較 `std::abs(cumulative - half_weight) <= eps * half_weight` に変更。
+  累積加算の丸め誤差によって境界判定が失敗する問題を修正。
+- **`correlation_covariance.hpp` — `weighted_covariance`**: Bessel 補正式 `W / (W² − Σwᵢ²)` が**頻度重み (frequency weights)** 向けであることをコメントで明示。
+  精度重み（逆分散重み）を使う場合は補正式が異なる点も注記。
+- **`correlation_covariance.hpp` — `kendall_tau`**: 同点検出が厳密等値比較 (`diff == 0.0`) を使用することをコメントで明示。
+  浮動小数点演算の結果を渡す場合は、呼び出し元で事前に丸め処理を行うよう注記。
+- `basic_statistics.hpp` および `order_statistics.hpp` に `<limits>` のインクルードを追加（`include/`・`include-ja/` 両方）。
+
+### Tests (テスト)
+
+- 単体テストを 18 件追加（758 → 776 件）:
+  - `HarmonicMeanTest.NearZeroValue` — 非正規化数の検出
+  - `LogarithmicMeanTest.DistinctValues`, `.EqualValues`, `.LargeNearlyEqualValues`, `.NonPositiveArgument` — 対数平均のカバレッジ
+  - `WeightedMedianTest.UniformWeights`, `.DominantWeight`, `.ExactHalfWeightBoundary`, `.EmptyRange`, `.NegativeWeight`, `.AllZeroWeights` — 重み付き中央値のカバレッジ
+  - `KendallTauTest.PerfectPositive`, `.PerfectNegative`, `.TiedValues`, `.AllTiedInX`, `.EmptyRange` — Kendall の τ のカバレッジ
+  - `WeightedCovarianceTest.UniformWeightsMatchSampleCovariance`, `.NegativeWeight` — 重み付き共分散のカバレッジ
+
+---
+
 ## [0.1.1] - 2026-02-20
 
 ### Fixed (修正)
