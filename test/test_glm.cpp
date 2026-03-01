@@ -422,23 +422,27 @@ TEST(GLMStatisticsTest, DegreesOfFreedom) {
  * @test Verifies that k = p_full + 1 for Gaussian family (intercept + slope + sigma^2 = 3)
  */
 TEST(GLMFitTest, GaussianAICIncludesSigma) {
-    // y = 1 + 2x (perfect linear), n=5, p_full=2 (intercept + 1 predictor)
-    // With sigma^2 correction, k should be 3
+    // y ≈ 1 + 2x with noise (not a perfect fit to avoid sigma2=0 and log(0)=-inf)
+    // n=10, p_full=2 (intercept + 1 predictor), k should be 3 (includes sigma^2)
     std::vector<std::vector<double>> X = {
-        {1.0}, {2.0}, {3.0}, {4.0}, {5.0}
+        {1.0}, {2.0}, {3.0}, {4.0}, {5.0},
+        {6.0}, {7.0}, {8.0}, {9.0}, {10.0}
     };
-    std::vector<double> y = {3.0, 5.0, 7.0, 9.0, 11.0};
+    std::vector<double> y = {3.1, 4.8, 7.2, 8.9, 11.1, 12.8, 15.3, 16.9, 19.0, 21.2};
 
     auto result = statcpp::glm_fit(X, y,
                                     statcpp::distribution_family::gaussian,
                                     statcpp::link_function::identity);
 
+    EXPECT_TRUE(result.converged);
+    EXPECT_TRUE(std::isfinite(result.log_likelihood));
+
     // For Gaussian: AIC = -2*LL + 2*k, k = p_full + 1 = 3 (includes sigma^2)
     double expected_aic = -2.0 * result.log_likelihood + 2.0 * 3.0;
     EXPECT_NEAR(result.aic, expected_aic, 1e-10);
 
-    // BIC = -2*LL + k*log(n), k=3, n=5
-    double expected_bic = -2.0 * result.log_likelihood + 3.0 * std::log(5.0);
+    // BIC = -2*LL + k*log(n), k=3, n=10
+    double expected_bic = -2.0 * result.log_likelihood + 3.0 * std::log(10.0);
     EXPECT_NEAR(result.bic, expected_bic, 1e-10);
 }
 
