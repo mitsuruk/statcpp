@@ -107,6 +107,10 @@ struct odds_ratio_result {
  *              - d: Not exposed and not diseased
  * @return Odds ratio calculation result
  * @throws std::invalid_argument If table is not 2x2 or if cell count is zero
+ *
+ * @note Currently throws an exception when any cell count is zero. A future enhancement
+ *       may add an optional Gart-Zweifel continuity correction (+0.5 to all cells)
+ *       to handle zero-cell tables.
  */
 inline odds_ratio_result odds_ratio(const std::vector<std::vector<std::size_t>>& table)
 {

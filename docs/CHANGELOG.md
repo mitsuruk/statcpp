@@ -4,6 +4,41 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] - 2026-03-01
+
+### Fixed
+
+- **`glm.hpp` — `glm_fit()`**: Fixed AIC/BIC calculation for Gaussian family to count the variance parameter sigma^2 as an estimated parameter (k = p_full + 1). AIC increases by +2 and BIC by +log(n) compared to previous values. Binomial/Poisson/Gamma families are unaffected. Resolves internal inconsistency with `model_selection.hpp`'s `aic_linear()`.
+- **`order_statistics.hpp` — `weighted_percentile()`**: Replaced exact floating-point comparison (`cumulative == target`) with tolerance-based comparison (`std::abs(cumulative - target) <= tol`), consistent with `weighted_median()`. Added NaN detection for `p` parameter and explicit endpoint handling for p=0/p=1. Both non-projection and projection overloads are fixed.
+- **`resampling.hpp` — `bootstrap()` / `bootstrap_bca()`**: Added validation that throws `std::invalid_argument` when `n_bootstrap < 2`. Prevents `size_t` underflow when `n_bootstrap == 0` and division by zero when `n_bootstrap == 1`.
+- **`resampling.hpp` — `bootstrap_bca()`**: Added clamping for BCa confidence interval index calculation to prevent undefined behavior when `alpha1` is negative (`static_cast<std::size_t>` of a negative double).
+
+### Changed
+
+- **`nonparametric_tests.hpp` — `ks_test_normal()`**: Renamed to `lilliefors_test()` to accurately reflect that the implementation estimates parameters (mean, variance) from data, making it a Lilliefors test rather than a standard KS test with known parameters. Doxygen comments updated accordingly.
+
+### Deprecated
+
+- **`nonparametric_tests.hpp` — `ks_test_normal()`**: Retained as a `[[deprecated]]` alias. Use `lilliefors_test()` instead.
+
+### Documentation
+
+- **`categorical.hpp` — `odds_ratio()`**: Added `@note` about planned optional Gart-Zweifel continuity correction (+0.5 to all cells) for zero-cell tables.
+- **`anova.hpp` — `scheffe_posthoc()`**: Added explicit p-value formula `1 - F_cdf(F_s, k-1, df_error)` to Doxygen documentation.
+- **`basic_statistics.hpp` — `harmonic_mean()`**: Added `@note` describing the zero-detection threshold `std::numeric_limits<double>::min()` characteristics and potential for a user-specified threshold in future versions.
+- **`multivariate.hpp` — `pca()`**: Added `@note` about potential numerical error accumulation in the deflation method when extracting many components.
+
+### Tests
+
+- Added 17 new unit tests (776 → 793 total):
+  - `GLMFitTest.GaussianAICIncludesSigma`, `.BinomialAICNoSigma` — Gaussian AIC/BIC sigma^2 parameter count
+  - `WeightedPercentileTest.UniformWeightsMedian`, `.PZero`, `.POne`, `.ToleranceComparison`, `.NaNPThrows`, `.EmptyRange`, `.NegativeWeight`, `.WithProjection` — weighted percentile coverage
+  - `BootstrapTest.ZeroBootstrapIterations`, `.OneBootstrapIteration` — bootstrap n_bootstrap validation
+  - `BootstrapBCaTest.ZeroBootstrapIterations`, `.OneBootstrapIteration` — BCa n_bootstrap validation
+  - `LillieforsTestTest.NormalData`, `.DeprecatedAliasProducesSameResult`, `.TooFewElements` — Lilliefors test and backward compatibility
+
+---
+
 ## [0.1.2] - 2026-02-28
 
 ### Fixed
@@ -258,5 +293,7 @@ Security-related changes
 
 ---
 
+[0.1.3]: https://github.com/yourusername/statcpp/releases/tag/v0.1.3
+[0.1.2]: https://github.com/yourusername/statcpp/releases/tag/v0.1.2
 [0.1.1]: https://github.com/yourusername/statcpp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/yourusername/statcpp/releases/tag/v0.1.0

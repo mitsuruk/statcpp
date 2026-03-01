@@ -197,6 +197,26 @@ TEST(BootstrapTest, TooFewElements) {
     EXPECT_THROW(statcpp::bootstrap(data.begin(), data.end(), mean_func, 1000, 0.95), std::invalid_argument);
 }
 
+/**
+ * @brief Tests that n_bootstrap=0 throws exception.
+ * @test Verifies that bootstrap with n_bootstrap=0 throws std::invalid_argument.
+ */
+TEST(BootstrapTest, ZeroBootstrapIterations) {
+    std::vector<double> data = {1.0, 2.0, 3.0};
+    auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
+    EXPECT_THROW(statcpp::bootstrap(data.begin(), data.end(), mean_func, 0, 0.95), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that n_bootstrap=1 throws exception.
+ * @test Verifies that bootstrap with n_bootstrap=1 throws std::invalid_argument (would cause division by zero).
+ */
+TEST(BootstrapTest, OneBootstrapIteration) {
+    std::vector<double> data = {1.0, 2.0, 3.0};
+    auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
+    EXPECT_THROW(statcpp::bootstrap(data.begin(), data.end(), mean_func, 1, 0.95), std::invalid_argument);
+}
+
 // ============================================================================
 // BCa Bootstrap Tests
 // ============================================================================
@@ -240,6 +260,26 @@ TEST(BootstrapBCaTest, TooFewElements) {
     auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
 
     EXPECT_THROW(statcpp::bootstrap_bca(data.begin(), data.end(), mean_func, 1000, 0.95), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that BCa bootstrap with n_bootstrap=0 throws exception.
+ * @test Verifies that bootstrap_bca with n_bootstrap=0 throws std::invalid_argument.
+ */
+TEST(BootstrapBCaTest, ZeroBootstrapIterations) {
+    std::vector<double> data = {1.0, 2.0, 3.0, 4.0, 5.0};
+    auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
+    EXPECT_THROW(statcpp::bootstrap_bca(data.begin(), data.end(), mean_func, 0, 0.95), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that BCa bootstrap with n_bootstrap=1 throws exception.
+ * @test Verifies that bootstrap_bca with n_bootstrap=1 throws std::invalid_argument.
+ */
+TEST(BootstrapBCaTest, OneBootstrapIteration) {
+    std::vector<double> data = {1.0, 2.0, 3.0, 4.0, 5.0};
+    auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
+    EXPECT_THROW(statcpp::bootstrap_bca(data.begin(), data.end(), mean_func, 1, 0.95), std::invalid_argument);
 }
 
 /**

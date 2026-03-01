@@ -315,6 +315,10 @@ inline std::pair<double, std::vector<double>> power_iteration(
  * @param n_components 抽出する主成分の数
  * @return PCA の結果
  * @throws std::invalid_argument データが空の場合、または行の列数が一致しない場合
+ *
+ * @note この実装はデフレーション法により複数の主成分を抽出します。
+ *       デフレーション法は多数の成分を抽出する際に数値誤差が蓄積する可能性があります。
+ *       高次元データや多数の成分が必要な場合は、完全固有値分解との結果比較を推奨します。
  */
 inline pca_result pca(const std::vector<std::vector<double>>& data,
                       std::size_t n_components)

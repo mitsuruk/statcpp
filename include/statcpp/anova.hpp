@@ -571,6 +571,7 @@ inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
  * Scheffe's method is valid for any linear contrast, applicable not only to
  * pairwise comparisons but also to complex contrasts.
  * The F statistic is calculated as t^2 / (k-1) and compared to F(k-1, df_error) distribution.
+ * The p-value is computed as 1 - F_cdf(F_s, k-1, df_error).
  *
  * @param anova_result Result from one-way ANOVA
  * @param alpha Significance level (default: 0.05)

@@ -580,6 +580,9 @@ inline glm_result glm_fit(
     // AIC と BIC
     double n_d = static_cast<double>(n);
     double k = static_cast<double>(p_full);
+    if (family == distribution_family::gaussian) {
+        k += 1.0;  // sigma^2 も推定パラメータとしてカウント
+    }
     double aic = -2.0 * log_likelihood + 2.0 * k;
     double bic = -2.0 * log_likelihood + k * std::log(n_d);
 

@@ -107,6 +107,10 @@ struct odds_ratio_result {
  *              - d: 曝露なし・疾患なし
  * @return オッズ比の計算結果
  * @throws std::invalid_argument テーブルが2x2でない場合、またはセル度数が0の場合
+ *
+ * @note 現在、セル度数が0の場合は例外をスローします。将来のバージョンでは、
+ *       ゼロセルテーブルを扱うためのGart-Zweifel連続補正（全セルに+0.5）を
+ *       オプション引数で選択可能にする予定です。
  */
 inline odds_ratio_result odds_ratio(const std::vector<std::vector<std::size_t>>& table)
 {

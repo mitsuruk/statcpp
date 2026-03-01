@@ -454,6 +454,11 @@ double geometric_mean(Iterator first, Iterator last, Projection proj)
  * @param last 終了イテレータ
  * @return 調和平均
  * @throws std::invalid_argument 空の範囲の場合、または値が0の場合
+ *
+ * @note 現在のゼロ判定閾値は std::numeric_limits<double>::min()（最小正規化double、約2.2e-308）を
+ *       使用しています。非正規化数やゼロを検出しますが、この閾値付近の意図的に小さい正の値を
+ *       扱う場合は偽拒否の可能性に注意してください。将来のバージョンでユーザー指定閾値の導入を
+ *       検討しています。
  */
 template <typename Iterator>
 double harmonic_mean(Iterator first, Iterator last)

@@ -455,6 +455,11 @@ double geometric_mean(Iterator first, Iterator last, Projection proj)
  * @param last End iterator
  * @return Harmonic mean
  * @throws std::invalid_argument If range is empty or if a value is zero
+ *
+ * @note The current zero-detection threshold uses std::numeric_limits<double>::min() (smallest
+ *       positive normal double, ~2.2e-308). This catches subnormals and zero, but users working
+ *       with intentionally small positive values near this threshold should be aware of potential
+ *       false rejections. A future version may allow a user-specified threshold.
  */
 template <typename Iterator>
 double harmonic_mean(Iterator first, Iterator last)

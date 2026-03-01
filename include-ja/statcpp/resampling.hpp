@@ -143,6 +143,10 @@ bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
         throw std::invalid_argument("statcpp::bootstrap: confidence must be in (0, 1)");
     }
 
+    if (n_bootstrap < 2) {
+        throw std::invalid_argument("statcpp::bootstrap: n_bootstrap must be at least 2");
+    }
+
     auto n = statcpp::count(first, last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::bootstrap: need at least 2 elements");
@@ -305,6 +309,10 @@ bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_fun
         throw std::invalid_argument("statcpp::bootstrap_bca: confidence must be in (0, 1)");
     }
 
+    if (n_bootstrap < 2) {
+        throw std::invalid_argument("statcpp::bootstrap_bca: n_bootstrap must be at least 2");
+    }
+
     auto n = statcpp::count(first, last);
     if (n < 3) {
         throw std::invalid_argument("statcpp::bootstrap_bca: need at least 3 elements");
@@ -370,11 +378,14 @@ bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_fun
     std::vector<double> sorted_replicates = replicates;
     std::sort(sorted_replicates.begin(), sorted_replicates.end());
 
-    std::size_t lower_idx = static_cast<std::size_t>(alpha1 * n_bootstrap);
-    std::size_t upper_idx = static_cast<std::size_t>(alpha2 * n_bootstrap);
-
-    if (lower_idx >= n_bootstrap) lower_idx = n_bootstrap - 1;
-    if (upper_idx >= n_bootstrap) upper_idx = n_bootstrap - 1;
+    auto clamp_index = [&](double a_val) -> std::size_t {
+        double idx = a_val * static_cast<double>(n_bootstrap);
+        if (idx < 0.0) return 0;
+        if (idx >= static_cast<double>(n_bootstrap)) return n_bootstrap - 1;
+        return static_cast<std::size_t>(idx);
+    };
+    std::size_t lower_idx = clamp_index(alpha1);
+    std::size_t upper_idx = clamp_index(alpha2);
 
     double ci_lower = sorted_replicates[lower_idx];
     double ci_upper = sorted_replicates[upper_idx];

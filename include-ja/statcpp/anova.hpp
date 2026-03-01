@@ -569,6 +569,7 @@ inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
  * Scheffe法は任意の線形対比（コントラスト）に対して有効であり、
  * ペア比較だけでなく複雑な対比にも適用可能です。
  * F統計量は t² / (k-1) として計算され、F(k-1, df_error) 分布と比較されます。
+ * p値は 1 - F_cdf(F_s, k-1, df_error) として計算されます。
  *
  * @param anova_result 一元配置分散分析の結果
  * @param alpha 有意水準（デフォルト: 0.05）

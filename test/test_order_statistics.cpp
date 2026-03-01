@@ -374,3 +374,95 @@ TEST(WeightedMedianTest, AllZeroWeights) {
     EXPECT_THROW(statcpp::weighted_median(data.begin(), data.end(), weights.begin()),
                  std::invalid_argument);
 }
+
+// ============================================================================
+// Weighted Percentile Tests
+// ============================================================================
+
+/**
+ * @brief Test weighted percentile with uniform weights
+ * @test Verify weighted_percentile returns the median for p=0.5 with equal weights
+ */
+TEST(WeightedPercentileTest, UniformWeightsMedian) {
+    std::vector<double> data    = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> weights = {1.0, 1.0, 1.0, 1.0, 1.0};
+    EXPECT_DOUBLE_EQ(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 0.5), 3.0);
+}
+
+/**
+ * @brief Test weighted percentile at p=0.0 boundary
+ * @test Verify weighted_percentile returns the minimum value for p=0
+ */
+TEST(WeightedPercentileTest, PZero) {
+    std::vector<double> data    = {10.0, 20.0, 30.0};
+    std::vector<double> weights = {1.0, 1.0, 1.0};
+    EXPECT_DOUBLE_EQ(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 0.0), 10.0);
+}
+
+/**
+ * @brief Test weighted percentile at p=1.0 boundary
+ * @test Verify weighted_percentile returns the maximum value for p=1
+ */
+TEST(WeightedPercentileTest, POne) {
+    std::vector<double> data    = {10.0, 20.0, 30.0};
+    std::vector<double> weights = {1.0, 1.0, 1.0};
+    EXPECT_DOUBLE_EQ(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 1.0), 30.0);
+}
+
+/**
+ * @brief Test weighted percentile with tolerance-based comparison
+ * @test Verify that cumulative weight near target triggers averaging (not exact ==)
+ */
+TEST(WeightedPercentileTest, ToleranceComparison) {
+    // weights {1, 1, 1, 1}: total = 4, target for p=0.5 = 2.0
+    // After element[1] cumulative = 2.0; should average elements[1] and [2]
+    std::vector<double> data    = {10.0, 20.0, 30.0, 40.0};
+    std::vector<double> weights = {1.0,  1.0,  1.0,  1.0};
+    EXPECT_DOUBLE_EQ(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 0.5), 25.0);
+}
+
+/**
+ * @brief Test weighted percentile with NaN p throws exception
+ * @test Verify that NaN p is rejected by the range check
+ */
+TEST(WeightedPercentileTest, NaNPThrows) {
+    std::vector<double> data    = {1.0, 2.0, 3.0};
+    std::vector<double> weights = {1.0, 1.0, 1.0};
+    EXPECT_THROW(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(),
+                 std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
+}
+
+/**
+ * @brief Test weighted percentile with empty range throws exception
+ * @test Verify weighted_percentile throws for empty input
+ */
+TEST(WeightedPercentileTest, EmptyRange) {
+    std::vector<double> data;
+    std::vector<double> weights;
+    EXPECT_THROW(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 0.5),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Test weighted percentile with negative weight throws exception
+ * @test Verify weighted_percentile throws for negative weight
+ */
+TEST(WeightedPercentileTest, NegativeWeight) {
+    std::vector<double> data    = {1.0, 2.0, 3.0};
+    std::vector<double> weights = {1.0, -1.0, 1.0};
+    EXPECT_THROW(statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 0.5),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Test weighted percentile with projection
+ * @test Verify weighted_percentile with projection function works correctly
+ */
+TEST(WeightedPercentileTest, WithProjection) {
+    struct Item { double value; };
+    std::vector<Item> data = {{10.0}, {20.0}, {30.0}};
+    std::vector<double> weights = {1.0, 1.0, 1.0};
+    double result = statcpp::weighted_percentile(data.begin(), data.end(), weights.begin(), 1.0,
+                                                  [](const Item& i) { return i.value; });
+    EXPECT_DOUBLE_EQ(result, 30.0);
+}

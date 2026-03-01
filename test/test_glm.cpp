@@ -412,3 +412,52 @@ TEST(GLMStatisticsTest, DegreesOfFreedom) {
     // df_residual = n - p = 10 - 3 = 7 (3 = intercept + 2 predictors)
     EXPECT_NEAR(model.df_residual, 7.0, 1e-10);
 }
+
+// ============================================================================
+// GLM AIC/BIC Parameter Count Tests
+// ============================================================================
+
+/**
+ * @brief Tests that Gaussian GLM AIC/BIC includes sigma^2 as an estimated parameter
+ * @test Verifies that k = p_full + 1 for Gaussian family (intercept + slope + sigma^2 = 3)
+ */
+TEST(GLMFitTest, GaussianAICIncludesSigma) {
+    // y = 1 + 2x (perfect linear), n=5, p_full=2 (intercept + 1 predictor)
+    // With sigma^2 correction, k should be 3
+    std::vector<std::vector<double>> X = {
+        {1.0}, {2.0}, {3.0}, {4.0}, {5.0}
+    };
+    std::vector<double> y = {3.0, 5.0, 7.0, 9.0, 11.0};
+
+    auto result = statcpp::glm_fit(X, y,
+                                    statcpp::distribution_family::gaussian,
+                                    statcpp::link_function::identity);
+
+    // For Gaussian: AIC = -2*LL + 2*k, k = p_full + 1 = 3 (includes sigma^2)
+    double expected_aic = -2.0 * result.log_likelihood + 2.0 * 3.0;
+    EXPECT_NEAR(result.aic, expected_aic, 1e-10);
+
+    // BIC = -2*LL + k*log(n), k=3, n=5
+    double expected_bic = -2.0 * result.log_likelihood + 3.0 * std::log(5.0);
+    EXPECT_NEAR(result.bic, expected_bic, 1e-10);
+}
+
+/**
+ * @brief Tests that non-Gaussian GLM AIC does NOT add sigma^2 parameter
+ * @test Verifies that k = p_full for Binomial family (no sigma^2 parameter)
+ */
+TEST(GLMFitTest, BinomialAICNoSigma) {
+    std::vector<std::vector<double>> X = {
+        {1.0}, {2.0}, {3.0}, {4.0}, {5.0},
+        {6.0}, {7.0}, {8.0}, {9.0}, {10.0}
+    };
+    std::vector<double> y = {0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0};
+
+    auto result = statcpp::glm_fit(X, y,
+                                    statcpp::distribution_family::binomial,
+                                    statcpp::link_function::logit);
+
+    // Binomial: k = p_full = 2 (intercept + 1 predictor), no sigma^2
+    double expected_aic = -2.0 * result.log_likelihood + 2.0 * 2.0;
+    EXPECT_NEAR(result.aic, expected_aic, 1e-10);
+}

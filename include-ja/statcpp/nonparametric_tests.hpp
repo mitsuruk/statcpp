@@ -280,15 +280,15 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
 }
 
 // ============================================================================
-// Kolmogorov-Smirnov Test for Normality
+// Lilliefors検定（正規性検定） (Lilliefors Test for Normality)
 // ============================================================================
 
 /**
- * @brief Kolmogorov-Smirnov検定（正規性検定）を実行する
+ * @brief Lilliefors検定（正規性検定）を実行する (Perform Lilliefors test for normality)
  *
- * データが正規分布に従うかどうかをKS検定で検定します。
- * データは標準化され、標準正規分布との比較が行われます。
- * Lilliefors補正による漸近近似を使用してp値を計算します。
+ * データが正規分布に従うかどうかを検定します。これはLilliefors検定であり、
+ * 標準KS検定ではありません。パラメータ（平均、分散）はデータから推定され、
+ * Lilliefors補正がp値に適用されます。
  *
  * @tparam Iterator 入力イテレータの型
  * @param first 範囲の先頭イテレータ
@@ -300,15 +300,17 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
  *
  * @note 帰無仮説: データは正規分布に従う
  * @note D統計量が大きいほど正規分布からの乖離が大きいことを示します
+ * @note 現在の実装は漸近近似式を使用しています。将来のバージョンでは、より精密な
+ *       臨界値（例: Dallal & Wilkinson 1986）を採用する可能性があります。
  * @note Lilliefors漸近近似は小標本（n < 20）や極端な裾領域（非常に小さいp値）では
  *       精度が低下する場合があります。小標本ではShapiro-Wilk検定の使用を検討してください。
  */
 template <typename Iterator>
-test_result ks_test_normal(Iterator first, Iterator last)
+test_result lilliefors_test(Iterator first, Iterator last)
 {
     auto n = statcpp::count(first, last);
     if (n < 2) {
-        throw std::invalid_argument("statcpp::ks_test_normal: need at least 2 elements");
+        throw std::invalid_argument("statcpp::lilliefors_test: need at least 2 elements");
     }
 
     // Standardize data
@@ -316,7 +318,7 @@ test_result ks_test_normal(Iterator first, Iterator last)
     double sd = statcpp::sample_stddev(first, last);
 
     if (sd == 0.0) {
-        throw std::invalid_argument("statcpp::ks_test_normal: zero variance");
+        throw std::invalid_argument("statcpp::lilliefors_test: zero variance");
     }
 
     std::vector<double> standardized;
@@ -351,6 +353,20 @@ test_result ks_test_normal(Iterator first, Iterator last)
     p_value = std::max(0.0, std::min(1.0, p_value));
 
     return {d, p_value, static_cast<double>(n), alternative_hypothesis::greater};
+}
+
+/**
+ * @brief Kolmogorov-Smirnov検定（正規性検定）を実行（非推奨） (deprecated)
+ *
+ * @deprecated lilliefors_test() を使用してください。この関数は将来のバージョンで削除されます。
+ *             実装はデータからパラメータを推定するLilliefors検定であり、
+ *             既知パラメータの標準KS検定ではありません。
+ */
+template <typename Iterator>
+[[deprecated("Use lilliefors_test() instead. ks_test_normal() will be removed in a future version.")]]
+test_result ks_test_normal(Iterator first, Iterator last)
+{
+    return lilliefors_test(first, last);
 }
 
 // ============================================================================

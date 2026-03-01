@@ -103,8 +103,12 @@ TEST(ShapiroWilkTest, TooFewElements) {
 // Kolmogorov-Smirnov Test Tests
 // ============================================================================
 
+// Suppress deprecation warnings for legacy ks_test_normal tests
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 /**
- * @brief Test Kolmogorov-Smirnov test for normality.
+ * @brief Test Kolmogorov-Smirnov test for normality (deprecated alias).
  * @test Verifies that KS test D statistic is computed for normal data.
  */
 TEST(KSTestNormalTest, NormalData) {
@@ -119,12 +123,62 @@ TEST(KSTestNormalTest, NormalData) {
 }
 
 /**
- * @brief Test KS test with insufficient data.
+ * @brief Test KS test with insufficient data (deprecated alias).
  * @test Verifies that exception is thrown for empty sample.
  */
 TEST(KSTestNormalTest, TooFewElements) {
     std::vector<double> data = {1.0};
     EXPECT_THROW(statcpp::ks_test_normal(data.begin(), data.end()), std::invalid_argument);
+}
+
+#pragma GCC diagnostic pop
+
+// ============================================================================
+// Lilliefors Test (new name) Tests
+// ============================================================================
+
+/**
+ * @brief Test Lilliefors test (renamed from ks_test_normal) with normal data.
+ * @test Verifies that lilliefors_test works correctly with the new function name.
+ */
+TEST(LillieforsTestTest, NormalData) {
+    std::vector<double> normal_data = {
+        -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 0.2, -0.3, 0.8
+    };
+
+    auto result = statcpp::lilliefors_test(normal_data.begin(), normal_data.end());
+
+    EXPECT_GT(result.statistic, 0.0);
+    EXPECT_LE(result.statistic, 1.0);
+}
+
+/**
+ * @brief Test that deprecated ks_test_normal still works and produces identical results.
+ * @test Verifies backward compatibility of the deprecated alias.
+ */
+TEST(LillieforsTestTest, DeprecatedAliasProducesSameResult) {
+    std::vector<double> data = {
+        -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 0.2, -0.3, 0.8
+    };
+
+    auto result_new = statcpp::lilliefors_test(data.begin(), data.end());
+
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    auto result_old = statcpp::ks_test_normal(data.begin(), data.end());
+    #pragma GCC diagnostic pop
+
+    EXPECT_DOUBLE_EQ(result_new.statistic, result_old.statistic);
+    EXPECT_DOUBLE_EQ(result_new.p_value, result_old.p_value);
+}
+
+/**
+ * @brief Test Lilliefors test with insufficient data.
+ * @test Verifies that exception is thrown for insufficient sample.
+ */
+TEST(LillieforsTestTest, TooFewElements) {
+    std::vector<double> data = {1.0};
+    EXPECT_THROW(statcpp::lilliefors_test(data.begin(), data.end()), std::invalid_argument);
 }
 
 // ============================================================================

@@ -548,7 +548,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
 template <typename Iterator, typename WeightIterator>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, double p)
 {
-    if (p < 0.0 || p > 1.0) {
+    if (!(0.0 <= p && p <= 1.0)) {
         throw std::invalid_argument("statcpp::weighted_percentile: p must be in [0, 1]");
     }
 
@@ -584,16 +584,21 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
         throw std::invalid_argument("statcpp::weighted_percentile: sum of weights is zero");
     }
 
+    // 浮動小数点ループに依存しない端点の明示処理
+    if (p <= 0.0) return pairs.front().first;
+    if (p >= 1.0) return pairs.back().first;
+
     // 累積重みを計算して目標パーセンタイルを見つける
     // p=0.5の場合、総重みの50%の位置を見つける
     double target = p * total_weight;
+    const double tol = std::numeric_limits<double>::epsilon() * total_weight;
     double cumulative = 0.0;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= target) {
-            // 累積重みがちょうど目標値の場合は次の値との平均を取る
-            if (cumulative == target && i + 1 < pairs.size()) {
+            // 累積重みがほぼ目標値の場合は次の値との平均を取る
+            if (std::abs(cumulative - target) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;
@@ -620,7 +625,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, double p, Projection proj)
 {
-    if (p < 0.0 || p > 1.0) {
+    if (!(0.0 <= p && p <= 1.0)) {
         throw std::invalid_argument("statcpp::weighted_percentile: p must be in [0, 1]");
     }
 
@@ -656,16 +661,21 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
         throw std::invalid_argument("statcpp::weighted_percentile: sum of weights is zero");
     }
 
+    // 浮動小数点ループに依存しない端点の明示処理
+    if (p <= 0.0) return pairs.front().first;
+    if (p >= 1.0) return pairs.back().first;
+
     // 累積重みを計算して目標パーセンタイルを見つける
     // p=0.5の場合、総重みの50%の位置を見つける
     double target = p * total_weight;
+    const double tol = std::numeric_limits<double>::epsilon() * total_weight;
     double cumulative = 0.0;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= target) {
-            // 累積重みがちょうど目標値の場合は次の値との平均を取る
-            if (cumulative == target && i + 1 < pairs.size()) {
+            // 累積重みがほぼ目標値の場合は次の値との平均を取る
+            if (std::abs(cumulative - target) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;

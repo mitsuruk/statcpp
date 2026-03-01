@@ -316,6 +316,11 @@ inline std::pair<double, std::vector<double>> power_iteration(
  * @param n_components Number of principal components to extract
  * @return PCA result
  * @throws std::invalid_argument If data is empty or rows have different column counts
+ *
+ * @note This implementation uses the deflation method to extract multiple principal components.
+ *       The deflation method may accumulate numerical errors when extracting many components.
+ *       For high-dimensional data or when many components are needed, consider verifying
+ *       results against a full eigendecomposition approach.
  */
 inline pca_result pca(const std::vector<std::vector<double>>& data,
                       std::size_t n_components)

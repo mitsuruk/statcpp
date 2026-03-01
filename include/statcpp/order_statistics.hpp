@@ -535,7 +535,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
 template <typename Iterator, typename WeightIterator>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, double p)
 {
-    if (p < 0.0 || p > 1.0) {
+    if (!(0.0 <= p && p <= 1.0)) {
         throw std::invalid_argument("statcpp::weighted_percentile: p must be in [0, 1]");
     }
 
@@ -571,16 +571,21 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
         throw std::invalid_argument("statcpp::weighted_percentile: sum of weights is zero");
     }
 
+    // Explicit endpoint handling to avoid relying on floating-point loop
+    if (p <= 0.0) return pairs.front().first;
+    if (p >= 1.0) return pairs.back().first;
+
     // Calculate cumulative weight to find target percentile
     // For p=0.5, find position at 50% of total weight
     double target = p * total_weight;
+    const double tol = std::numeric_limits<double>::epsilon() * total_weight;
     double cumulative = 0.0;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= target) {
-            // If cumulative weight is exactly at target, take average with next value
-            if (cumulative == target && i + 1 < pairs.size()) {
+            // If cumulative weight is approximately at target, take average with next value
+            if (std::abs(cumulative - target) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;
@@ -607,7 +612,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, double p, Projection proj)
 {
-    if (p < 0.0 || p > 1.0) {
+    if (!(0.0 <= p && p <= 1.0)) {
         throw std::invalid_argument("statcpp::weighted_percentile: p must be in [0, 1]");
     }
 
@@ -643,16 +648,21 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
         throw std::invalid_argument("statcpp::weighted_percentile: sum of weights is zero");
     }
 
+    // Explicit endpoint handling to avoid relying on floating-point loop
+    if (p <= 0.0) return pairs.front().first;
+    if (p >= 1.0) return pairs.back().first;
+
     // Calculate cumulative weight to find target percentile
     // For p=0.5, find position at 50% of total weight
     double target = p * total_weight;
+    const double tol = std::numeric_limits<double>::epsilon() * total_weight;
     double cumulative = 0.0;
 
     for (std::size_t i = 0; i < pairs.size(); ++i) {
         cumulative += pairs[i].second;
         if (cumulative >= target) {
-            // If cumulative weight is exactly at target, take average with next value
-            if (cumulative == target && i + 1 < pairs.size()) {
+            // If cumulative weight is approximately at target, take average with next value
+            if (std::abs(cumulative - target) <= tol && i + 1 < pairs.size()) {
                 return (pairs[i].first + pairs[i + 1].first) / 2.0;
             }
             return pairs[i].first;

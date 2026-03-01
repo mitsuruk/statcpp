@@ -282,15 +282,15 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
 }
 
 // ============================================================================
-// Kolmogorov-Smirnov Test for Normality
+// Lilliefors Test for Normality
 // ============================================================================
 
 /**
- * @brief Perform Kolmogorov-Smirnov test (normality test)
+ * @brief Perform Lilliefors test for normality
  *
- * Tests whether data follows a normal distribution using KS test.
- * Data is standardized and compared against the standard normal distribution.
- * Uses Lilliefors correction with asymptotic approximation for p-value calculation.
+ * Tests whether data follows a normal distribution. This is a Lilliefors test
+ * (not a standard KS test): parameters (mean, variance) are estimated from data,
+ * and the Lilliefors correction is applied to the p-value.
  *
  * @tparam Iterator Input iterator type
  * @param first Beginning iterator of range
@@ -302,16 +302,18 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
  *
  * @note Null hypothesis: Data follows a normal distribution
  * @note Larger D statistic indicates greater deviation from normal distribution
+ * @note The current implementation uses an asymptotic approximation formula.
+ *       Future versions may adopt more precise critical values (e.g., Dallal & Wilkinson 1986).
  * @note The Lilliefors asymptotic approximation may be imprecise for small samples (n < 20)
  *       or in extreme tail regions (very small p-values). For small samples, consider
  *       using the Shapiro-Wilk test as an alternative.
  */
 template <typename Iterator>
-test_result ks_test_normal(Iterator first, Iterator last)
+test_result lilliefors_test(Iterator first, Iterator last)
 {
     auto n = statcpp::count(first, last);
     if (n < 2) {
-        throw std::invalid_argument("statcpp::ks_test_normal: need at least 2 elements");
+        throw std::invalid_argument("statcpp::lilliefors_test: need at least 2 elements");
     }
 
     // Standardize data
@@ -319,7 +321,7 @@ test_result ks_test_normal(Iterator first, Iterator last)
     double sd = statcpp::sample_stddev(first, last);
 
     if (sd == 0.0) {
-        throw std::invalid_argument("statcpp::ks_test_normal: zero variance");
+        throw std::invalid_argument("statcpp::lilliefors_test: zero variance");
     }
 
     std::vector<double> standardized;
@@ -354,6 +356,20 @@ test_result ks_test_normal(Iterator first, Iterator last)
     p_value = std::max(0.0, std::min(1.0, p_value));
 
     return {d, p_value, static_cast<double>(n), alternative_hypothesis::greater};
+}
+
+/**
+ * @brief Perform Kolmogorov-Smirnov test for normality (deprecated)
+ *
+ * @deprecated Use lilliefors_test() instead. This function will be removed in a future version.
+ *             The implementation is actually a Lilliefors test (parameters estimated from data),
+ *             not a standard KS test with known parameters.
+ */
+template <typename Iterator>
+[[deprecated("Use lilliefors_test() instead. ks_test_normal() will be removed in a future version.")]]
+test_result ks_test_normal(Iterator first, Iterator last)
+{
+    return lilliefors_test(first, last);
 }
 
 // ============================================================================
