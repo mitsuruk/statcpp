@@ -3,8 +3,13 @@
 C++17 Header-only Statistics Library
 
 [![CI](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml/badge.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-online-brightgreen.svg)](https://mitsuruk.github.io/statcpp/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
+[![Header Only](https://img.shields.io/badge/header--only-yes-green.svg)](https://github.com/mitsuruk/statcpp)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-758-brightgreen.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
+[![R Verified](https://img.shields.io/badge/R%20verified-167%20checks-blue.svg)](testWithR/VERIFIED_FUNCTIONS.md)
 
 [日本語版 / Japanese](README.ja.md)
 

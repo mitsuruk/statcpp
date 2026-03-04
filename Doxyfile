@@ -1,0 +1,65 @@
+# Doxyfile for statcpp
+# Doxygen configuration for generating API documentation
+
+#---------------------------------------------------------------------------
+# Project settings
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "statcpp"
+PROJECT_BRIEF          = "C++17 Header-Only Statistics Library"
+PROJECT_NUMBER         =
+OUTPUT_DIRECTORY       = doxydocs
+
+#---------------------------------------------------------------------------
+# Input settings
+#---------------------------------------------------------------------------
+INPUT                  = include/statcpp
+FILE_PATTERNS          = *.hpp
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = docs/README.md
+INPUT                 += docs/README.md
+
+#---------------------------------------------------------------------------
+# Extraction settings
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+
+#---------------------------------------------------------------------------
+# Output settings
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+HTML_COLORSTYLE        = LIGHT
+
+#---------------------------------------------------------------------------
+# Source browsing
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+VERBATIM_HEADERS       = YES
+
+#---------------------------------------------------------------------------
+# Preprocessing
+#---------------------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+
+#---------------------------------------------------------------------------
+# Diagrams (requires Graphviz)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+
+#---------------------------------------------------------------------------
+# Warnings
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
