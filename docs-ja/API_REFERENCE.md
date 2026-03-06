@@ -23,10 +23,10 @@ sudo apt-get install doxygen
 doxygen Doxyfile
 
 # ブラウザで開く (macOS)
-open docs/html/index.html
+open doxydocs/html/index.html
 
 # Linux
-xdg-open docs/html/index.html
+xdg-open doxydocs/html/index.html
 ```
 
 ## モジュール一覧
@@ -130,6 +130,8 @@ xdg-open docs/html/index.html
 | `spearman_correlation` | Spearman 順位相関係数 | + 射影 |
 | `kendall_tau` | Kendall の順位相関係数 | + 射影 |
 | `weighted_covariance` | 重み付き共分散 | + 射影 |
+
+> **注意:** `weighted_covariance` は**頻度重み（frequency weights, 観測の繰り返し回数）**を前提としています。Bessel 補正式 `W / (W² − Σwᵢ²)` はこの重みタイプ向けに設計されており、全ての重みが 1 の場合は `n/(n−1)` に帰着します。**精度重み（inverse-variance）**や**信頼性重み（reliability weights）**を使用する場合は、異なる補正が必要です。
 
 ### 6. 度数分布 (`frequency_distribution.hpp`)
 
@@ -315,13 +317,18 @@ xdg-open docs/html/index.html
 | `compute_ranks_with_ties` | タイ処理付き順位計算 |
 | `compute_tie_groups` | タイグループ情報の計算 |
 | `shapiro_wilk_test` | Shapiro-Wilk 正規性検定 |
-| `ks_test_normal` | Kolmogorov-Smirnov 正規性検定 |
+| `lilliefors_test` | Lilliefors 正規性検定 |
+| `ks_test_normal` | *(非推奨 — `lilliefors_test` を使用)* |
 | `levene_test` | Levene 検定（等分散性） |
 | `bartlett_test` | Bartlett 検定（等分散性） |
 | `wilcoxon_signed_rank_test` | Wilcoxon 符号順位検定 |
 | `mann_whitney_u_test` | Mann-Whitney U 検定 |
 | `kruskal_wallis_test` | Kruskal-Wallis 検定 |
 | `fisher_exact_test` | Fisher の正確検定（2x2 分割表） |
+
+> **注意（タイ検出）:** 順位ベースの関数（`compute_ranks_with_ties`, `wilcoxon_signed_rank_test`, `mann_whitney_u_test`, `kruskal_wallis_test`, `spearman_correlation`, `kendall_tau`）はタイの検出に浮動小数点の厳密等値比較（`==`）を使用します。これは観測データ（整数、固定精度の小数）に対しては適切であり、R の動作と一致します。浮動小数点演算の結果を入力する場合、タイとして認識されない可能性があります。そのようなデータは事前に丸めまたは量子化してから渡してください。
+>
+> **注意（Lilliefors 検定）:** `lilliefors_test` は p 値の計算に漸近近似を使用しており、小標本（n < 20）や極端な裾領域では精度が低下する可能性があります。小標本では `shapiro_wilk_test` の使用を検討してください。
 
 ### 14. 効果量 (`effect_size.hpp`)
 
@@ -397,6 +404,8 @@ xdg-open docs/html/index.html
 | `sample_size_prop_test` | 比率検定のサンプルサイズ |
 | `power_analysis_t_one_sample` | `power_result` を返す検出力分析 |
 | `power_analysis_t_one_sample_n` | `power_result` を返すサンプルサイズ分析 |
+
+> **注意:** t 検定の検出力/サンプルサイズ関数は正規分布近似を使用しています。大標本（n > 30）では十分な精度が得られますが、小標本や小効果量では、厳密な非心 t 分布に比べて検出力をわずかに過大評価する可能性があります。より精密な計算には R の `pwr` パッケージや G\*Power などの利用を検討してください。
 
 ### 17. 線形回帰 (`linear_regression.hpp`)
 

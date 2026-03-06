@@ -4,6 +4,41 @@ statcpp ライブラリの変更履歴を記録します。
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います。
 
+## [0.1.3] - 2026-03-01
+
+### Fixed (修正)
+
+- **`glm.hpp` — `glm_fit()`**: Gaussian ファミリの AIC/BIC 計算で、分散パラメータ σ² を推定パラメータとしてカウントするよう修正（k = p_full + 1）。AIC は +2、BIC は +log(n) 増加。Binomial/Poisson/Gamma ファミリには影響なし。`model_selection.hpp` の `aic_linear()` との内部的な不整合を解消。
+- **`order_statistics.hpp` — `weighted_percentile()`**: 浮動小数点の厳密比較 (`cumulative == target`) を許容誤差付き比較 (`std::abs(cumulative - target) <= tol`) に変更。`weighted_median()` と一貫性を確保。`p` パラメータの NaN 検出と p=0/p=1 の端点処理を追加。非射影・射影オーバーロードの両方を修正。
+- **`resampling.hpp` — `bootstrap()` / `bootstrap_bca()`**: `n_bootstrap < 2` の場合に `std::invalid_argument` をスローするバリデーションを追加。`n_bootstrap == 0` での `size_t` アンダーフロー、`n_bootstrap == 1` でのゼロ除算を防止。
+- **`resampling.hpp` — `bootstrap_bca()`**: BCa 信頼区間のインデックス計算にクランプ処理を追加。`alpha1` が負の場合の `static_cast<std::size_t>` の未定義動作を防止。
+
+### Changed (変更)
+
+- **`nonparametric_tests.hpp` — `ks_test_normal()`**: `lilliefors_test()` にリネーム。実装がデータからパラメータ（平均・分散）を推定しており、既知パラメータの標準 KS 検定ではなく Lilliefors 検定であることを正確に反映。Doxygen コメントも更新。
+
+### Deprecated (非推奨)
+
+- **`nonparametric_tests.hpp` — `ks_test_normal()`**: `[[deprecated]]` エイリアスとして保持。`lilliefors_test()` を使用すること。
+
+### Documentation (ドキュメント)
+
+- **`categorical.hpp` — `odds_ratio()`**: ゼロセルテーブルに対する Gart-Zweifel 連続性補正（+0.5）の将来的な導入予定について `@note` を追加。
+- **`anova.hpp` — `scheffe_posthoc()`**: p 値の計算式 `1 - F_cdf(F_s, k-1, df_error)` を Doxygen に明記。
+- **`basic_statistics.hpp` — `harmonic_mean()`**: ゼロ検出閾値 `std::numeric_limits<double>::min()` の特性と、将来バージョンでのユーザー指定閾値の可能性について `@note` を追加。
+- **`multivariate.hpp` — `pca()`**: デフレーション法で多数の成分を抽出する際の数値誤差蓄積の可能性について `@note` を追加。
+
+### Tests (テスト)
+
+- 単体テストを 17 件追加（776 → 793 件）:
+  - `GLMFitTest.GaussianAICIncludesSigma`, `.BinomialAICNoSigma` — Gaussian AIC/BIC の σ² パラメータカウント
+  - `WeightedPercentileTest.UniformWeightsMedian`, `.PZero`, `.POne`, `.ToleranceComparison`, `.NaNPThrows`, `.EmptyRange`, `.NegativeWeight`, `.WithProjection` — 重み付きパーセンタイルのカバレッジ
+  - `BootstrapTest.ZeroBootstrapIterations`, `.OneBootstrapIteration` — bootstrap の n_bootstrap バリデーション
+  - `BootstrapBCaTest.ZeroBootstrapIterations`, `.OneBootstrapIteration` — BCa の n_bootstrap バリデーション
+  - `LillieforsTestTest.NormalData`, `.DeprecatedAliasProducesSameResult`, `.TooFewElements` — Lilliefors 検定と後方互換性
+
+---
+
 ## [0.1.2] - 2026-02-28
 
 ### Fixed (修正)

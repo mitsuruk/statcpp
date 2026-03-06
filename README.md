@@ -8,14 +8,14 @@ C++17 Header-only Statistics Library
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
 [![Header Only](https://img.shields.io/badge/header--only-yes-green.svg)](https://github.com/mitsuruk/statcpp)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-758-brightgreen.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-793-brightgreen.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
 [![R Verified](https://img.shields.io/badge/R%20verified-167%20checks-blue.svg)](testWithR/VERIFIED_FUNCTIONS.md)
 
 [日本語版 / Japanese](README.ja.md)
 
 ## Overview
 
-statcpp is a header-only statistics library written in C++17. It provides 524 public functions across 31 header files, covering a wide range of statistical functionality from basic statistics to advanced hypothesis testing and regression analysis. The library includes 758 unit tests and 167 R-verified numerical checks.
+statcpp is a header-only statistics library written in C++17. It provides 524 public functions across 31 header files, covering a wide range of statistical functionality from basic statistics to advanced hypothesis testing and regression analysis. The library includes 793 unit tests and 167 R-verified numerical checks.
 
 ### Key Features
 
@@ -24,7 +24,7 @@ statcpp is a header-only statistics library written in C++17. It provides 524 pu
 - **C++17 compliant**: Leverages modern C++ features
 - **STL-style**: Intuitive iterator-based API
 - **Projection support**: Directly process struct members and other data
-- **Comprehensive testing**: 758 unit tests with Google Test, 167 numerical checks verified against R 4.4.2
+- **Comprehensive testing**: 793 unit tests with Google Test, 167 numerical checks verified against R 4.4.2
 - **Cross-platform**: Tested on macOS and Linux
 - **Bilingual support**: English and Japanese commented headers available
 

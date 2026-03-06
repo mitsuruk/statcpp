@@ -23,10 +23,10 @@ sudo apt-get install doxygen
 doxygen Doxyfile
 
 # Open in browser (macOS)
-open docs/html/index.html
+open doxydocs/html/index.html
 
 # Linux
-xdg-open docs/html/index.html
+xdg-open doxydocs/html/index.html
 ```
 
 ## Module List
@@ -130,6 +130,8 @@ Functions for measuring relationships between two variables.
 | `spearman_correlation` | Spearman rank correlation | + projection |
 | `kendall_tau` | Kendall's rank correlation | + projection |
 | `weighted_covariance` | Weighted covariance | + projection |
+
+> **Note:** `weighted_covariance` assumes **frequency weights** (repeat counts). The Bessel correction formula `W / (W² − Σwᵢ²)` is designed for this weight type and reduces to `n/(n−1)` when all weights equal 1. For **precision weights** (inverse-variance) or **reliability weights**, a different correction is required.
 
 ### 6. Frequency Distribution (`frequency_distribution.hpp`)
 
@@ -315,13 +317,18 @@ Nonparametric hypothesis tests.
 | `compute_ranks_with_ties` | Compute ranks with tie handling |
 | `compute_tie_groups` | Compute tie group information |
 | `shapiro_wilk_test` | Shapiro-Wilk normality test |
-| `ks_test_normal` | Kolmogorov-Smirnov normality test |
+| `lilliefors_test` | Lilliefors normality test |
+| `ks_test_normal` | *(deprecated — use `lilliefors_test`)* |
 | `levene_test` | Levene's test for homogeneity of variance |
 | `bartlett_test` | Bartlett's test for homogeneity of variance |
 | `wilcoxon_signed_rank_test` | Wilcoxon signed-rank test |
 | `mann_whitney_u_test` | Mann-Whitney U test |
 | `kruskal_wallis_test` | Kruskal-Wallis test |
 | `fisher_exact_test` | Fisher's exact test (2x2 table) |
+
+> **Note (tie detection):** Rank-based functions (`compute_ranks_with_ties`, `wilcoxon_signed_rank_test`, `mann_whitney_u_test`, `kruskal_wallis_test`, `spearman_correlation`, `kendall_tau`) use exact floating-point equality (`==`) for tie detection. This is appropriate for observed data (integers, fixed-precision decimals) and consistent with R's behavior. If input values are the result of floating-point arithmetic, they may not be recognized as ties. Round or quantize such data before passing it to these functions.
+>
+> **Note (Lilliefors test):** `lilliefors_test` uses an asymptotic approximation for p-value calculation, which may be imprecise for small samples (n < 20) or in extreme tail regions. For small samples, consider using `shapiro_wilk_test` as an alternative.
 
 ### 14. Effect Size (`effect_size.hpp`)
 
@@ -397,6 +404,8 @@ Power analysis and sample size calculation.
 | `sample_size_prop_test` | Sample size for proportion test |
 | `power_analysis_t_one_sample` | Power analysis returning `power_result` |
 | `power_analysis_t_one_sample_n` | Sample size analysis returning `power_result` |
+
+> **Note:** The t-test power/sample size functions use a normal distribution approximation. For large samples (n > 30), accuracy is sufficient. For small samples or small effect sizes, the results may slightly overestimate power compared to the exact noncentral t-distribution. For more precise calculations, consider specialized software such as R's `pwr` package or G\*Power.
 
 ### 17. Linear Regression (`linear_regression.hpp`)
 
