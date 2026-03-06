@@ -82,7 +82,7 @@ To contribute code, follow these steps:
 
 - **Header files**: Place in `include/statcpp/`
 - **Test files**: Place in `test/` (format: `test_*.cpp`)
-- **Example files**: Place in `Examples/` (format: `example_*.cpp`)
+- **Example files**: Place in `examples/` (format: `example_*.cpp`)
 
 ### Coding Style
 
@@ -326,7 +326,7 @@ inline double mean(Iterator first, Iterator last) {
 
 Add usage examples for new features:
 
-1. Create `example_your_feature.cpp` in `Examples/`
+1. Create `example_your_feature.cpp` in `examples/`
 2. Include practical usage examples
 3. Add explanatory comments
 

@@ -134,13 +134,13 @@ cmake --build .
 cd examples-ja
 
 # GCC
-g++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_statistics
+g++ -std=c++17 -I../include-ja example_basic_statistics.cpp -o example_basic_statistics
 
 # Clang
-clang++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_statistics
+clang++ -std=c++17 -I../include-ja example_basic_statistics.cpp -o example_basic_statistics
 
 # Apple Clang (macOS)
-clang++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_statistics
+clang++ -std=c++17 -I../include-ja example_basic_statistics.cpp -o example_basic_statistics
 
 # 実行
 ./example_basic_statistics

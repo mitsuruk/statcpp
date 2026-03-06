@@ -91,7 +91,7 @@ statcpp ライブラリの各機能を示すサンプルプログラムが `exam
 すべてのサンプルプログラムを一括でビルドして実行:
 
 ```bash
-cd Examples-jp
+cd examples-ja
 ./build.sh
 ```
 
@@ -105,7 +105,7 @@ cd Examples-jp
 特定のサンプルプログラムだけをビルド:
 
 ```bash
-cd Examples-jp
+cd examples-ja
 
 # GCC を使用
 g++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_statistics
@@ -122,7 +122,7 @@ clang++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_st
 CMake を使ってすべてのサンプルをビルド:
 
 ```bash
-cd Examples-jp
+cd examples-ja
 mkdir build
 cd build
 cmake ..

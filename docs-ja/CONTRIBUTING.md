@@ -353,9 +353,9 @@ int main() {
 
 コードの変更に応じて、以下のドキュメントを更新してください:
 
-- `docs/API_REFERENCE.md` - 新しい関数を追加
-- `docs/EXAMPLES.md` - 新しいサンプルプログラムを追加
-- `docs/CHANGELOG.md` - 変更履歴を記録
+- `docs-ja/API_REFERENCE.md` - 新しい関数を追加
+- `docs-ja/EXAMPLES.md` - 新しいサンプルプログラムを追加
+- `docs-ja/CHANGELOG.md` - 変更履歴を記録
 
 ## コミットメッセージ
 

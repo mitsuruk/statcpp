@@ -84,8 +84,8 @@ Functions for computing order statistics (all require sorted range).
 
 **Structs:**
 
-- `quartile_result` — fields: `Q1`, `Q2`, `Q3`
-- `five_number_summary_result` — fields: `min`, `Q1`, `median`, `Q3`, `max`
+- `quartile_result` — fields: `q1`, `q2`, `q3`
+- `five_number_summary_result` — fields: `min`, `q1`, `median`, `q3`, `max`
 
 **Functions:**
 
@@ -502,8 +502,8 @@ Model selection and regularized regression.
 
 **Structs:**
 
-- `cv_result` — cross-validation result
-- `regularized_regression_result` — regularized regression result
+- `cv_result` — fields: `mean_error`, `se_error`, `fold_errors`, `n_folds`
+- `regularized_regression_result` — fields: `coefficients`, `lambda`, `mse`, `iterations`, `converged`
 
 **Functions:**
 
@@ -577,7 +577,7 @@ Multivariate analysis functions.
 
 **Structs:**
 
-- `pca_result` — PCA analysis result
+- `pca_result` — fields: `components`, `explained_variance`, `explained_variance_ratio`
 
 **Functions:**
 
@@ -618,10 +618,10 @@ Categorical data analysis.
 
 **Structs:**
 
-- `contingency_table_result` — contingency table with totals
-- `odds_ratio_result` — odds ratio with CI
-- `relative_risk_result` — relative risk with CI
-- `risk_difference_result` — risk difference with CI
+- `contingency_table_result` — fields: `table`, `row_totals`, `col_totals`, `total`, `n_rows`, `n_cols`
+- `odds_ratio_result` — fields: `odds_ratio`, `log_odds_ratio`, `se_log_odds_ratio`, `ci_lower`, `ci_upper`
+- `relative_risk_result` — fields: `relative_risk`, `log_relative_risk`, `se_log_relative_risk`, `ci_lower`, `ci_upper`
+- `risk_difference_result` — fields: `risk_difference`, `se`, `ci_lower`, `ci_upper`
 
 **Functions:**
 
@@ -639,9 +639,9 @@ Survival analysis functions.
 
 **Structs:**
 
-- `kaplan_meier_result` — Kaplan-Meier estimate
-- `logrank_result` — Log-rank test result
-- `hazard_rate_result` — hazard rate estimate
+- `kaplan_meier_result` — fields: `times`, `survival`, `se`, `ci_lower`, `ci_upper`, `n_at_risk`, `n_events`, `n_censored`
+- `logrank_result` — fields: `statistic`, `p_value`, `df`, `expected1`, `expected2`, `observed1`, `observed2`
+- `hazard_rate_result` — fields: `times`, `hazard`, `cumulative_hazard`
 
 **Functions:**
 
@@ -658,7 +658,7 @@ Robust statistical methods.
 
 **Structs:**
 
-- `outlier_detection_result` — outlier detection result
+- `outlier_detection_result` — fields: `outliers`, `outlier_indices`, `lower_fence`, `upper_fence`, `q1`, `q3`, `iqr_value`
 
 **Functions:**
 
@@ -710,10 +710,10 @@ Data transformation and preprocessing.
 
 **Structs:**
 
-- `group_result` — group-by result
-- `aggregation_result` — aggregation result
-- `label_encoding_result` — label encoding result
-- `validation_result` — data validation result
+- `group_result<K,V>` — fields: `groups`
+- `aggregation_result<K>` — fields: `keys`, `values`
+- `label_encoding_result<T>` — fields: `encoded`, `mapping`, `classes`
+- `validation_result` — fields: `is_valid`, `n_missing`, `n_infinite`, `n_negative`, `missing_indices`, `infinite_indices`, `negative_indices`
 
 **Functions:**
 
@@ -769,12 +769,12 @@ Advanced missing data handling.
 
 **Structs:**
 
-- `mcar_test_result` — MCAR test result
-- `missing_pattern_info` — missing pattern information
-- `multiple_imputation_result` — multiple imputation result
-- `sensitivity_analysis_result` — sensitivity analysis result
-- `tipping_point_result` — tipping point analysis result
-- `complete_case_result` — complete case analysis result
+- `mcar_test_result` — fields: `chi_square`, `p_value`, `df`, `is_mcar`, `interpretation`
+- `missing_pattern_info` — fields: `patterns`, `pattern_counts`, `missing_rates`, `overall_missing_rate`, `n_complete_cases`, `n_patterns`
+- `multiple_imputation_result` — fields: `imputed_datasets`, `m`, `pooled_means`, `pooled_vars`, `within_vars`, `between_vars`, `fraction_missing_info`
+- `sensitivity_analysis_result` — fields: `delta_values`, `estimated_means`, `estimated_vars`, `original_mean`, `original_var`, `interpretation`
+- `tipping_point_result` — fields: `tipping_point`, `found`, `threshold`, `interpretation`
+- `complete_case_result` — fields: `complete_data`, `n_complete`, `n_dropped`, `proportion_complete`
 
 **Functions:**
 

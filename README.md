@@ -42,6 +42,14 @@ statcpp is a header-only statistics library written in C++17. It provides 524 pu
 - **Power analysis**: Sample size calculation and power analysis
 - **Distance metrics**: Euclidean distance, Manhattan distance, cosine similarity, etc.
 - **Clustering**: k-means, hierarchical clustering
+- **Categorical data**: Contingency tables, odds ratio, relative risk, risk difference
+- **Model selection**: AIC, BIC, adjusted R-squared
+- **Multivariate analysis**: PCA, covariance matrix
+- **Robust statistics**: Outlier detection, trimmed/winsorized statistics
+- **Survival analysis**: Kaplan-Meier, log-rank test
+- **Time series**: Autocorrelation, moving average, exponential smoothing
+- **Missing data**: MCAR test, multiple imputation, sensitivity analysis
+- **Data wrangling**: Standardization, normalization, binning, encoding
 
 ## Quick Start
 

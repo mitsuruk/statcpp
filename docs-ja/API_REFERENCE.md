@@ -84,8 +84,8 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `quartile_result` — フィールド: `Q1`, `Q2`, `Q3`
-- `five_number_summary_result` — フィールド: `min`, `Q1`, `median`, `Q3`, `max`
+- `quartile_result` — フィールド: `q1`, `q2`, `q3`
+- `five_number_summary_result` — フィールド: `min`, `q1`, `median`, `q3`, `max`
 
 **関数:**
 
@@ -502,8 +502,8 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `cv_result` — クロスバリデーション結果
-- `regularized_regression_result` — 正則化回帰結果
+- `cv_result` — フィールド: `mean_error`, `se_error`, `fold_errors`, `n_folds`
+- `regularized_regression_result` — フィールド: `coefficients`, `lambda`, `mse`, `iterations`, `converged`
 
 **関数:**
 
@@ -577,7 +577,7 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `pca_result` — PCA 分析結果
+- `pca_result` — フィールド: `components`, `explained_variance`, `explained_variance_ratio`
 
 **関数:**
 
@@ -618,10 +618,10 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `contingency_table_result` — 周辺度数付き分割表
-- `odds_ratio_result` — 信頼区間付きオッズ比
-- `relative_risk_result` — 信頼区間付き相対リスク
-- `risk_difference_result` — 信頼区間付きリスク差
+- `contingency_table_result` — フィールド: `table`, `row_totals`, `col_totals`, `total`, `n_rows`, `n_cols`
+- `odds_ratio_result` — フィールド: `odds_ratio`, `log_odds_ratio`, `se_log_odds_ratio`, `ci_lower`, `ci_upper`
+- `relative_risk_result` — フィールド: `relative_risk`, `log_relative_risk`, `se_log_relative_risk`, `ci_lower`, `ci_upper`
+- `risk_difference_result` — フィールド: `risk_difference`, `se`, `ci_lower`, `ci_upper`
 
 **関数:**
 
@@ -639,9 +639,9 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `kaplan_meier_result` — Kaplan-Meier 推定結果
-- `logrank_result` — ログランク検定結果
-- `hazard_rate_result` — ハザード率推定結果
+- `kaplan_meier_result` — フィールド: `times`, `survival`, `se`, `ci_lower`, `ci_upper`, `n_at_risk`, `n_events`, `n_censored`
+- `logrank_result` — フィールド: `statistic`, `p_value`, `df`, `expected1`, `expected2`, `observed1`, `observed2`
+- `hazard_rate_result` — フィールド: `times`, `hazard`, `cumulative_hazard`
 
 **関数:**
 
@@ -658,7 +658,7 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `outlier_detection_result` — 外れ値検出結果
+- `outlier_detection_result` — フィールド: `outliers`, `outlier_indices`, `lower_fence`, `upper_fence`, `q1`, `q3`, `iqr_value`
 
 **関数:**
 
@@ -710,10 +710,10 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `group_result` — グループ化結果
-- `aggregation_result` — 集約結果
-- `label_encoding_result` — ラベルエンコーディング結果
-- `validation_result` — データ検証結果
+- `group_result<K,V>` — フィールド: `groups`
+- `aggregation_result<K>` — フィールド: `keys`, `values`
+- `label_encoding_result<T>` — フィールド: `encoded`, `mapping`, `classes`
+- `validation_result` — フィールド: `is_valid`, `n_missing`, `n_infinite`, `n_negative`, `missing_indices`, `infinite_indices`, `negative_indices`
 
 **関数:**
 
@@ -769,12 +769,12 @@ xdg-open doxydocs/html/index.html
 
 **構造体:**
 
-- `mcar_test_result` — MCAR 検定結果
-- `missing_pattern_info` — 欠損パターン情報
-- `multiple_imputation_result` — 多重代入法結果
-- `sensitivity_analysis_result` — 感度分析結果
-- `tipping_point_result` — ティッピングポイント分析結果
-- `complete_case_result` — 完全ケース分析結果
+- `mcar_test_result` — フィールド: `chi_square`, `p_value`, `df`, `is_mcar`, `interpretation`
+- `missing_pattern_info` — フィールド: `patterns`, `pattern_counts`, `missing_rates`, `overall_missing_rate`, `n_complete_cases`, `n_patterns`
+- `multiple_imputation_result` — フィールド: `imputed_datasets`, `m`, `pooled_means`, `pooled_vars`, `within_vars`, `between_vars`, `fraction_missing_info`
+- `sensitivity_analysis_result` — フィールド: `delta_values`, `estimated_means`, `estimated_vars`, `original_mean`, `original_var`, `interpretation`
+- `tipping_point_result` — フィールド: `tipping_point`, `found`, `threshold`, `interpretation`
+- `complete_case_result` — フィールド: `complete_data`, `n_complete`, `n_dropped`, `proportion_complete`
 
 **関数:**
 

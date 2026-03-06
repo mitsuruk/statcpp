@@ -1,6 +1,6 @@
 # Examples
 
-Sample programs demonstrating each feature of the statcpp library are provided in the `Examples/` directory.
+Sample programs demonstrating each feature of the statcpp library are provided in the `examples/` directory.
 
 ## Sample Program List
 
