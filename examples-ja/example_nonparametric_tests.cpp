@@ -4,7 +4,7 @@
  *
  * このファイルでは nonparametric_tests.hpp で提供される以下の関数を解説します：
  * - shapiro_wilk_test(): Shapiro-Wilk正規性検定
- * - ks_test_normal(): Kolmogorov-Smirnov正規性検定
+ * - lilliefors_test(): Lilliefors正規性検定
  * - levene_test(): Levene等分散性検定（Brown-Forsythe版）
  * - bartlett_test(): Bartlett等分散性検定
  * - wilcoxon_signed_rank_test(): Wilcoxon符号付順位検定
@@ -144,11 +144,11 @@ void example_shapiro_wilk_test()
 }
 
 /**
- * @brief ks_test_normal() のサンプル
+ * @brief lilliefors_test() のサンプル
  *
  * 【目的】
- * Kolmogorov-Smirnov検定（KS検定）は、データの経験分布関数と
- * 理論的な正規分布関数との最大乖離を検定します。
+ * Lilliefors検定は、データの経験分布関数と理論的な正規分布関数との
+ * 最大乖離を検定します。パラメータ（平均・分散）はデータから推定されます。
  *
  * 【数式】
  * D = max|Fₙ(x) - F(x)|
@@ -163,11 +163,11 @@ void example_shapiro_wilk_test()
  * 【注意点】
  * - Shapiro-Wilk検定より検出力が低い傾向がある
  * - 分布の中心部分よりも裾部分に敏感
- * - 平均と分散を推定して使用（Lilliefors補正）
+ * - 漸近近似を使用しており、小標本（n < 20）では精度が低下する可能性がある
  */
-void example_ks_test_normal()
+void example_lilliefors_test()
 {
-    print_section("ks_test_normal() - Kolmogorov-Smirnov正規性検定");
+    print_section("lilliefors_test() - Lilliefors正規性検定");
 
     std::cout << std::fixed << std::setprecision(4);
 
@@ -183,7 +183,7 @@ void example_ks_test_normal()
         normal_data.push_back(normal(gen));
     }
 
-    auto result1 = statcpp::ks_test_normal(normal_data.begin(), normal_data.end());
+    auto result1 = statcpp::lilliefors_test(normal_data.begin(), normal_data.end());
     std::cout << "D統計量（最大乖離）: " << result1.statistic << "\n";
     std::cout << "p値: " << result1.p_value << "\n";
     std::cout << "判定: "
@@ -206,7 +206,7 @@ void example_ks_test_normal()
         }
     }
 
-    auto result2 = statcpp::ks_test_normal(bimodal_data.begin(), bimodal_data.end());
+    auto result2 = statcpp::lilliefors_test(bimodal_data.begin(), bimodal_data.end());
     std::cout << "D統計量: " << result2.statistic << "\n";
     std::cout << "p値: " << result2.p_value << "\n";
     std::cout << "判定: "
@@ -220,12 +220,12 @@ void example_ks_test_normal()
     }
 
     auto sw_result = statcpp::shapiro_wilk_test(test_data.begin(), test_data.end());
-    auto ks_result = statcpp::ks_test_normal(test_data.begin(), test_data.end());
+    auto ks_result = statcpp::lilliefors_test(test_data.begin(), test_data.end());
 
     std::cout << "同じ正規分布データに対する検定結果:\n";
     std::cout << "  Shapiro-Wilk: W = " << sw_result.statistic
               << ", p = " << sw_result.p_value << "\n";
-    std::cout << "  KS検定:       D = " << ks_result.statistic
+    std::cout << "  Lilliefors:   D = " << ks_result.statistic
               << ", p = " << ks_result.p_value << "\n";
 }
 
@@ -909,7 +909,7 @@ void print_summary()
 │ 関数名                          用途                                       │
 ├────────────────────────────────────────────────────────────────────────────┤
 │ shapiro_wilk_test()             正規性検定（高検出力、n≤5000）             │
-│ ks_test_normal()                正規性検定（KS検定）                       │
+│ lilliefors_test()               正規性検定（Lilliefors検定）               │
 │ levene_test()                   等分散性検定（頑健）                       │
 │ bartlett_test()                 等分散性検定（正規性仮定）                 │
 │ wilcoxon_signed_rank_test()     1標本/対応あり2標本の位置検定              │
@@ -946,7 +946,7 @@ int main()
     std::cout << "==========================================================\n";
 
     example_shapiro_wilk_test();
-    example_ks_test_normal();
+    example_lilliefors_test();
     example_levene_test();
     example_bartlett_test();
     example_wilcoxon_signed_rank_test();

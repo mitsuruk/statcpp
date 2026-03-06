@@ -4,7 +4,7 @@
  *
  * This file demonstrates the following functions from nonparametric_tests.hpp:
  * - shapiro_wilk_test(): Shapiro-Wilk normality test
- * - ks_test_normal(): Kolmogorov-Smirnov normality test
+ * - lilliefors_test(): Lilliefors normality test
  * - levene_test(): Levene's test for homogeneity of variance (Brown-Forsythe version)
  * - bartlett_test(): Bartlett's test for homogeneity of variance
  * - wilcoxon_signed_rank_test(): Wilcoxon signed-rank test
@@ -144,11 +144,12 @@ void example_shapiro_wilk_test()
 }
 
 /**
- * @brief ks_test_normal() example
+ * @brief lilliefors_test() example
  *
  * [Purpose]
- * The Kolmogorov-Smirnov test (KS test) tests the maximum deviation between
- * the empirical distribution function and theoretical normal distribution function.
+ * The Lilliefors test tests the maximum deviation between the empirical
+ * distribution function and theoretical normal distribution function,
+ * with parameters (mean, variance) estimated from data.
  *
  * [Formula]
  * D = max|F_n(x) - F(x)|
@@ -163,11 +164,11 @@ void example_shapiro_wilk_test()
  * [Notes]
  * - Tends to have lower power than Shapiro-Wilk test
  * - More sensitive to tails than center of distribution
- * - Uses estimated mean and variance (Lilliefors correction)
+ * - Uses asymptotic approximation; may be imprecise for small samples (n < 20)
  */
-void example_ks_test_normal()
+void example_lilliefors_test()
 {
-    print_section("ks_test_normal() - Kolmogorov-Smirnov Normality Test");
+    print_section("lilliefors_test() - Lilliefors Normality Test");
 
     std::cout << std::fixed << std::setprecision(4);
 
@@ -183,7 +184,7 @@ void example_ks_test_normal()
         normal_data.push_back(normal(gen));
     }
 
-    auto result1 = statcpp::ks_test_normal(normal_data.begin(), normal_data.end());
+    auto result1 = statcpp::lilliefors_test(normal_data.begin(), normal_data.end());
     std::cout << "D statistic (max deviation): " << result1.statistic << "\n";
     std::cout << "p-value: " << result1.p_value << "\n";
     std::cout << "Decision: "
@@ -206,7 +207,7 @@ void example_ks_test_normal()
         }
     }
 
-    auto result2 = statcpp::ks_test_normal(bimodal_data.begin(), bimodal_data.end());
+    auto result2 = statcpp::lilliefors_test(bimodal_data.begin(), bimodal_data.end());
     std::cout << "D statistic: " << result2.statistic << "\n";
     std::cout << "p-value: " << result2.p_value << "\n";
     std::cout << "Decision: "
@@ -220,12 +221,12 @@ void example_ks_test_normal()
     }
 
     auto sw_result = statcpp::shapiro_wilk_test(test_data.begin(), test_data.end());
-    auto ks_result = statcpp::ks_test_normal(test_data.begin(), test_data.end());
+    auto ks_result = statcpp::lilliefors_test(test_data.begin(), test_data.end());
 
     std::cout << "Results for same normal distribution data:\n";
     std::cout << "  Shapiro-Wilk: W = " << sw_result.statistic
               << ", p = " << sw_result.p_value << "\n";
-    std::cout << "  KS test:      D = " << ks_result.statistic
+    std::cout << "  Lilliefors:   D = " << ks_result.statistic
               << ", p = " << ks_result.p_value << "\n";
 }
 
@@ -912,7 +913,7 @@ void print_summary()
 | Function                          Purpose                                   |
 +----------------------------------------------------------------------------+
 | shapiro_wilk_test()               Normality test (high power, n<=5000)      |
-| ks_test_normal()                  Normality test (KS test)                  |
+| lilliefors_test()                 Normality test (Lilliefors)               |
 | levene_test()                     Homogeneity of variance (robust)          |
 | bartlett_test()                   Homogeneity of variance (assumes normal)  |
 | wilcoxon_signed_rank_test()       1-sample/paired location test             |
@@ -949,7 +950,7 @@ int main()
     std::cout << "==========================================================\n";
 
     example_shapiro_wilk_test();
-    example_ks_test_normal();
+    example_lilliefors_test();
     example_levene_test();
     example_bartlett_test();
     example_wilcoxon_signed_rank_test();
