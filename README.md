@@ -13,6 +13,14 @@ C++17 Header-only Statistics Library
 
 [日本語版 / Japanese](README.ja.md)
 
+## Choose Your Interface
+
+| Use case | Repository | Description |
+| --- | --- | --- |
+| C++ library | **statcpp** (this repo) | C++17 header-only statistics library (524 functions) |
+| UNIX CLI | [statcppCLI](https://github.com/mitsuruk/statcppCLI) | Command-line interface for UNIX pipelines |
+| SQL (SQLite3) | [sqlite3-stats](https://github.com/mitsuruk/sqlite3-stats) | SQLite3 loadable extension (249 functions) |
+
 ## Overview
 
 statcpp is a header-only statistics library written in C++17. It provides 524 public functions across 31 header files, covering a wide range of statistical functionality from basic statistics to advanced hypothesis testing and regression analysis. The library includes 793 unit tests and 167 R-verified numerical checks.
