@@ -1,0 +1,40 @@
+
+=== PARAMETRIC TESTS ===
+
+=== NONPARAMETRIC TESTS ===
+
+=== ANOVA ===
+
+=== LINEAR REGRESSION ===
+
+=== GLM (Logistic & Poisson) ===
+
+=== EFFECT SIZE ===
+
+=== ESTIMATION (CI) ===
+
+=== CATEGORICAL ===
+
+=== SHAPE OF DISTRIBUTION ===
+
+=== SURVIVAL ===
+
+=== MODEL SELECTION ===
+
+=== POWER ANALYSIS ===
+  power_t_test_one_sample(d=0.5, n=30) = 0.781908
+  power_t_test_two_sample(d=0.5, n1=30, n2=30) = 0.490686
+  sample_size_t_test_one_sample(d=0.5, power=0.8) = 32
+  sample_size_t_test_two_sample(d=0.5, power=0.8) = 63
+
+=== ROBUST STATISTICS ===
+
+=== TIME SERIES ===
+
+=== MULTIVARIATE ===
+
+=== DATA WRANGLING ===
+
+========================================
+TOTAL: 167 PASS, 0 FAIL
+========================================
