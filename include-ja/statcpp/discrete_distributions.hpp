@@ -308,7 +308,7 @@ inline std::uint64_t poisson_rand(double lambda)
  * @brief 幾何分布の確率質量関数（PMF）
  *
  * P(X = k) = (1-p)^k * p
- * X = 最初の成功までの失敗回数（サポート: k = 0, 1, 2, ...）
+ * X = 最初の成功までの失敗回数（対応範囲: k = 0, 1, 2, ...）
  *
  * @param k 失敗回数
  * @param p 各試行の成功確率
@@ -407,7 +407,7 @@ inline std::uint64_t geometric_rand(double p)
  * @brief 負の二項分布の確率質量関数（PMF）
  *
  * P(X = k) = C(k+r-1, k) * p^r * (1-p)^k
- * X = r回成功するまでの失敗回数（サポート: k = 0, 1, 2, ...）
+ * X = r回成功するまでの失敗回数（対応範囲: k = 0, 1, 2, ...）
  *
  * @param k 失敗回数
  * @param r 成功回数（分散パラメータ、> 0、非整数も可）

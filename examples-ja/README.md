@@ -41,7 +41,7 @@ g++ -std=c++17 -I../include -o example_basic_statistics example_basic_statistics
 
 ### Module 3: 推測統計 (Inferential Statistics)
 
-- **example_estimation.cpp** - 推定（信頼区間、標準誤差、誤差マージンなど）
+- **example_estimation.cpp** - 推定（信頼区間、標準誤差、誤差限界など）
 - **example_parametric_tests.cpp** - パラメトリック検定（t検定、χ²検定、F検定など）
 - **example_nonparametric_tests.cpp** - ノンパラメトリック検定（Wilcoxon検定、Mann-Whitney U検定など）
 - **example_resampling.cpp** - リサンプリング（ブートストラップ、置換検定、交差検証など）
@@ -71,7 +71,7 @@ cd build/test
 # 連続分布のサンプル
 ./example_continuous_distributions
 
-# 距離メトリクスのサンプル
+# 距離尺度のサンプル
 ./example_distance_metrics
 
 # 数値計算ユーティリティのサンプル

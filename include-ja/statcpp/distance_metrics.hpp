@@ -315,7 +315,7 @@ double cosine_distance(Iterator1 first1, Iterator1 last1,
  * 点 x と平均 mu,共分散行列 Sigma の分布に対して:
  * d(x, mu) = sqrt((x - mu)^T Sigma^{-1} (x - mu))
  *
- * 現在の実装は2次元データのみをサポートしています.
+ * 現在の実装は2次元データのみに対応しています.
  *
  * @param x 距離を測る点
  * @param mean 分布の平均

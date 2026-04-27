@@ -147,7 +147,7 @@ void example_t_test() {
  *
  * 【2つの方法】
  * - t_test_two_sample(): プール分散を使用（等分散を仮定）
- * - t_test_welch(): Welch法（等分散を仮定しない、より頑健）
+ * - t_test_welch(): Welch法（等分散を仮定しない、よりロバスト）
  *
  * 【使用場面】
  * - A/Bテストの効果比較
@@ -405,7 +405,7 @@ void example_chisq_independence() {
  *
  * 【注意点】
  * - 正規分布を強く仮定する
- * - より頑健な方法としてLevene検定やBartlett検定がある
+ * - よりロバストな方法としてLevene検定やBartlett検定がある
  */
 void example_f_test() {
     print_section("7. f_test() - F検定（分散の比較）");

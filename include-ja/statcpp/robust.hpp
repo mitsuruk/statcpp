@@ -2,7 +2,7 @@
  * @file robust.hpp
  * @brief ロバスト統計の実装 (Robust statistics implementation)
  *
- * MAD、外れ値検出、ウィンザー化、Cook距離、ロバスト推定量などを提供します。
+ * MAD、外れ値検出、ウィンザー化、Cook の距離、ロバスト推定量などを提供します。
  * Provides MAD, outlier detection, winsorization, Cook's distance, robust estimators, and more.
  */
 
@@ -38,8 +38,8 @@ namespace statcpp {
  * @return MAD 値 (MAD value)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
  *
- * @note ロバストな分散の推定量として使用されます。
- * Used as a robust estimator of variance.
+ * @note ロバストなスケール（散布度）推定量として使用されます。
+ * Used as a robust scale (dispersion) estimator.
  */
 template <typename Iterator>
 double mad(Iterator first, Iterator last)
@@ -238,7 +238,7 @@ outlier_detection_result detect_outliers_zscore(Iterator first, Iterator last, d
 /**
  * @brief Modified Z-score による外れ値検出 (Outlier detection using Modified Z-score)
  *
- * MAD ベースの Modified Z-score を用いて外れ値を検出します（より堅牢）。
+ * MAD ベースの Modified Z-score を用いて外れ値を検出します（よりロバスト）。
  * Detects outliers using MAD-based Modified Z-score (more robust).
  *
  * @tparam Iterator イテレータ型 (iterator type)
@@ -318,7 +318,7 @@ outlier_detection_result detect_outliers_modified_zscore(Iterator first, Iterato
  * @throws std::invalid_argument 範囲が空、または limits が無効な場合
  *         (if range is empty or limits is invalid)
  *
- * @note 外れ値の影響を軽減しながらデータポイント数を保持します。
+ * @note 外れ値の影響を軽減しながらデータ点数を保持します。
  * Reduces the impact of outliers while preserving the number of data points.
  */
 template <typename Iterator>

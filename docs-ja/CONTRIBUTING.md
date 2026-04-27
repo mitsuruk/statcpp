@@ -293,7 +293,7 @@ double function_name(Iterator first, Iterator last) {
 }
 ```
 
-### 3. 射影のサポート
+### 3. 射影への対応
 
 可能な限り射影バージョンを提供してください:
 

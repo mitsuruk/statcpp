@@ -86,7 +86,7 @@
 **Module 1 未実装項目の理由**:
 - **分散の自由度補正オプション (ddof)**: 既存の`population_variance`と`sample_variance`で対応可能。追加APIは冗長。
 - **対数標準偏差**: 幾何標準偏差で類似機能を提供済み。使用頻度が低い。
-- **分位点の補間法指定**: 現在の線形補間（R type=7相当）で十分実用的。複数の補間法をサポートするとAPIが複雑化。
+- **分位点の補間法指定**: 現在の線形補間（R type=7相当）で十分実用的。複数の補間法に対応するとAPIが複雑化。
 - **デシル、パーセンタイルランク**: `percentile`関数で実現可能。専用関数は不要。
 - **バイアス補正歪度・尖度、中心モーメント、高次統計量**: 使用頻度が低く、実装の優先度が低い。
 - **偏相関**: 線形回帰の残差相関で代替可能。専用実装は複雑。
@@ -189,9 +189,9 @@
 
 - [x] 標準誤差（推定）(Standard Error Estimation)
 - [x] 信頼区間（平均・比率・分散など）(Confidence Intervals (Mean/Proportion/Variance, etc.))
-- [x] 平均の誤差マージン (Mean Margin of Error)
-- [x] 比率の誤差マージン (Proportion Margin of Error)
-- [x] 最悪ケースの比率誤差マージン (Worst-case Proportion Margin of Error)
+- [x] 平均の誤差限界 (Mean Margin of Error)
+- [x] 比率の誤差限界 (Proportion Margin of Error)
+- [x] 最悪ケースの比率誤差限界 (Worst-case Proportion Margin of Error)
 - [x] 2標本平均差の推定 (Two-sample Mean Difference)
 - [x] 2標本比率差の推定 (Two-sample Proportion Difference)
 - [ ] 最尤推定 (Maximum Likelihood Estimation, MLE)
@@ -378,7 +378,7 @@
 - **ロバスト回帰**: Phase 4と同じ理由。反復最適化が必要で複雑。
 - **トリミング・外れ値除去の拡張**: 基本的な外れ値検出（IQR法、MAD等）は実装済み。追加手法は優先度低。
 - **次元削減（t-SNE/UMAP）**: 非線形次元削減は非常に複雑。反復最適化と近傍探索が必要。専門ライブラリ推奨。
-- **エントロピー、相互情報量、KLダイバージェンス、JSダイバージェンス**: 離散確率分布の場合は実装可能だが、連続分布では数値積分が必要。優先度は中程度だが、今回は距離メトリクスを優先。
+- **エントロピー、相互情報量、KLダイバージェンス、JSダイバージェンス**: 離散確率分布の場合は実装可能だが、連続分布では数値積分が必要。優先度は中程度だが、今回は距離尺度を優先。
 - **情報理論量の差分**: 基本的な情報理論量が未実装のため、派生機能も未実装。
 - **方向統計（円形平均、円形分散、von Mises分布）**: 特殊なドメイン（角度データ）向け。使用頻度が非常に限定的。
 

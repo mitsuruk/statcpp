@@ -604,7 +604,7 @@ inline glm_result glm_fit(
 /**
  * @brief ロジスティック回帰
  *
- * 二項分布とロジットリンク関数を使用した一般化線形モデルをフィットします。
+ * 二項分布とロジットリンク関数を使用した一般化線形モデルを当てはめます。
  *
  * @param X 説明変数の行列（切片は自動的に追加されます）
  * @param y 目的変数ベクトル（0から1の範囲）
@@ -635,10 +635,10 @@ inline glm_result logistic_regression(
 /**
  * @brief ロジスティック回帰での確率予測
  *
- * フィットされたロジスティック回帰モデルを使用して、
- * 新しいデータポイントに対する確率を予測します。
+ * 当てはめ済みのロジスティック回帰モデルを使用して、
+ * 新しいデータ点に対する確率を予測します。
  *
- * @param model フィットされたGLMモデル（二項分布）
+ * @param model 当てはめ済みの GLM モデル（二項分布）
  * @param x 説明変数ベクトル
  * @return 予測確率（0から1の範囲）
  * @throws std::invalid_argument モデルが二項分布でない場合、xの次元が一致しない場合
@@ -665,7 +665,7 @@ inline double predict_probability(const glm_result& model, const std::vector<dou
  *
  * ロジスティック回帰モデルの係数からオッズ比を計算します。
  *
- * @param model フィットされたロジスティック回帰モデル
+ * @param model 当てはめ済みのロジスティック回帰モデル
  * @return 各説明変数のオッズ比ベクトル（切片を除く）
  * @throws std::invalid_argument モデルがロジスティック回帰でない場合
  */
@@ -687,7 +687,7 @@ inline std::vector<double> odds_ratios(const glm_result& model)
  *
  * ロジスティック回帰モデルのオッズ比に対する信頼区間を計算します。
  *
- * @param model フィットされたロジスティック回帰モデル
+ * @param model 当てはめ済みのロジスティック回帰モデル
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 各説明変数のオッズ比の信頼区間（下限、上限）のペアベクトル
  * @throws std::invalid_argument モデルがロジスティック回帰でない場合、
@@ -723,7 +723,7 @@ inline std::vector<std::pair<double, double>> odds_ratios_ci(
 /**
  * @brief ポアソン回帰
  *
- * ポアソン分布と対数リンク関数を使用した一般化線形モデルをフィットします。
+ * ポアソン分布と対数リンク関数を使用した一般化線形モデルを当てはめます。
  * カウントデータの回帰分析に使用します。
  *
  * @param X 説明変数の行列（切片は自動的に追加されます）
@@ -755,12 +755,12 @@ inline glm_result poisson_regression(
 /**
  * @brief ポアソン回帰での期待カウント予測
  *
- * フィットされたポアソン回帰モデルを使用して、
- * 新しいデータポイントに対する期待カウントを予測します。
+ * 当てはめ済みのポアソン回帰モデルを使用して、
+ * 新しいデータ点に対する期待カウントを予測します。
  *
- * @param model フィットされたGLMモデル（ポアソン分布）
+ * @param model 当てはめ済みの GLM モデル（ポアソン分布）
  * @param x 説明変数ベクトル
- * @return 予測された期待カウント
+ * @return 期待カウントの予測値
  * @throws std::invalid_argument モデルがポアソン分布でない場合、xの次元が一致しない場合
  */
 inline double predict_count(const glm_result& model, const std::vector<double>& x)
@@ -785,7 +785,7 @@ inline double predict_count(const glm_result& model, const std::vector<double>& 
  *
  * ポアソン回帰モデルの係数から発生率比を計算します。
  *
- * @param model フィットされたポアソン回帰モデル
+ * @param model 当てはめ済みのポアソン回帰モデル
  * @return 各説明変数の発生率比ベクトル（切片を除く）
  * @throws std::invalid_argument モデルがポアソン回帰でない場合
  */
@@ -821,9 +821,9 @@ struct glm_residuals {
 /**
  * @brief GLM残差の計算
  *
- * フィットされたGLMモデルから各種残差を計算します。
+ * 当てはめ済みの GLM モデルから各種残差を計算します。
  *
- * @param model フィットされたGLMモデル
+ * @param model 当てはめ済みの GLM モデル
  * @param X 説明変数の行列
  * @param y 目的変数ベクトル
  * @return 各種残差を含む構造体
@@ -879,7 +879,7 @@ inline glm_residuals compute_glm_residuals(
  * ポアソン回帰モデルにおける過分散パラメータを計算します。
  * 値が1より大きい場合、過分散の存在を示唆します。
  *
- * @param model フィットされたポアソン回帰モデル
+ * @param model 当てはめ済みのポアソン回帰モデル
  * @param X 説明変数の行列
  * @param y 目的変数ベクトル
  * @return 過分散パラメータ（ピアソンカイ二乗統計量 / 残差自由度）
@@ -913,7 +913,7 @@ inline double overdispersion_test(const glm_result& model,
  * McFaddenの疑似決定係数を計算します。
  * 1 - (残差逸脱度 / ヌル逸脱度) として定義されます。
  *
- * @param model フィットされたGLMモデル
+ * @param model 当てはめ済みの GLM モデル
  * @return McFaddenの疑似決定係数
  */
 inline double pseudo_r_squared_mcfadden(const glm_result& model)
@@ -930,7 +930,7 @@ inline double pseudo_r_squared_mcfadden(const glm_result& model)
  * 逸脱度と対数尤度の関係: deviance = -2 * (LL_model - LL_saturated) を用いて
  * LL_null = LL_saturated - null_deviance / 2 として帰無モデルの対数尤度を計算します。
  *
- * @param model フィットされたGLMモデル
+ * @param model 当てはめ済みの GLM モデル
  * @param y 目的変数ベクトル（非ガウス族の飽和モデル対数尤度計算に必要）
  * @param n サンプルサイズ
  * @return Nagelkerkeの疑似決定係数

@@ -31,14 +31,14 @@ int main() {
     std::cout << std::fixed << std::setprecision(4);
 
     // ============================================================================
-    // 1. 情報量基準（AIC, BIC）
+    // 1. 情報量規準（AIC, BIC）
     // ============================================================================
-    print_section("1. 情報量基準 (AIC, BIC)");
+    print_section("1. 情報量規準 (AIC, BIC)");
 
     std::cout << R"(
 【概念】
-AIC (赤池情報量基準): モデルの適合度と複雑さのバランスを評価
-BIC (ベイズ情報量基準): AICより複雑さにペナルティを課す
+AIC (赤池情報量規準): モデルの適合度と複雑さのバランスを評価
+BIC (ベイズ情報量規準): AICより複雑さにペナルティを課す
 
 【実例: 単回帰モデルの評価】
 データへの当てはまりとパラメータ数のトレードオフを評価
@@ -65,7 +65,7 @@ BIC (ベイズ情報量基準): AICより複雑さにペナルティを課す
     double aic_value = statcpp::aic_linear(model, x.size());
     double bic_value = statcpp::bic_linear(model, x.size());
 
-    print_subsection("情報量基準");
+    print_subsection("情報量規準");
     std::cout << "  AIC: " << aic_value << "\n";
     std::cout << "  BIC: " << bic_value << "\n";
 
@@ -304,7 +304,7 @@ Elastic Net:
 - LOOCV: 小規模データ、不偏推定
 - 訓練/テスト分割: 大規模データ、高速
 
-【モデル比較基準】
+【モデル比較規準】
 - AIC: 予測重視、ペナルティ小
 - BIC: 一致性、複雑さへのペナルティ大
 - 交差検証: 予測性能を直接測定

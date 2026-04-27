@@ -191,7 +191,7 @@ int main() {
     }
     std::cout << "→ 各変数の主成分への寄与度\n";
 
-    std::cout << "\n説明された分散:\n";
+    std::cout << "\n説明分散:\n";
     for (std::size_t i = 0; i < pca_result.explained_variance.size(); ++i) {
         std::cout << "  第" << (i + 1) << "主成分: " << pca_result.explained_variance[i] << std::endl;
     }

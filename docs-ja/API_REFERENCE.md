@@ -203,7 +203,7 @@ xdg-open doc/html/index.html
 
 連続確率分布の PDF、CDF、分位点関数、乱数生成。
 
-各分布に `_pdf`, `_cdf`, `_quantile`, `_rand` 関数が提供されています（スチューデント化された範囲分布は CDF と分位点のみ）。
+各分布に `_pdf`, `_cdf`, `_quantile`, `_rand` 関数が提供されています（スチューデント化範囲分布は CDF と分位点のみ）。
 
 **関数:**
 
@@ -509,10 +509,10 @@ xdg-open doc/html/index.html
 
 | 関数 | 説明 |
 | ---- | ---- |
-| `aic` | 赤池情報量基準 |
+| `aic` | 赤池情報量規準 |
 | `aic_linear` | 線形回帰の AIC（2 オーバーロード） |
 | `aicc` | 補正 AIC |
-| `bic` | ベイズ情報量基準 |
+| `bic` | ベイズ情報量規準 |
 | `bic_linear` | 線形回帰の BIC（2 オーバーロード） |
 | `press_statistic` | PRESS 統計量 |
 | `create_cv_folds` | クロスバリデーション分割の作成 |
@@ -631,7 +631,7 @@ xdg-open doc/html/index.html
 | `odds_ratio` | オッズ比（分割表または 2x2 値） |
 | `relative_risk` | 相対リスク（分割表または 2x2 値） |
 | `risk_difference` | リスク差（分割表または 2x2 値） |
-| `number_needed_to_treat` | 治療必要数 |
+| `number_needed_to_treat` | 治療必要人数 |
 
 ### 26. 生存時間解析 (`survival.hpp`)
 
@@ -652,9 +652,9 @@ xdg-open doc/html/index.html
 | `median_survival_time` | 生存時間中央値 |
 | `nelson_aalen` | Nelson-Aalen 累積ハザード推定 |
 
-### 27. 頑健統計 (`robust.hpp`)
+### 27. ロバスト統計 (`robust.hpp`)
 
-頑健な統計手法。
+外れ値の影響を受けにくい統計手法。
 
 **構造体:**
 
@@ -812,9 +812,9 @@ std::vector<double> data = {1.0, 2.0, 3.0, 4.0, 5.0};
 double avg = statcpp::mean(data.begin(), data.end());
 ```
 
-### 射影サポート
+### 射影対応
 
-多くの関数は射影関数をサポートし、構造体のメンバーなどを直接計算できます。
+多くの関数は射影関数に対応し、構造体のメンバーなどを直接計算できます。
 
 ```cpp
 struct Point { double x, y; };

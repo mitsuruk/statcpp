@@ -60,7 +60,7 @@ statcpp ライブラリの各機能を示すサンプルプログラムが `exam
 |-----------|------|
 | `example_multivariate.cpp` | 多変量解析 |
 | `example_clustering.cpp` | k-means、階層的クラスタリング |
-| `example_distance_metrics.cpp` | ユークリッド距離、マンハッタン距離などの距離メトリクス |
+| `example_distance_metrics.cpp` | ユークリッド距離、マンハッタン距離などの距離尺度 |
 
 ### 時系列・カテゴリカルデータ
 
@@ -69,13 +69,13 @@ statcpp ライブラリの各機能を示すサンプルプログラムが `exam
 | `example_time_series.cpp` | 時系列分析 |
 | `example_categorical.cpp` | カテゴリカルデータ分析 |
 
-### データ処理・頑健統計
+### データ処理・ロバスト統計
 
 | ファイル名 | 内容 |
 |-----------|------|
 | `example_data_wrangling.cpp` | データ変換、欠損値処理 |
 | `example_missing_data.cpp` | 欠損値の高度な処理 |
-| `example_robust.cpp` | 頑健統計（外れ値に強い統計量） |
+| `example_robust.cpp` | ロバスト統計（外れ値の影響を受けにくい統計量） |
 | `example_survival.cpp` | 生存時間解析 |
 
 ### その他

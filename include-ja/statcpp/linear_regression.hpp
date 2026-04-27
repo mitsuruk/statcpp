@@ -1029,7 +1029,7 @@ inline std::vector<double> compute_vif(const std::vector<std::vector<double>>& X
  * @param X 説明変数の行列 (n x p)
  * @return double 相関行列の行列式
  * @throws std::invalid_argument 観測数が2未満の場合
- * @throws std::invalid_argument 説明変数が2未満または4以上の場合（2または3のみサポート）
+ * @throws std::invalid_argument 説明変数が2未満または4以上の場合（2または3のみに対応）
  */
 inline double correlation_matrix_determinant(const std::vector<std::vector<double>>& X)
 {
@@ -1064,7 +1064,7 @@ inline double correlation_matrix_determinant(const std::vector<std::vector<doubl
         }
     }
 
-    // 行列式を計算（小さい行列のみサポート）
+    // 行列式を計算（小さい行列のみに対応）
     if (p == 2) {
         // 2x2行列: det = a11*a22 - a12*a21
         return corr_matrix[0][0] * corr_matrix[1][1] - corr_matrix[0][1] * corr_matrix[1][0];

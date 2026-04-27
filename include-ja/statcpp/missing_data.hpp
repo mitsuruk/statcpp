@@ -359,14 +359,14 @@ inline missing_mechanism diagnose_missing_mechanism(
  * @brief 多重代入結果
  *
  * 多重代入法の結果を格納する構造体です。
- * 複数の代入データセット、プールされた統計量、
+ * 複数の代入データセット、統合後の統計量、
  * 代入内分散、代入間分散、欠損情報割合を含みます。
  */
 struct multiple_imputation_result {
-    std::vector<std::vector<std::vector<double>>> imputed_datasets;  ///< 代入されたデータセット群
+    std::vector<std::vector<std::vector<double>>> imputed_datasets;  ///< 代入後のデータセット群
     std::size_t m = 0;                                               ///< 代入数
-    std::vector<double> pooled_means;                                ///< プールされた平均
-    std::vector<double> pooled_vars;                                 ///< プールされた分散
+    std::vector<double> pooled_means;                                ///< 統合後の平均
+    std::vector<double> pooled_vars;                                 ///< 統合後の分散
     std::vector<double> within_vars;                                 ///< 代入内分散
     std::vector<double> between_vars;                                ///< 代入間分散
     std::vector<double> fraction_missing_info;                       ///< 欠損情報割合 (FMI)
@@ -608,7 +608,7 @@ inline multiple_imputation_result multiple_imputation_pmm(
             vars_j[imp] = var(col_values.begin(), col_values.end(), 1);
         }
 
-        // プールされた平均
+        // 統合後の平均
         result.pooled_means[j] = mean(means_j.begin(), means_j.end());
 
         // 代入内分散 (W)
@@ -796,7 +796,7 @@ struct sensitivity_analysis_result {
  * @brief パターン混合モデルによる感度分析
  *
  * MNAR (Missing Not At Random) の仮定下で、欠損値と観測値の間の
- * 差（delta）を変化させて推定値の頑健性を評価します。
+ * 差（delta）を変化させて推定値のロバスト性を評価します。
  *
  * パターン混合モデルの基本式:
  * - E[Y] = E[Y|R=1] * P(R=1) + E[Y|R=0] * P(R=0)
@@ -884,7 +884,7 @@ inline sensitivity_analysis_result sensitivity_analysis_pattern_mixture(
 /**
  * @brief 選択モデルによる感度分析
  *
- * 欠損が応答値に依存する程度（phi）を変化させて、推定値の頑健性を評価します。
+ * 欠損が応答値に依存する程度（phi）を変化させて、推定値のロバスト性を評価します。
  * phi = 0 は MAR の仮定に対応し、phi > 0 は欠損値が観測値より
  * 低い傾向にあることを示します。
  *

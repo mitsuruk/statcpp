@@ -20,7 +20,7 @@ namespace statcpp {
 /**
  * @brief Cohen's d（1標本、母標準偏差が既知）
  *
- * 標準化された平均差を計算します。母標準偏差が既知の場合に使用します。
+ * 標準化平均差を計算します。母標準偏差が既知の場合に使用します。
  *
  * @tparam Iterator RandomAccessIterator型
  * @param first 開始イテレータ
@@ -49,7 +49,7 @@ double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
 /**
  * @brief Cohen's d（1標本、標本標準偏差を使用）
  *
- * 標準化された平均差を計算します。標本標準偏差を使用します。
+ * 標準化平均差を計算します。標本標準偏差を使用します。
  *
  * @tparam Iterator RandomAccessIterator型
  * @param first 開始イテレータ
@@ -79,8 +79,8 @@ double cohens_d(Iterator first, Iterator last, double mu0)
 /**
  * @brief Cohen's d（2標本、プール標準偏差）
  *
- * 2つのグループ間の標準化された平均差を計算します。
- * プールされた標準偏差を使用します。
+ * 2つのグループ間の標準化平均差を計算します。
+ * プール標準偏差を使用します。
  *
  * @tparam Iterator1 第1サンプルのRandomAccessIterator型
  * @tparam Iterator2 第2サンプルのRandomAccessIterator型
@@ -138,7 +138,7 @@ inline double hedges_correction_factor(double df)
 /**
  * @brief Hedges' g（1標本）
  *
- * バイアス補正されたCohen's dを計算します。
+ * バイアス補正済みの Cohen's d を計算します。
  *
  * @tparam Iterator RandomAccessIterator型
  * @param first 開始イテレータ
@@ -163,7 +163,7 @@ double hedges_g(Iterator first, Iterator last, double mu0)
 /**
  * @brief Hedges' g（2標本）
  *
- * 2つのグループ間のバイアス補正された標準化平均差を計算します。
+ * 2つのグループ間のバイアス補正済み標準化平均差を計算します。
  *
  * @tparam Iterator1 第1サンプルのRandomAccessIterator型
  * @tparam Iterator2 第2サンプルのRandomAccessIterator型

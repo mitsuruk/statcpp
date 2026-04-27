@@ -3,7 +3,7 @@
  * @brief カテゴリカルデータ分析のサンプルコード
  *
  * 分割表（クロス集計表）、オッズ比、相対リスク、リスク差、
- * 治療必要数(NNT)等のカテゴリカルデータ分析手法の使用例を示します。
+ * 治療必要人数(NNT)等のカテゴリカルデータ分析手法の使用例を示します。
  */
 
 #include <iostream>
@@ -120,9 +120,9 @@ int main() {
     }
 
     // ============================================================================
-    // 4. リスク差（Attributable Risk）
+    // 4. リスク差（Risk Difference）
     // ============================================================================
-    std::cout << "\n4. リスク差（寄与リスク）" << std::endl;
+    std::cout << "\n4. リスク差（絶対リスク差）" << std::endl;
     std::cout << std::string(50, '-') << std::endl;
 
     auto rd_result = statcpp::risk_difference(treatment_table);
@@ -140,9 +140,9 @@ int main() {
     }
 
     // ============================================================================
-    // 5. 治療必要数（Number Needed to Treat, NNT）
+    // 5. 治療必要人数（Number Needed to Treat, NNT）
     // ============================================================================
-    std::cout << "\n5. 治療必要数（NNT）" << std::endl;
+    std::cout << "\n5. 治療必要人数（NNT）" << std::endl;
     std::cout << std::string(50, '-') << std::endl;
 
     double nnt = statcpp::number_needed_to_treat(treatment_table);

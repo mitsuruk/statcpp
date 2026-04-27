@@ -242,14 +242,14 @@ inline relative_risk_result relative_risk(std::size_t a, std::size_t b, std::siz
 }
 
 // ============================================================================
-// Risk Difference (Attributable Risk)
+// Risk Difference
 // ============================================================================
 
 /**
  * @brief リスク差の結果
  */
 struct risk_difference_result {
-    double risk_difference;       ///< リスク差（寄与危険度）
+    double risk_difference;       ///< リスク差
     double se;                    ///< 標準誤差
     double ci_lower;              ///< 95%信頼区間下限
     double ci_upper;              ///< 95%信頼区間上限
@@ -258,7 +258,7 @@ struct risk_difference_result {
 /**
  * @brief 2x2分割表からリスク差を計算
  *
- * リスク差（寄与危険度）とその信頼区間を計算します。
+ * リスク差とその信頼区間を計算します。
  * リスク差 = (a/(a+b)) - (c/(c+d))
  *
  * @param table 2x2分割表 [[a, b], [c, d]]の形式
@@ -319,13 +319,13 @@ inline risk_difference_result risk_difference(std::size_t a, std::size_t b, std:
 // ============================================================================
 
 /**
- * @brief 治療必要数 (NNT) を計算
+ * @brief 治療必要人数 (NNT) を計算
  *
  * リスク差の逆数として計算されます。
  * ある結果を1つ防ぐために治療が必要な患者数を表します。
  *
  * @param table 2x2分割表
- * @return 治療必要数
+ * @return 治療必要人数
  * @throws std::invalid_argument リスク差が0の場合
  */
 inline double number_needed_to_treat(const std::vector<std::vector<std::size_t>>& table)

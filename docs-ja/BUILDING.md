@@ -92,7 +92,7 @@ cd build
 - `test_time_series` - 時系列分析
 - `test_categorical` - カテゴリカルデータ分析
 - `test_survival` - 生存時間解析
-- `test_robust` - 頑健統計
+- `test_robust` - ロバスト統計
 - `test_clustering` - クラスタリング
 - `test_data_wrangling` - データ変換
 - `test_missing_data` - 欠損データ
@@ -261,7 +261,7 @@ brew install googletest
 vcpkg install gtest
 ```
 
-### コンパイラエラー: C++17 サポートがない
+### コンパイラエラー: C++17 に対応していない
 
 古いコンパイラを使用している可能性があります。最新版にアップグレードしてください:
 

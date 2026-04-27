@@ -5,7 +5,7 @@
  * このファイルでは anova.hpp で提供される以下の関数を解説します：
  * - one_way_anova(): 一元配置分散分析
  * - two_way_anova(): 二元配置分散分析
- * - tukey_hsd(): Tukey HSD検定（Studentized range分布による事後比較）
+ * - tukey_hsd(): Tukey HSD検定（スチューデント化範囲分布による事後比較）
  * - bonferroni_posthoc(): Bonferroni法（事後比較）
  * - dunnett_posthoc(): Dunnett法（対照群との比較）
  * - scheffe_posthoc(): Scheffe法（事後比較）
@@ -205,7 +205,7 @@ void example_one_way_anova()
     std::cout << "ω² (Omega-squared):   " << omega_sq << "\n";
     std::cout << "Cohen's f:            " << cohens_f_val << "\n";
     std::cout << "\n効果量の解釈:\n";
-    std::cout << "  η² - 説明された分散の割合（" << (eta_sq * 100) << "%）\n";
+    std::cout << "  η² - 分散の説明割合（" << (eta_sq * 100) << "%）\n";
     if (cohens_f_val < 0.10) std::cout << "  Cohen's f: 小さい効果\n";
     else if (cohens_f_val < 0.25) std::cout << "  Cohen's f: 中程度の効果\n";
     else if (cohens_f_val < 0.40) std::cout << "  Cohen's f: 大きい効果\n";
@@ -330,15 +330,15 @@ void example_two_way_anova()
  * @brief tukey_hsd() のサンプル
  *
  * 【目的】
- * Tukeyの正直有意差（HSD）検定により、
+ * Tukey HSD検定により、
  * ANOVAで有意差が出た後、どの群間に差があるかを調べる事後比較です。
- * Studentized range分布（q分布）を使用します
+ * スチューデント化範囲分布（q分布）を使用します
  * （不等サンプルサイズにはTukey-Kramer法）。
  *
  * 【数式】
  * q = |mean_i - mean_j| / SE
  * ここで SE = sqrt(MSE/2 × (1/n_i + 1/n_j))、
- * p値はk群・df_error自由度のStudentized range分布から算出
+ * p値はk群・df_error自由度のスチューデント化範囲分布から算出
  *
  * 【使用場面】
  * - ANOVA後の全ての群間比較

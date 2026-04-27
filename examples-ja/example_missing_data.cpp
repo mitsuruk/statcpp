@@ -119,12 +119,12 @@ int main() {
     auto mi_result = statcpp::multiple_imputation_pmm(impute_data, 5, 42);
 
     std::cout << "代入回数: " << mi_result.m << std::endl;
-    std::cout << "\nプールされた平均:" << std::endl;
+    std::cout << "\n統合後の平均:" << std::endl;
     for (std::size_t i = 0; i < mi_result.pooled_means.size(); ++i) {
         std::cout << "  変数 " << i << ": " << mi_result.pooled_means[i] << std::endl;
     }
 
-    std::cout << "\nプールされた分散:" << std::endl;
+    std::cout << "\n統合後の分散:" << std::endl;
     for (std::size_t i = 0; i < mi_result.pooled_vars.size(); ++i) {
         std::cout << "  変数 " << i << ": " << mi_result.pooled_vars[i] << std::endl;
     }

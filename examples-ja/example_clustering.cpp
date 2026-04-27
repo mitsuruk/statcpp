@@ -35,7 +35,7 @@ int main() {
     std::cout << "======================================================================" << std::endl;
 
     std::cout << "\n【概念】" << std::endl;
-    std::cout << "データポイント間の類似度を測定する基本的な方法" << std::endl;
+    std::cout << "データ点間の類似度を測定する基本的な方法" << std::endl;
 
     std::vector<double> point_a = {1.0, 2.0, 3.0};
     std::vector<double> point_b = {4.0, 5.0, 6.0};
@@ -78,7 +78,7 @@ int main() {
     };
 
     std::cout << "\n【実例: 顧客データのグループ分け】" << std::endl;
-    std::cout << "21個のデータポイントを3つのクラスタに分割" << std::endl;
+    std::cout << "21個のデータ点を3つのクラスタに分割" << std::endl;
 
     std::size_t k = 3;
     auto kmeans_result = statcpp::kmeans(data, k);

@@ -377,7 +377,7 @@ void example_mean_absolute_deviation() {
     std::cout << "→ MAD ≈ 0.8 × SD（正規分布の場合）\n";
 
     // 外れ値の影響を比較
-    print_subsection("外れ値に対する頑健性");
+    print_subsection("外れ値に対するロバスト性");
     std::vector<double> with_outlier = {85, 90, 78, 92, 88, 75, 95, 82, 88, 200};
     print_data("外れ値ありデータ", with_outlier);
 

@@ -1110,7 +1110,7 @@ double mean_absolute_deviation(Iterator first, Iterator last, Projection proj, d
 // ============================================================================
 
 /**
- * @brief 重み付き分散（frequency weights: 各データポイントの繰り返し数）
+ * @brief 重み付き分散（frequency weights: 各データ点の繰り返し数）
  *
  * 各要素に重みを適用した分散を計算します。
  * ビッセル補正を適用して不偏推定量を返します。

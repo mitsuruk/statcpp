@@ -122,3 +122,6 @@ data/
 
 # Misc
 .markdownlint.json
+
+# Serena
+.serena/

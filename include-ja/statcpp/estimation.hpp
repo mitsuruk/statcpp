@@ -2,7 +2,7 @@
  * @file estimation.hpp
  * @brief 推定と信頼区間の関数
  *
- * 標準誤差の計算、信頼区間の推定、および誤差マージンとサンプルサイズの計算を提供します。
+ * 標準誤差の計算、信頼区間の推定、および誤差限界とサンプルサイズの計算を提供します。
  */
 
 #pragma once
@@ -450,7 +450,7 @@ confidence_interval ci_mean_diff_welch(Iterator1 first1, Iterator1 last1,
 // ============================================================================
 
 /**
- * @brief 平均の誤差マージンを計算
+ * @brief 平均の誤差限界を計算
  *
  * MoE = t_{α/2, df} × SE
  *
@@ -458,7 +458,7 @@ confidence_interval ci_mean_diff_welch(Iterator1 first1, Iterator1 last1,
  * @param first データ範囲の開始イテレータ
  * @param last データ範囲の終了イテレータ
  * @param confidence 信頼水準（デフォルト: 0.95）
- * @return 誤差マージン
+ * @return 誤差限界
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
  */
 template <typename Iterator>
@@ -482,7 +482,7 @@ double margin_of_error_mean(Iterator first, Iterator last, double confidence = 0
 }
 
 /**
- * @brief 平均の誤差マージンを計算（射影版）
+ * @brief 平均の誤差限界を計算（射影版）
  *
  * @tparam Iterator イテレータ型
  * @tparam Projection 射影関数型
@@ -490,7 +490,7 @@ double margin_of_error_mean(Iterator first, Iterator last, double confidence = 0
  * @param last データ範囲の終了イテレータ
  * @param confidence 信頼水準
  * @param proj 射影関数
- * @return 誤差マージン
+ * @return 誤差限界
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
  */
 template <typename Iterator, typename Projection>
@@ -514,14 +514,14 @@ double margin_of_error_mean(Iterator first, Iterator last, double confidence, Pr
 }
 
 /**
- * @brief 比率の誤差マージンを計算
+ * @brief 比率の誤差限界を計算
  *
  * MoE = z_{α/2} × √(p(1-p)/n)
  *
  * @param successes 成功回数
  * @param n サンプルサイズ
  * @param confidence 信頼水準（デフォルト: 0.95）
- * @return 誤差マージン
+ * @return 誤差限界
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、nが0、または成功回数がnを超える場合
  */
 inline double margin_of_error_proportion(std::size_t successes, std::size_t n, double confidence = 0.95)
@@ -546,13 +546,13 @@ inline double margin_of_error_proportion(std::size_t successes, std::size_t n, d
 }
 
 /**
- * @brief 最悪ケースの比率誤差マージンを計算
+ * @brief 最悪ケースの比率誤差限界を計算
  *
  * p=0.5 で最大となる: MoE = z_{α/2} × 0.5/√n
  *
  * @param n サンプルサイズ
  * @param confidence 信頼水準（デフォルト: 0.95）
- * @return 誤差マージン
+ * @return 誤差限界
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、またはnが0の場合
  */
 inline double margin_of_error_proportion_worst_case(std::size_t n, double confidence = 0.95)
@@ -577,10 +577,10 @@ inline double margin_of_error_proportion_worst_case(std::size_t n, double confid
 /**
  * @brief 比率推定のためのサンプルサイズを計算
  *
- * 指定した誤差マージンを達成するために必要なサンプルサイズを計算します。
+ * 指定した誤差限界を達成するために必要なサンプルサイズを計算します。
  * n = (z_{α/2} / MoE)² × p(1-p)
  *
- * @param margin_of_error 目標とする誤差マージン
+ * @param margin_of_error 目標とする誤差限界
  * @param confidence_level 信頼水準（デフォルト: 0.95）
  * @param p_estimate 事前の比率推定値（デフォルト: 0.5で最も保守的な見積もり）
  * @return 必要なサンプルサイズ
@@ -613,10 +613,10 @@ inline std::size_t sample_size_for_moe_proportion(double margin_of_error,
 /**
  * @brief 平均推定のためのサンプルサイズを計算（母標準偏差が既知の場合）
  *
- * 指定した誤差マージンを達成するために必要なサンプルサイズを計算します。
+ * 指定した誤差限界を達成するために必要なサンプルサイズを計算します。
  * n = (z_{α/2} × σ / MoE)²
  *
- * @param margin_of_error 目標とする誤差マージン
+ * @param margin_of_error 目標とする誤差限界
  * @param sigma 母標準偏差（既知または推定値）
  * @param confidence_level 信頼水準（デフォルト: 0.95）
  * @return 必要なサンプルサイズ

@@ -339,14 +339,14 @@ inline two_way_anova_result two_way_anova(
 // ============================================================================
 
 /**
- * @brief Tukeyの正直有意差（HSD）検定を実行する
+ * @brief Tukey HSD 検定を実行する
  *
- * Studentized range 分布（スチューデント化された範囲分布）を使用して、
+ * スチューデント化範囲分布（Studentized range distribution）を使用して、
  * 全ての群ペア間の比較を行います（不等サンプルサイズにはTukey-Kramer法）。
  *
  * q統計量は |mean_i - mean_j| / SE として計算され、
  * SE = sqrt(MSE/2 * (1/n_i + 1/n_j)) です。p値はk群・df_error自由度の
- * Studentized range 分布から求められます。
+ * スチューデント化範囲分布から求められます。
  *
  * @param anova_result 一元配置分散分析の結果
  * @param groups 各群のデータ（現在未使用。API互換性のため保持。
@@ -398,10 +398,10 @@ inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
                     lower = mean_diff; upper = mean_diff; significant = true;
                 }
             } else {
-                // q統計量（スチューデント化された範囲統計量）
+                // q統計量（スチューデント化範囲統計量）
                 q_stat = std::abs(mean_diff) / se;
 
-                // Studentized range 分布からのp値
+                // スチューデント化範囲分布からのp値
                 p_value = 1.0 - studentized_range_cdf(q_stat, k_d, df_error);
                 p_value = std::max(0.0, std::min(1.0, p_value));
 
@@ -750,7 +750,7 @@ inline ancova_result one_way_ancova(
 
     // 平方和の計算
     double ss_error = ssw_y - b_within * spw;  // 調整済み群内平方和
-    double ss_covariate = b_within * spw;       // 共変量による説明された分散
+    double ss_covariate = b_within * spw;       // 共変量による説明分散
 
     // 全体の回帰係数
     double b_total = (sst_x > 0.0) ? spt / sst_x : 0.0;

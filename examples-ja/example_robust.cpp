@@ -60,7 +60,7 @@ int main() {
     // ============================================================================
     // 2. 外れ値検出（IQR法）
     // ============================================================================
-    std::cout << "\n2. 外れ値検出（IQR法 - Tukeyの囲い）" << std::endl;
+    std::cout << "\n2. 外れ値検出（IQR法 - Tukeyのフェンス）" << std::endl;
     std::cout << std::string(50, '-') << std::endl;
 
     std::vector<double> test_data = {
@@ -75,9 +75,9 @@ int main() {
     std::cout << "  Q3: " << iqr_result.q3 << std::endl;
     std::cout << "  IQR: " << iqr_result.iqr_value << std::endl;
 
-    std::cout << "\n囲い (k=1.5):" << std::endl;
-    std::cout << "  下側囲い: " << iqr_result.lower_fence << std::endl;
-    std::cout << "  上側囲い: " << iqr_result.upper_fence << std::endl;
+    std::cout << "\nフェンス (k=1.5):" << std::endl;
+    std::cout << "  下側フェンス: " << iqr_result.lower_fence << std::endl;
+    std::cout << "  上側フェンス: " << iqr_result.upper_fence << std::endl;
 
     std::cout << "\n検出された外れ値 (" << iqr_result.outliers.size() << "個):" << std::endl;
     for (std::size_t i = 0; i < iqr_result.outliers.size(); ++i) {
@@ -136,7 +136,7 @@ int main() {
     std::cout << "  Modified Z-score法 (閾値=3.5): " << modified_zscore_result.outliers.size() << "個" << std::endl;
 
     std::cout << "\n推奨事項:" << std::endl;
-    std::cout << "  - IQR法: 歪んだ分布に最適" << std::endl;
+    std::cout << "  - IQR法: 歪みのある分布に適している" << std::endl;
     std::cout << "  - Z-score法: 正規分布を仮定、外れ値の影響を受けやすい" << std::endl;
     std::cout << "  - Modified Z-score法: ロバスト、非正規データに適している" << std::endl;
 
@@ -172,7 +172,7 @@ int main() {
     std::cout << "変化: " << (mean_original - mean_winsorized) << std::endl;
 
     std::cout << "\n注: ウィンザー化は極端な値を削除するのではなく、" << std::endl;
-    std::cout << "    より極端でない値で置き換えます（トリミングとは異なる）。" << std::endl;
+    std::cout << "    指定した分位点の値で置き換えます（トリミングとは異なる）。" << std::endl;
 
     // ============================================================================
     // 7. Cook's Distance（回帰診断）
@@ -286,11 +286,11 @@ int main() {
     std::cout << "古典的推定量 vs ロバスト推定量:" << std::endl;
     std::cout << "\n位置:" << std::endl;
     std::cout << "  古典的: 平均 (外れ値に敏感)" << std::endl;
-    std::cout << "  ロバスト: 中央値、Hodges-Lehmann (外れ値に頑健)" << std::endl;
+    std::cout << "  ロバスト: 中央値、Hodges-Lehmann (外れ値に対してロバスト)" << std::endl;
 
     std::cout << "\nスケール（散らばり）:" << std::endl;
     std::cout << "  古典的: 標準偏差 (敏感)" << std::endl;
-    std::cout << "  ロバスト: MAD、Biweight Midvariance (頑健)" << std::endl;
+    std::cout << "  ロバスト: MAD、Biweight Midvariance (外れ値の影響を受けにくい)" << std::endl;
 
     std::cout << "\n外れ値検出:" << std::endl;
     std::cout << "  非ロバスト: Z-score法 (平均と標準偏差を使用)" << std::endl;
