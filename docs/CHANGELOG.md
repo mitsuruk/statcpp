@@ -4,6 +4,23 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-07-09
+
+Correctness and boundary-safety fixes from a full-library computation review. All
+public signatures are unchanged, but several functions now return corrected values.
+
+### Fixed
+
+- **`linear_regression.hpp` — `compute_residual_diagnostics()`**: Cook's distance denominator corrected from `(1-h)` to `(1-h)²` in the English header (the Japanese header was already correct in 0.2.0; this resolves an `include/` vs `include-ja/` drift). High-leverage points were under-reported by up to ~6x.
+- **`discrete_distributions.hpp` — `poisson_quantile()` / `geometric_quantile()` / `nbinom_quantile()`**: Added `prob == 1.0` guard. Previously cast `+inf` to `uint64` (undefined behavior); now returns `std::numeric_limits<uint64_t>::max()` for these infinite-support distributions.
+- **`continuous_distributions.hpp` — `beta_rand()`**: Re-draw when both gamma variates underflow to 0 (extremely small shapes, e.g. α=β=0.001), which previously produced silent NaN.
+- **`data_wrangling.hpp` — `rolling_mean()` / `rolling_sum()`**: A NaN now contaminates only the windows that actually contain it. The incremental sum previously stayed NaN for all subsequent windows. Now consistent with `rolling_std/min/max`.
+- **`glm.hpp` — `glm_fit()` coefficient SE**: Apply the dispersion φ to the coefficient covariance (`φ·(XᵀWX)⁻¹`). φ is fixed at 1 for binomial/poisson and estimated by the Pearson statistic / residual df for gaussian/gamma (as in R's `summary.glm`). Gaussian SEs now match OLS; z-statistics and p-values follow.
+- **`glm.hpp` — Poisson null log-likelihood**: Added the missing `-lgamma(y+1)` term so McFadden's pseudo-R² is consistent between the null and fitted models.
+- **`glm.hpp` — gamma log-likelihood**: Corrected to the exact gamma(shape=ν, mean=μ) density `ν·log(ν/μ) − logΓ(ν) + (ν−1)·log(y) − ν·y/μ` (previously missing the `ν·log ν` term and using a `2ν−2` coefficient on `log y`). Affects gamma AIC/BIC.
+- **`nonparametric_tests.hpp` — `kruskal_wallis_test()`**: All-tied input previously divided by a zero tie-correction factor, giving `-inf`/NaN. Now returns H=0, p=1.
+- **`nonparametric_tests.hpp` — `shapiro_wilk_test()`**: For W ≥ 1 (maximally normal, e.g. perfectly equispaced data) the p-value was ~0.001 (strongly rejecting normality); it is now ~1.
+
 ## [0.2.0] - 2026-03-13
 
 ### Added

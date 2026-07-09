@@ -167,7 +167,7 @@ simple_regression_result simple_linear_regression(IteratorX x_first, IteratorX x
     // 平方和
     double ss_total = syy;
     double ss_regression = slope * sxy;
-    double ss_residual = ss_total - ss_regression;
+    double ss_residual = std::max(0.0, ss_total - ss_regression);
 
     if (ss_total == 0.0) {
         throw std::invalid_argument("statcpp::simple_linear_regression: zero variance in y (constant response)");

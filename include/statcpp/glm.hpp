@@ -526,9 +526,24 @@ inline glm_result glm_fit(
     std::vector<double> z_statistics(p_full, std::numeric_limits<double>::quiet_NaN());
     std::vector<double> p_values(p_full, std::numeric_limits<double>::quiet_NaN());
 
+    // Dispersion parameter phi. Fixed at 1 for binomial/poisson; estimated by the
+    // Pearson statistic divided by the residual df for gaussian/gamma (as in R's
+    // summary.glm). The coefficient covariance is phi * (X^T W X)^{-1}.
+    double dispersion = 1.0;
+    if (family == distribution_family::gaussian || family == distribution_family::gamma_family) {
+        double pearson_chi2 = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            double resid = y[i] - mu[i];
+            pearson_chi2 += resid * resid / detail::variance_function(mu[i], family);
+        }
+        double df_resid = static_cast<double>(n) - static_cast<double>(p_full);
+        dispersion = (df_resid > 0.0) ? pearson_chi2 / df_resid
+                                      : std::numeric_limits<double>::quiet_NaN();
+    }
+
     if (!XtWX_inv.empty()) {
         for (std::size_t j = 0; j < p_full; ++j) {
-            coefficient_se[j] = std::sqrt(XtWX_inv[j][j]);
+            coefficient_se[j] = std::sqrt(dispersion * XtWX_inv[j][j]);
         }
 
         // z-statistics and p-values
@@ -568,7 +583,7 @@ inline glm_result glm_fit(
         case distribution_family::poisson:
             for (std::size_t i = 0; i < n; ++i) {
                 double mu_null = std::max(1e-10, y_mean_original);
-                null_log_likelihood += y[i] * std::log(mu_null) - mu_null;
+                null_log_likelihood += y[i] * std::log(mu_null) - mu_null - std::lgamma(y[i] + 1.0);
             }
             break;
         default:
@@ -604,13 +619,15 @@ inline glm_result glm_fit(
             }
             break;
         case distribution_family::gamma_family: {
-                // Use deviance-based log-likelihood approximation
-                // phi = residual_deviance / (n - p_full) (Pearson dispersion estimate)
+                // Exact gamma log-density given the dispersion estimate: the shape nu is
+                // approximated by 1/phi with phi = deviance / (n - p_full); the per-observation
+                // density term itself is the exact gamma(shape=nu, mean=mu) log-likelihood.
                 double phi = residual_deviance / std::max(1.0, static_cast<double>(n - p_full));
                 for (std::size_t i = 0; i < n; ++i) {
                     if (mu[i] > 0.0 && y[i] > 0.0) {
                         double nu = 1.0 / phi;
-                        log_likelihood += nu * (-y[i] / mu[i] + std::log(y[i] / mu[i])) - std::lgamma(nu) + (nu - 1.0) * std::log(y[i]) - std::log(y[i]);
+                        log_likelihood += nu * std::log(nu / mu[i]) - std::lgamma(nu)
+                                          + (nu - 1.0) * std::log(y[i]) - nu * y[i] / mu[i];
                     }
                 }
                 break;

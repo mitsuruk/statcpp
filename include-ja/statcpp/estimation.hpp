@@ -668,35 +668,8 @@ confidence_interval ci_mean_diff_pooled(Iterator1 first1, Iterator1 last1,
                                         Iterator2 first2, Iterator2 last2,
                                         double confidence = 0.95)
 {
-    if (confidence <= 0.0 || confidence >= 1.0) {
-        throw std::invalid_argument("statcpp::ci_mean_diff_pooled: confidence must be in (0, 1)");
-    }
-
-    auto n1 = statcpp::count(first1, last1);
-    auto n2 = statcpp::count(first2, last2);
-
-    if (n1 < 2 || n2 < 2) {
-        throw std::invalid_argument("statcpp::ci_mean_diff_pooled: need at least 2 elements in each sample");
-    }
-
-    double mean1 = statcpp::mean(first1, last1);
-    double mean2 = statcpp::mean(first2, last2);
-    double var1 = statcpp::sample_variance(first1, last1);
-    double var2 = statcpp::sample_variance(first2, last2);
-
-    double diff = mean1 - mean2;
-
-    // Pooled variance
-    double pooled_var = ((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2);
-    double se = std::sqrt(pooled_var * (1.0 / n1 + 1.0 / n2));
-
-    double df = static_cast<double>(n1 + n2 - 2);
-    double alpha = 1.0 - confidence;
-    double t_crit = t_quantile(1.0 - alpha / 2.0, df);
-
-    double margin = t_crit * se;
-
-    return {diff - margin, diff + margin, diff, confidence};
+    // ci_mean_diff と同一のロジック(等分散を仮定した pooled t 検定)
+    return ci_mean_diff(first1, last1, first2, last2, confidence);
 }
 
 // ============================================================================

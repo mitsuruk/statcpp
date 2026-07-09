@@ -794,15 +794,32 @@ inline std::vector<double> rolling_mean(const std::vector<double>& data, std::si
     std::vector<double> result;
     result.reserve(data.size() - window + 1);
 
+    // Track the running sum over non-NaN values plus the NaN count in the current
+    // window, so a window containing NaN yields NaN without permanently corrupting
+    // the running sum (consistent with rolling_std/min/max).
     double sum = 0.0;
+    std::size_t nan_count = 0;
     for (std::size_t i = 0; i < window; ++i) {
-        sum += data[i];
+        if (std::isnan(data[i])) {
+            ++nan_count;
+        } else {
+            sum += data[i];
+        }
     }
-    result.push_back(sum / static_cast<double>(window));
+    result.push_back(nan_count > 0 ? NA : sum / static_cast<double>(window));
 
     for (std::size_t i = window; i < data.size(); ++i) {
-        sum += data[i] - data[i - window];
-        result.push_back(sum / static_cast<double>(window));
+        if (std::isnan(data[i])) {
+            ++nan_count;
+        } else {
+            sum += data[i];
+        }
+        if (std::isnan(data[i - window])) {
+            --nan_count;
+        } else {
+            sum -= data[i - window];
+        }
+        result.push_back(nan_count > 0 ? NA : sum / static_cast<double>(window));
     }
     return result;
 }
@@ -897,15 +914,32 @@ inline std::vector<double> rolling_sum(const std::vector<double>& data, std::siz
     std::vector<double> result;
     result.reserve(data.size() - window + 1);
 
+    // Track the running sum over non-NaN values plus the NaN count in the current
+    // window, so a window containing NaN yields NaN without permanently corrupting
+    // the running sum (consistent with rolling_std/min/max).
     double s = 0.0;
+    std::size_t nan_count = 0;
     for (std::size_t i = 0; i < window; ++i) {
-        s += data[i];
+        if (std::isnan(data[i])) {
+            ++nan_count;
+        } else {
+            s += data[i];
+        }
     }
-    result.push_back(s);
+    result.push_back(nan_count > 0 ? NA : s);
 
     for (std::size_t i = window; i < data.size(); ++i) {
-        s += data[i] - data[i - window];
-        result.push_back(s);
+        if (std::isnan(data[i])) {
+            ++nan_count;
+        } else {
+            s += data[i];
+        }
+        if (std::isnan(data[i - window])) {
+            --nan_count;
+        } else {
+            s -= data[i - window];
+        }
+        result.push_back(nan_count > 0 ? NA : s);
     }
     return result;
 }

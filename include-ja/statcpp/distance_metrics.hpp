@@ -6,8 +6,7 @@
  * 2つの系列間の距離・類似度を計算する関数を提供します。
  */
 
-#ifndef STATCPP_DISTANCE_METRICS_HPP
-#define STATCPP_DISTANCE_METRICS_HPP
+#pragma once
 
 #include <cmath>
 #include <stdexcept>
@@ -554,5 +553,3 @@ double chebyshev_distance(Iterator1 first1, Iterator1 last1,
 }
 
 } // namespace statcpp
-
-#endif // STATCPP_DISTANCE_METRICS_HPP

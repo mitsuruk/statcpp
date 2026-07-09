@@ -1110,10 +1110,87 @@ double mean_absolute_deviation(Iterator first, Iterator last, Projection proj, d
 // ============================================================================
 
 /**
- * @brief 重み付き分散（frequency weights: 各データ点の繰り返し数）
+ * @brief 重み付き分散（信頼性重み / 解析重み）
  *
  * 各要素に重みを適用した分散を計算します。
- * ビッセル補正を適用して不偏推定量を返します。
+ * ベッセル補正を適用して不偏推定量を返します。
+ *
+ * @tparam Iterator イテレータ型
+ * @tparam WeightIterator 重みのイテレータ型
+ * @param first 開始イテレータ
+ * @param last 終了イテレータ
+ * @param weight_first 重みの開始イテレータ
+ * @param weight_last 重みの終了イテレータ
+ * @return 重み付き分散
+ * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ */
+template <typename Iterator, typename WeightIterator>
+double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_variance: data and weight ranges differ in length");
+    }
+
+    auto n = statcpp::count(first, last);
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_variance: empty range");
+    }
+
+    // 重み付き平均を計算
+    double sum_weighted = 0.0;
+    double sum_weights = 0.0;
+    auto weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_variance: negative weight");
+        }
+
+        sum_weighted += value * weight;
+        sum_weights += weight;
+    }
+
+    if (sum_weights == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_variance: sum of weights is zero");
+    }
+
+    double mean = sum_weighted / sum_weights;
+
+    // 重み付き分散を計算（ベッセル補正付き）
+    double sum_squared_dev = 0.0;
+    double sum_weights_squared = 0.0;
+    weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+        double dev = value - mean;
+
+        sum_squared_dev += weight * dev * dev;
+        sum_weights_squared += weight * weight;
+    }
+
+    // ベッセル補正: V = Σw(x-μ)² / ((Σw)² - Σ(w²)) * Σw
+    // 簡略版: V = Σw(x-μ)² / (Σw - Σw²/Σw)
+    double correction = sum_weights - (sum_weights_squared / sum_weights);
+
+    if (correction <= 0.0) {
+        throw std::invalid_argument("statcpp::weighted_variance: insufficient effective sample size");
+    }
+
+    return sum_squared_dev / correction;
+}
+
+/**
+ * @brief 重み付き分散（信頼性重み / 解析重み）
+ *
+ * @deprecated 範囲安全性のため weighted_variance(first, last, weight_first, weight_last) オーバーロードを使用してください
+ *
+ * 各要素に重みを適用した分散を計算します。
+ * ベッセル補正を適用して不偏推定量を返します。
  *
  * @tparam Iterator イテレータ型
  * @tparam WeightIterator 重みのイテレータ型
@@ -1124,6 +1201,7 @@ double mean_absolute_deviation(Iterator first, Iterator last, Projection proj, d
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
  */
 template <typename Iterator, typename WeightIterator>
+[[deprecated("Use weighted_variance(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first)
 {
     auto n = statcpp::count(first, last);
@@ -1154,7 +1232,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
 
     double mean = sum_weighted / sum_weights;
 
-    // 重み付き分散を計算（ビッセル補正版）
+    // 重み付き分散を計算（ベッセル補正付き）
     double sum_squared_dev = 0.0;
     double sum_weights_squared = 0.0;
     weight_it = weight_first;
@@ -1168,7 +1246,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
         sum_weights_squared += weight * weight;
     }
 
-    // ビッセル補正: V = (Σw * Σw(x-μ)²) / (Σw² - Σw²)
+    // ベッセル補正: V = Σw(x-μ)² / ((Σw)² - Σ(w²)) * Σw
     // 簡略版: V = Σw(x-μ)² / (Σw - Σw²/Σw)
     double correction = sum_weights - (sum_weights_squared / sum_weights);
 
@@ -1183,7 +1261,84 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @brief 重み付き分散（射影版）
  *
  * 各要素に射影関数を適用した結果の重み付き分散を計算します。
- * ビッセル補正を適用して不偏推定量を返します。
+ * ベッセル補正を適用して不偏推定量を返します。
+ *
+ * @tparam Iterator イテレータ型
+ * @tparam WeightIterator 重みのイテレータ型
+ * @tparam Projection 射影関数型
+ * @param first 開始イテレータ
+ * @param last 終了イテレータ
+ * @param weight_first 重みの開始イテレータ
+ * @param weight_last 重みの終了イテレータ
+ * @param proj 射影関数
+ * @return 射影後の重み付き分散
+ * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ */
+template <typename Iterator, typename WeightIterator, typename Projection>
+double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_variance: data and weight ranges differ in length");
+    }
+
+    auto n = statcpp::count(first, last);
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_variance: empty range");
+    }
+
+    // 重み付き平均を計算
+    double sum_weighted = 0.0;
+    double sum_weights = 0.0;
+    auto weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(std::invoke(proj, *it));
+        double weight = static_cast<double>(*weight_it);
+
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_variance: negative weight");
+        }
+
+        sum_weighted += value * weight;
+        sum_weights += weight;
+    }
+
+    if (sum_weights == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_variance: sum of weights is zero");
+    }
+
+    double mean = sum_weighted / sum_weights;
+
+    // 重み付き分散を計算
+    double sum_squared_dev = 0.0;
+    double sum_weights_squared = 0.0;
+    weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(std::invoke(proj, *it));
+        double weight = static_cast<double>(*weight_it);
+        double dev = value - mean;
+
+        sum_squared_dev += weight * dev * dev;
+        sum_weights_squared += weight * weight;
+    }
+
+    double correction = sum_weights - (sum_weights_squared / sum_weights);
+
+    if (correction <= 0.0) {
+        throw std::invalid_argument("statcpp::weighted_variance: insufficient effective sample size");
+    }
+
+    return sum_squared_dev / correction;
+}
+
+/**
+ * @brief 重み付き分散（射影版）
+ *
+ * @deprecated 範囲安全性のため weighted_variance(first, last, weight_first, weight_last, proj) オーバーロードを使用してください
+ *
+ * 各要素に射影関数を適用した結果の重み付き分散を計算します。
+ * ベッセル補正を適用して不偏推定量を返します。
  *
  * @tparam Iterator イテレータ型
  * @tparam WeightIterator 重みのイテレータ型
@@ -1196,6 +1351,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
+[[deprecated("Use weighted_variance(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
     auto n = statcpp::count(first, last);
@@ -1259,10 +1415,33 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @param weight_first 重みの開始イテレータ
+ * @param weight_last 重みの終了イテレータ
+ * @return 重み付き標準偏差
+ * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ */
+template <typename Iterator, typename WeightIterator>
+double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
+{
+    return std::sqrt(weighted_variance(first, last, weight_first, weight_last));
+}
+
+/**
+ * @brief 重み付き標準偏差
+ *
+ * @deprecated 範囲安全性のため weighted_stddev(first, last, weight_first, weight_last) オーバーロードを使用してください
+ *
+ * 重み付き分散の平方根を計算します。
+ *
+ * @tparam Iterator イテレータ型
+ * @tparam WeightIterator 重みのイテレータ型
+ * @param first 開始イテレータ
+ * @param last 終了イテレータ
+ * @param weight_first 重みの開始イテレータ
  * @return 重み付き標準偏差
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
  */
 template <typename Iterator, typename WeightIterator>
+[[deprecated("Use weighted_stddev(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first)
 {
     return std::sqrt(weighted_variance(first, last, weight_first));
@@ -1279,11 +1458,36 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @param weight_first 重みの開始イテレータ
+ * @param weight_last 重みの終了イテレータ
+ * @param proj 射影関数
+ * @return 射影後の重み付き標準偏差
+ * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ */
+template <typename Iterator, typename WeightIterator, typename Projection>
+double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
+{
+    return std::sqrt(weighted_variance(first, last, weight_first, weight_last, proj));
+}
+
+/**
+ * @brief 重み付き標準偏差（射影版）
+ *
+ * @deprecated 範囲安全性のため weighted_stddev(first, last, weight_first, weight_last, proj) オーバーロードを使用してください
+ *
+ * 各要素に射影関数を適用した結果の重み付き標準偏差を計算します。
+ *
+ * @tparam Iterator イテレータ型
+ * @tparam WeightIterator 重みのイテレータ型
+ * @tparam Projection 射影関数型
+ * @param first 開始イテレータ
+ * @param last 終了イテレータ
+ * @param weight_first 重みの開始イテレータ
  * @param proj 射影関数
  * @return 射影後の重み付き標準偏差
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
+[[deprecated("Use weighted_stddev(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
     return std::sqrt(weighted_variance(first, last, weight_first, proj));

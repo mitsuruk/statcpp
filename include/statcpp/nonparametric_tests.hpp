@@ -267,12 +267,12 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
         if (arg > 0) {
             z = (-std::log(arg) - mu) / sigma;
         } else {
-            z = 3.0;  // Very high W, very normal
+            z = -8.0;  // Very high W (very normal): p -> 1
         }
     } else if (w < 1.0) {
         z = (std::log(1.0 - w) - mu) / sigma;
     } else {
-        z = 3.0;  // Perfect W = 1
+        z = -8.0;  // Perfect W = 1 (maximally normal): p -> 1
     }
 
     double p_value = 1.0 - norm_cdf(z);
@@ -875,7 +875,13 @@ inline test_result kruskal_wallis_test(const std::vector<std::vector<double>>& g
         }
         double denom = n_d * n_d * n_d - n_d;
         if (tie_sum > 0.0 && denom > 0.0) {
-            h /= (1.0 - tie_sum / denom);
+            double correction = 1.0 - tie_sum / denom;
+            if (correction > 0.0) {
+                h /= correction;
+            } else {
+                // All observations are tied: the corrected statistic is 0 (avoid /0).
+                h = 0.0;
+            }
         }
     }
 

@@ -13,8 +13,7 @@
  * - 完全ケース分析
  */
 
-#ifndef STATCPP_MISSING_DATA_HPP
-#define STATCPP_MISSING_DATA_HPP
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -1141,5 +1140,3 @@ inline std::vector<std::vector<double>> correlation_matrix_pairwise(
 }
 
 }  // namespace statcpp
-
-#endif  // STATCPP_MISSING_DATA_HPP

@@ -70,6 +70,7 @@ struct glm_result {
     double aic;                             ///< AIC
     double bic;                             ///< BIC
     double log_likelihood;                  ///< 対数尤度
+    double null_log_likelihood;             ///< ヌルモデルの対数尤度
     std::size_t iterations;                 ///< 収束までの反復回数
     bool converged;                         ///< 収束したかどうか
     link_function link;                     ///< 使用したリンク関数
@@ -133,9 +134,12 @@ inline double inverse_link(double eta, link_function link)
         case link_function::probit:
             return norm_cdf(eta);
         case link_function::log:
-            return std::exp(eta);
-        case link_function::inverse:
-            return 1.0 / eta;
+            return std::min(std::exp(eta), 1e300);
+        case link_function::inverse: {
+            if (std::abs(eta) < 1e-10) return 1e10;
+            double result = 1.0 / eta;
+            return std::max(result, 1e-10);
+        }
         case link_function::cloglog:
             return 1.0 - std::exp(-std::exp(eta));
         default:
@@ -522,9 +526,24 @@ inline glm_result glm_fit(
     std::vector<double> z_statistics(p_full, std::numeric_limits<double>::quiet_NaN());
     std::vector<double> p_values(p_full, std::numeric_limits<double>::quiet_NaN());
 
+    // 分散パラメータ phi. binomial/poisson は 1 固定. gaussian/gamma は
+    // Pearson 統計量 / 残差df で推定(R の summary.glm と同じ).
+    // 係数共分散は phi * (X^T W X)^{-1}.
+    double dispersion = 1.0;
+    if (family == distribution_family::gaussian || family == distribution_family::gamma_family) {
+        double pearson_chi2 = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            double resid = y[i] - mu[i];
+            pearson_chi2 += resid * resid / detail::variance_function(mu[i], family);
+        }
+        double df_resid = static_cast<double>(n) - static_cast<double>(p_full);
+        dispersion = (df_resid > 0.0) ? pearson_chi2 / df_resid
+                                      : std::numeric_limits<double>::quiet_NaN();
+    }
+
     if (!XtWX_inv.empty()) {
         for (std::size_t j = 0; j < p_full; ++j) {
-            coefficient_se[j] = std::sqrt(XtWX_inv[j][j]);
+            coefficient_se[j] = std::sqrt(dispersion * XtWX_inv[j][j]);
         }
 
         // z統計量とp値
@@ -544,6 +563,32 @@ inline glm_result glm_fit(
     double null_deviance = 0.0;
     for (std::size_t i = 0; i < n; ++i) {
         null_deviance += detail::deviance_residual(y[i], y_mean_original, family);
+    }
+
+    // ヌルモデル（切片のみ）の対数尤度
+    double null_log_likelihood = 0.0;
+    switch (family) {
+        case distribution_family::gaussian:
+            for (std::size_t i = 0; i < n; ++i) {
+                double resid = y[i] - y_mean_original;
+                null_log_likelihood += -0.5 * resid * resid;
+            }
+            break;
+        case distribution_family::binomial:
+            for (std::size_t i = 0; i < n; ++i) {
+                double p_null = std::max(1e-10, std::min(1.0 - 1e-10, y_mean_original));
+                null_log_likelihood += y[i] * std::log(p_null) + (1.0 - y[i]) * std::log(1.0 - p_null);
+            }
+            break;
+        case distribution_family::poisson:
+            for (std::size_t i = 0; i < n; ++i) {
+                double mu_null = std::max(1e-10, y_mean_original);
+                null_log_likelihood += y[i] * std::log(mu_null) - mu_null - std::lgamma(y[i] + 1.0);
+            }
+            break;
+        default:
+            null_log_likelihood = -0.5 * null_deviance;
+            break;
     }
 
     // 対数尤度の計算
@@ -573,6 +618,19 @@ inline glm_result glm_fit(
                                   - std::lgamma(y[i] + 1.0);
             }
             break;
+        case distribution_family::gamma_family: {
+                // 分散推定 phi = deviance/(n - p_full) から形状 nu = 1/phi を近似する.
+                // 密度項自体は厳密な gamma(shape=nu, mean=mu) の対数尤度.
+                double phi = residual_deviance / std::max(1.0, static_cast<double>(n - p_full));
+                for (std::size_t i = 0; i < n; ++i) {
+                    if (mu[i] > 0.0 && y[i] > 0.0) {
+                        double nu = 1.0 / phi;
+                        log_likelihood += nu * std::log(nu / mu[i]) - std::lgamma(nu)
+                                          + (nu - 1.0) * std::log(y[i]) - nu * y[i] / mu[i];
+                    }
+                }
+                break;
+            }
         default:
             log_likelihood = -0.5 * residual_deviance;
             break;
@@ -591,7 +649,7 @@ inline glm_result glm_fit(
         beta, coefficient_se, z_statistics, p_values,
         null_deviance, residual_deviance,
         static_cast<double>(n - 1), static_cast<double>(n - p_full),
-        aic, bic, log_likelihood,
+        aic, bic, log_likelihood, null_log_likelihood,
         iter, converged,
         link, family
     };
@@ -918,7 +976,8 @@ inline double overdispersion_test(const glm_result& model,
  */
 inline double pseudo_r_squared_mcfadden(const glm_result& model)
 {
-    return 1.0 - (model.residual_deviance / model.null_deviance);
+    if (model.null_log_likelihood == 0.0) return 0.0;
+    return 1.0 - model.log_likelihood / model.null_log_likelihood;
 }
 
 /**

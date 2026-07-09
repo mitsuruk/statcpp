@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <type_traits>
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -67,6 +68,12 @@ struct five_number_summary_result {
 template <typename Iterator>
 double interpolate_at(Iterator first, std::size_t n, double p)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::interpolate_at requires random access iterators");
+
     double index = p * static_cast<double>(n - 1);
     auto lo = static_cast<std::size_t>(std::floor(index));
     double frac = index - static_cast<double>(lo);
@@ -91,6 +98,12 @@ double interpolate_at(Iterator first, std::size_t n, double p)
 template <typename Iterator, typename Projection>
 double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::interpolate_at requires random access iterators");
+
     double index = p * static_cast<double>(n - 1);
     auto lo = static_cast<std::size_t>(std::floor(index));
     double frac = index - static_cast<double>(lo);
@@ -140,13 +153,11 @@ auto minimum(Iterator first, Iterator last, Projection proj)
     if (first == last) {
         throw std::invalid_argument("statcpp::minimum: empty range");
     }
-    auto min_it = first;
     auto min_val = std::invoke(proj, *first);
     for (auto it = std::next(first); it != last; ++it) {
         auto val = std::invoke(proj, *it);
         if (val < min_val) {
             min_val = val;
-            min_it = it;
         }
     }
     return min_val;
@@ -339,6 +350,12 @@ double percentile(Iterator first, Iterator last, double p, Projection proj)
 template <typename Iterator>
 five_number_summary_result five_number_summary(Iterator first, Iterator last)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::five_number_summary requires random access iterators");
+
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::five_number_summary: empty range");
@@ -366,6 +383,12 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 five_number_summary_result five_number_summary(Iterator first, Iterator last, Projection proj)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::five_number_summary requires random access iterators");
+
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::five_number_summary: empty range");
@@ -384,6 +407,87 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last, Pr
 // ============================================================================
 
 /**
+ * @brief 重み付き中央値（安全なオーバーロード）(Weighted median, safe overload)
+ *
+ * 範囲の安全性を検証したうえで重み付き中央値を計算します。
+ * Calculates the weighted median with range safety validation.
+ *
+ * @tparam Iterator イテレータ型 (iterator type)
+ * @tparam WeightIterator 重みイテレータ型 (weight iterator type)
+ * @param first 範囲の開始 (beginning of range)
+ * @param last 範囲の終了 (end of range)
+ * @param weight_first 重みの開始 (beginning of weights)
+ * @param weight_last 重みの終了 (end of weights)
+ * @return 重み付き中央値 (weighted median)
+ * @throws std::invalid_argument 範囲が空、サイズ不一致、重みが負、または重みの総和が0の場合
+ *         (if range is empty, sizes mismatch, weight is negative, or sum of weights is zero)
+ */
+template <typename Iterator, typename WeightIterator>
+double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_median: data and weight ranges must have the same size");
+    }
+
+    auto n = static_cast<std::size_t>(std::distance(first, last));
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_median: empty range");
+    }
+
+    // 値と重みのペアを作成
+    std::vector<std::pair<double, double>> pairs;
+    pairs.reserve(n);
+    auto weight_it = weight_first;
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_median: negative weight");
+        }
+        pairs.emplace_back(value, weight);
+    }
+
+    // 値でソート
+    std::sort(pairs.begin(), pairs.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // 重みの総和
+    double total_weight = 0.0;
+    for (const auto& p : pairs) {
+        total_weight += p.second;
+    }
+
+    if (total_weight == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_median: sum of weights is zero");
+    }
+
+    // 累積重みを計算して中央値を見つける。
+    // 浮動小数点数の累積加算では、数学的に half_weight と等しいはずの値が
+    // 丸め誤差により bit-identical にならない場合がある。
+    // そのため == ではなく相対許容誤差 tol を用いて比較する。
+    double cumulative = 0.0;
+    double half_weight = total_weight / 2.0;
+    const double tol = std::numeric_limits<double>::epsilon() * half_weight;
+
+    for (std::size_t i = 0; i < pairs.size(); ++i) {
+        cumulative += pairs[i].second;
+        if (cumulative >= half_weight) {
+            // 累積重みがほぼちょうど半分の場合は次の重みが正の値との平均を取る
+            if (std::abs(cumulative - half_weight) <= tol) {
+                for (std::size_t j = i + 1; j < pairs.size(); ++j) {
+                    if (pairs[j].second > 0.0) {
+                        return (pairs[i].first + pairs[j].first) / 2.0;
+                    }
+                }
+            }
+            return pairs[i].first;
+        }
+    }
+
+    return pairs.back().first;
+}
+
+/**
  * @brief 重み付き中央値 (Weighted median)
  *
  * 重み付き中央値を計算します。
@@ -399,6 +503,7 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last, Pr
  *         (if range is empty, weight is negative, or sum of weights is zero)
  */
 template <typename Iterator, typename WeightIterator>
+[[deprecated("Use weighted_median(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_median(Iterator first, Iterator last, WeightIterator weight_first)
 {
     auto n = static_cast<std::size_t>(std::distance(first, last));
@@ -412,6 +517,89 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
     auto weight_it = weight_first;
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_median: negative weight");
+        }
+        pairs.emplace_back(value, weight);
+    }
+
+    // 値でソート
+    std::sort(pairs.begin(), pairs.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // 重みの総和
+    double total_weight = 0.0;
+    for (const auto& p : pairs) {
+        total_weight += p.second;
+    }
+
+    if (total_weight == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_median: sum of weights is zero");
+    }
+
+    // 累積重みを計算して中央値を見つける。
+    // 浮動小数点数の累積加算では、数学的に half_weight と等しいはずの値が
+    // 丸め誤差により bit-identical にならない場合がある。
+    // そのため == ではなく相対許容誤差 tol を用いて比較する。
+    double cumulative = 0.0;
+    double half_weight = total_weight / 2.0;
+    const double tol = std::numeric_limits<double>::epsilon() * half_weight;
+
+    for (std::size_t i = 0; i < pairs.size(); ++i) {
+        cumulative += pairs[i].second;
+        if (cumulative >= half_weight) {
+            // 累積重みがほぼちょうど半分の場合は次の重みが正の値との平均を取る
+            if (std::abs(cumulative - half_weight) <= tol) {
+                for (std::size_t j = i + 1; j < pairs.size(); ++j) {
+                    if (pairs[j].second > 0.0) {
+                        return (pairs[i].first + pairs[j].first) / 2.0;
+                    }
+                }
+            }
+            return pairs[i].first;
+        }
+    }
+
+    return pairs.back().first;
+}
+
+/**
+ * @brief 重み付き中央値（射影版・安全なオーバーロード）(Weighted median with projection, safe overload)
+ *
+ * 範囲の安全性を検証したうえで重み付き中央値を計算します。
+ * Calculates the weighted median with range safety validation.
+ *
+ * @tparam Iterator イテレータ型 (iterator type)
+ * @tparam WeightIterator 重みイテレータ型 (weight iterator type)
+ * @tparam Projection 射影関数型 (projection function type)
+ * @param first 範囲の開始 (beginning of range)
+ * @param last 範囲の終了 (end of range)
+ * @param weight_first 重みの開始 (beginning of weights)
+ * @param weight_last 重みの終了 (end of weights)
+ * @param proj 射影関数 (projection function)
+ * @return 重み付き中央値 (weighted median)
+ * @throws std::invalid_argument 範囲が空、サイズ不一致、重みが負、または重みの総和が0の場合
+ *         (if range is empty, sizes mismatch, weight is negative, or sum of weights is zero)
+ */
+template <typename Iterator, typename WeightIterator, typename Projection>
+double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_median: data and weight ranges must have the same size");
+    }
+
+    auto n = static_cast<std::size_t>(std::distance(first, last));
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_median: empty range");
+    }
+
+    // 値と重みのペアを作成
+    std::vector<std::pair<double, double>> pairs;
+    pairs.reserve(n);
+    auto weight_it = weight_first;
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(std::invoke(proj, *it));
         double weight = static_cast<double>(*weight_it);
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_median: negative weight");
@@ -474,6 +662,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  *         (if range is empty, weight is negative, or sum of weights is zero)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
+[[deprecated("Use weighted_median(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
     auto n = static_cast<std::size_t>(std::distance(first, last));
@@ -539,6 +728,90 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
 // ============================================================================
 
 /**
+ * @brief 重み付きパーセンタイル（安全なオーバーロード）(Weighted percentile, safe overload)
+ *
+ * 範囲の安全性を検証したうえで重み付きパーセンタイルを計算します。
+ * Calculates the weighted percentile with range safety validation.
+ *
+ * @tparam Iterator イテレータ型 (iterator type)
+ * @tparam WeightIterator 重みイテレータ型 (weight iterator type)
+ * @param first 範囲の開始 (beginning of range)
+ * @param last 範囲の終了 (end of range)
+ * @param weight_first 重みの開始 (beginning of weights)
+ * @param weight_last 重みの終了 (end of weights)
+ * @param p パーセンタイル（0.0〜1.0）(percentile as proportion 0.0-1.0)
+ * @return 重み付きパーセンタイル値 (weighted percentile value)
+ * @throws std::invalid_argument パラメータが無効、またはサイズ不一致の場合
+ *         (if parameters are invalid or sizes mismatch)
+ */
+template <typename Iterator, typename WeightIterator>
+double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, double p)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_percentile: data and weight ranges must have the same size");
+    }
+
+    if (!(0.0 <= p && p <= 1.0)) {
+        throw std::invalid_argument("statcpp::weighted_percentile: p must be in [0, 1]");
+    }
+
+    auto n = static_cast<std::size_t>(std::distance(first, last));
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_percentile: empty range");
+    }
+
+    // 値と重みのペアを作成
+    std::vector<std::pair<double, double>> pairs;
+    pairs.reserve(n);
+    auto weight_it = weight_first;
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_percentile: negative weight");
+        }
+        pairs.emplace_back(value, weight);
+    }
+
+    // 値でソート
+    std::sort(pairs.begin(), pairs.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // 重みの総和
+    double total_weight = 0.0;
+    for (const auto& pair : pairs) {
+        total_weight += pair.second;
+    }
+
+    if (total_weight == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_percentile: sum of weights is zero");
+    }
+
+    // 浮動小数点ループに依存しない端点の明示処理
+    if (p <= 0.0) return pairs.front().first;
+    if (p >= 1.0) return pairs.back().first;
+
+    // 累積重みを計算して目標パーセンタイルを見つける
+    // p=0.5の場合、総重みの50%の位置を見つける
+    double target = p * total_weight;
+    const double tol = std::numeric_limits<double>::epsilon() * total_weight;
+    double cumulative = 0.0;
+
+    for (std::size_t i = 0; i < pairs.size(); ++i) {
+        cumulative += pairs[i].second;
+        if (cumulative >= target) {
+            // 累積重みがほぼ目標値の場合は次の値との平均を取る
+            if (std::abs(cumulative - target) <= tol && i + 1 < pairs.size()) {
+                return (pairs[i].first + pairs[i + 1].first) / 2.0;
+            }
+            return pairs[i].first;
+        }
+    }
+
+    return pairs.back().first;
+}
+
+/**
  * @brief 重み付きパーセンタイル (Weighted percentile)
  *
  * 重み付きパーセンタイルを計算します。
@@ -554,6 +827,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
  */
 template <typename Iterator, typename WeightIterator>
+[[deprecated("Use weighted_percentile(first, last, weight_first, weight_last, p) overload for range safety")]]
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, double p)
 {
     if (!(0.0 <= p && p <= 1.0)) {
@@ -617,6 +891,92 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
 }
 
 /**
+ * @brief 重み付きパーセンタイル（射影版・安全なオーバーロード）(Weighted percentile with projection, safe overload)
+ *
+ * 範囲の安全性を検証したうえで重み付きパーセンタイルを計算します。
+ * Calculates the weighted percentile with range safety validation.
+ *
+ * @tparam Iterator イテレータ型 (iterator type)
+ * @tparam WeightIterator 重みイテレータ型 (weight iterator type)
+ * @tparam Projection 射影関数型 (projection function type)
+ * @param first 範囲の開始 (beginning of range)
+ * @param last 範囲の終了 (end of range)
+ * @param weight_first 重みの開始 (beginning of weights)
+ * @param weight_last 重みの終了 (end of weights)
+ * @param p パーセンタイル（0.0〜1.0）(percentile as proportion 0.0-1.0)
+ * @param proj 射影関数 (projection function)
+ * @return 重み付きパーセンタイル値 (weighted percentile value)
+ * @throws std::invalid_argument パラメータが無効、またはサイズ不一致の場合
+ *         (if parameters are invalid or sizes mismatch)
+ */
+template <typename Iterator, typename WeightIterator, typename Projection>
+double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, double p, Projection proj)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_percentile: data and weight ranges must have the same size");
+    }
+
+    if (!(0.0 <= p && p <= 1.0)) {
+        throw std::invalid_argument("statcpp::weighted_percentile: p must be in [0, 1]");
+    }
+
+    auto n = static_cast<std::size_t>(std::distance(first, last));
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_percentile: empty range");
+    }
+
+    // 値と重みのペアを作成
+    std::vector<std::pair<double, double>> pairs;
+    pairs.reserve(n);
+    auto weight_it = weight_first;
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(std::invoke(proj, *it));
+        double weight = static_cast<double>(*weight_it);
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_percentile: negative weight");
+        }
+        pairs.emplace_back(value, weight);
+    }
+
+    // 値でソート
+    std::sort(pairs.begin(), pairs.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // 重みの総和
+    double total_weight = 0.0;
+    for (const auto& pair : pairs) {
+        total_weight += pair.second;
+    }
+
+    if (total_weight == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_percentile: sum of weights is zero");
+    }
+
+    // 浮動小数点ループに依存しない端点の明示処理
+    if (p <= 0.0) return pairs.front().first;
+    if (p >= 1.0) return pairs.back().first;
+
+    // 累積重みを計算して目標パーセンタイルを見つける
+    // p=0.5の場合、総重みの50%の位置を見つける
+    double target = p * total_weight;
+    const double tol = std::numeric_limits<double>::epsilon() * total_weight;
+    double cumulative = 0.0;
+
+    for (std::size_t i = 0; i < pairs.size(); ++i) {
+        cumulative += pairs[i].second;
+        if (cumulative >= target) {
+            // 累積重みがほぼ目標値の場合は次の値との平均を取る
+            if (std::abs(cumulative - target) <= tol && i + 1 < pairs.size()) {
+                return (pairs[i].first + pairs[i + 1].first) / 2.0;
+            }
+            return pairs[i].first;
+        }
+    }
+
+    return pairs.back().first;
+}
+
+/**
  * @brief 重み付きパーセンタイル（射影版）(Weighted percentile with projection)
  *
  * @tparam Iterator イテレータ型 (iterator type)
@@ -631,6 +991,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
+[[deprecated("Use weighted_percentile(first, last, weight_first, weight_last, p, proj) overload for range safety")]]
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, double p, Projection proj)
 {
     if (!(0.0 <= p && p <= 1.0)) {

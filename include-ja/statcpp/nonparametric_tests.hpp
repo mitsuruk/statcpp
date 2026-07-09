@@ -265,12 +265,12 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
         if (arg > 0) {
             z = (-std::log(arg) - mu) / sigma;
         } else {
-            z = 3.0;  // Very high W, very normal
+            z = -8.0;  // W が非常に大きい(極めて正規的): p -> 1
         }
     } else if (w < 1.0) {
         z = (std::log(1.0 - w) - mu) / sigma;
     } else {
-        z = 3.0;  // Perfect W = 1
+        z = -8.0;  // W = 1(最も正規的): p -> 1
     }
 
     double p_value = 1.0 - norm_cdf(z);
@@ -608,6 +608,10 @@ test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 
 
     double se = std::sqrt(std::max(0.0, var_w));
 
+    if (se == 0.0) {
+        return {w, 1.0, static_cast<double>(n), alt};
+    }
+
     double z;
     double p_value;
 
@@ -742,6 +746,10 @@ test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
 
     double se = std::sqrt(std::max(0.0, var_u));
 
+    if (se == 0.0) {
+        return {u1, 1.0, static_cast<double>(n1 + n2), alt};
+    }
+
     // 連続性補正
     double diff = u1 - mean_u;
     if (correct) {
@@ -860,7 +868,13 @@ inline test_result kruskal_wallis_test(const std::vector<std::vector<double>>& g
         }
         double denom = n_d * n_d * n_d - n_d;
         if (tie_sum > 0.0 && denom > 0.0) {
-            h /= (1.0 - tie_sum / denom);
+            double correction = 1.0 - tie_sum / denom;
+            if (correction > 0.0) {
+                h /= correction;
+            } else {
+                // 全ての観測値が同値: 補正後の統計量は 0 (ゼロ除算回避).
+                h = 0.0;
+            }
         }
     }
 

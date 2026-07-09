@@ -562,3 +562,17 @@ TEST(StudentizedRangeQuantileTest, InverseRelationship) {
     double p_back = statcpp::studentized_range_cdf(q, k, df);
     EXPECT_NEAR(p_back, p, 1e-6);
 }
+
+/**
+ * @brief Regression guard for beta_rand with extremely small shapes (review #6).
+ * @test With alpha = beta = 0.001 both gamma variates can underflow to 0, giving
+ *       0/0 = NaN. The re-draw loop must yield finite values in [0, 1] every time.
+ */
+TEST(BetaRandTest, ExtremeSmallShapeNoNaN) {
+    for (int i = 0; i < 5000; ++i) {
+        double v = statcpp::beta_rand(0.001, 0.001);
+        ASSERT_FALSE(std::isnan(v)) << "NaN at iteration " << i;
+        ASSERT_GE(v, 0.0);
+        ASSERT_LE(v, 1.0);
+    }
+}

@@ -610,3 +610,31 @@ TEST(FisherExactTest, SmallSample) {
     // p-value should be small for this extreme case
     EXPECT_LT(result.p_value, 0.15);
 }
+
+/**
+ * @brief Regression guard for Kruskal-Wallis with all-tied values (review #11).
+ * @test When every observation is identical the tie correction divisor is 0.
+ *       H must be a finite 0 (not -inf/NaN) and p = 1.
+ */
+TEST(KruskalWallisTest, AllTiedValuesGivesZero) {
+    std::vector<std::vector<double>> groups = {
+        {5.0, 5.0, 5.0}, {5.0, 5.0}, {5.0, 5.0, 5.0}
+    };
+    auto result = statcpp::kruskal_wallis_test(groups);
+
+    EXPECT_TRUE(std::isfinite(result.statistic));
+    EXPECT_DOUBLE_EQ(result.statistic, 0.0);
+    EXPECT_DOUBLE_EQ(result.p_value, 1.0);
+}
+
+/**
+ * @brief Regression guard for Shapiro-Wilk with W >= 1 (review #12).
+ * @test Perfectly equispaced data yields W ~ 1 (maximally normal shape). The
+ *       pre-fix code returned p ~ 0.001 (rejecting normality); it must be high now.
+ */
+TEST(ShapiroWilkTest, EquispacedNotRejected) {
+    std::vector<double> data = {1.0, 2.0, 3.0};
+    auto result = statcpp::shapiro_wilk_test(data.begin(), data.end());
+
+    EXPECT_GT(result.p_value, 0.5);  // must NOT strongly reject normality
+}

@@ -3,8 +3,7 @@
  * @brief Numerical utilities for precision and convergence
  */
 
-#ifndef STATCPP_NUMERICAL_UTILS_HPP
-#define STATCPP_NUMERICAL_UTILS_HPP
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -343,5 +342,3 @@ bool approx_equal_range(Iterator1 first1, Iterator1 last1,
 }
 
 } // namespace statcpp
-
-#endif // STATCPP_NUMERICAL_UTILS_HPP

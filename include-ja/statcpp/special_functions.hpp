@@ -618,30 +618,71 @@ inline double gammainc_lower_inv(double a, double p)
         x = std::pow(p * tgamma(a + 1.0), 1.0 / a);
     }
 
-    // Newton-Raphson
+    // 二分法の探索範囲を初期化
+    double lo = 0.0;
+    double hi = a + 50.0 * std::sqrt(a);
+    if (hi < 10.0) hi = 10.0;
+
+    // hi が実際に上界であることを保証する
+    while (gammainc_lower(a, hi) < p) {
+        hi *= 2.0;
+    }
+
+    bool converged = false;
+
+    // Newton-Raphson (二分法の範囲追跡付き)
     for (int i = 0; i < max_iter; ++i) {
         double f = gammainc_lower(a, x) - p;
         if (std::abs(f) < eps) {
-            return x;
+            converged = true;
+            break;
+        }
+
+        // 二分法の範囲を更新
+        if (f < 0.0) {
+            lo = x;
+        } else {
+            hi = x;
         }
 
         // Derivative: d/dx P(a,x) = x^(a-1) * e^(-x) / Gamma(a)
         double df = std::exp((a - 1.0) * std::log(x) - x - lgamma(a));
         if (df == 0.0) {
-            // Fallback to bisection
+            // 導関数がゼロ: 二分法フォールバックへ
             break;
         }
 
         double x_new = x - f / df;
-        if (x_new <= 0.0) {
-            x_new = x / 2.0;
+
+        // Newton ステップが範囲外なら二分法を使う
+        if (x_new <= lo || x_new >= hi) {
+            x_new = (lo + hi) / 2.0;
         }
 
         if (std::abs(x_new - x) < eps * x) {
-            return x_new;
+            converged = true;
+            x = x_new;
+            break;
         }
 
         x = x_new;
+    }
+
+    // Newton-Raphson が収束しなかった場合の二分法フォールバック
+    if (!converged) {
+        for (int bisect_iter = 0; bisect_iter < 100; ++bisect_iter) {
+            double mid = (lo + hi) / 2.0;
+            double f_mid = gammainc_lower(a, mid) - p;
+            if (std::abs(f_mid) < 1e-12 || (hi - lo) < 1e-12 * mid) {
+                return mid;
+            }
+            if (f_mid < 0) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        return (lo + hi) / 2.0;
     }
 
     return x;

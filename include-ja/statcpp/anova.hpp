@@ -316,14 +316,24 @@ inline two_way_anova_result two_way_anova(
     double ms_ab = ss_ab / df_ab;
     double ms_error = ss_error / df_error;
 
-    // F統計量とp値
-    double f_a = ms_a / ms_error;
-    double f_b = ms_b / ms_error;
-    double f_ab = ms_ab / ms_error;
-
-    double p_a = 1.0 - f_cdf(f_a, df_a, df_error);
-    double p_b = 1.0 - f_cdf(f_b, df_b, df_error);
-    double p_ab = 1.0 - f_cdf(f_ab, df_ab, df_error);
+    // F統計量とp値（退化ケース ms_error == 0 の処理）
+    double f_a, f_b, f_ab;
+    double p_a, p_b, p_ab;
+    if (ms_error == 0.0) {
+        f_a = (ms_a == 0.0) ? 0.0 : std::numeric_limits<double>::infinity();
+        f_b = (ms_b == 0.0) ? 0.0 : std::numeric_limits<double>::infinity();
+        f_ab = (ms_ab == 0.0) ? 0.0 : std::numeric_limits<double>::infinity();
+        p_a = (ms_a == 0.0) ? 1.0 : 0.0;
+        p_b = (ms_b == 0.0) ? 1.0 : 0.0;
+        p_ab = (ms_ab == 0.0) ? 1.0 : 0.0;
+    } else {
+        f_a = ms_a / ms_error;
+        f_b = ms_b / ms_error;
+        f_ab = ms_ab / ms_error;
+        p_a = 1.0 - f_cdf(f_a, df_a, df_error);
+        p_b = 1.0 - f_cdf(f_b, df_b, df_error);
+        p_ab = 1.0 - f_cdf(f_ab, df_ab, df_error);
+    }
 
     anova_row factor_a{"Factor A", ss_a, df_a, ms_a, f_a, p_a};
     anova_row factor_b{"Factor B", ss_b, df_b, ms_b, f_b, p_b};
@@ -769,13 +779,20 @@ inline ancova_result one_way_ancova(
     double ms_treatment = ss_treatment / df_treatment;
     double ms_error = ss_error / df_error;
 
-    // F統計量
-    double f_covariate = ms_covariate / ms_error;
-    double f_treatment = ms_treatment / ms_error;
-
-    // p値
-    double p_covariate = 1.0 - f_cdf(f_covariate, df_covariate, df_error);
-    double p_treatment = 1.0 - f_cdf(f_treatment, df_treatment, df_error);
+    // F統計量とp値（退化ケース ms_error == 0 の処理）
+    double f_covariate, f_treatment;
+    double p_covariate, p_treatment;
+    if (ms_error == 0.0) {
+        f_covariate = (ms_covariate == 0.0) ? 0.0 : std::numeric_limits<double>::infinity();
+        f_treatment = (ms_treatment == 0.0) ? 0.0 : std::numeric_limits<double>::infinity();
+        p_covariate = (ms_covariate == 0.0) ? 1.0 : 0.0;
+        p_treatment = (ms_treatment == 0.0) ? 1.0 : 0.0;
+    } else {
+        f_covariate = ms_covariate / ms_error;
+        f_treatment = ms_treatment / ms_error;
+        p_covariate = 1.0 - f_cdf(f_covariate, df_covariate, df_error);
+        p_treatment = 1.0 - f_cdf(f_treatment, df_treatment, df_error);
+    }
 
     // 調整済み平均
     std::vector<double> adjusted_means(k);

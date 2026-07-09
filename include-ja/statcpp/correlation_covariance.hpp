@@ -979,7 +979,12 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
     // 式  W / (W^2 - sum(w_i^2))  は、重みが繰り返し回数を表す場合に
     // 不偏推定量を与える。すべての重みが 1 のとき n/(n-1) と一致する。
     // 精度重み（逆分散重み）を用いる場合は補正式が異なる点に注意すること。
-    double correction = sum_weights / (sum_weights * sum_weights - sum_w_sq);
+    double denominator = sum_weights * sum_weights - sum_w_sq;
+    if (denominator <= 0.0) {
+        throw std::invalid_argument(
+            "statcpp::weighted_covariance: insufficient effective sample size for Bessel correction");
+    }
+    double correction = sum_weights / denominator;
     return cov * correction;
 }
 
@@ -1068,7 +1073,12 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
     // 式  W / (W^2 - sum(w_i^2))  は、重みが繰り返し回数を表す場合に
     // 不偏推定量を与える。すべての重みが 1 のとき n/(n-1) と一致する。
     // 精度重み（逆分散重み）を用いる場合は補正式が異なる点に注意すること。
-    double correction = sum_weights / (sum_weights * sum_weights - sum_w_sq);
+    double denominator = sum_weights * sum_weights - sum_w_sq;
+    if (denominator <= 0.0) {
+        throw std::invalid_argument(
+            "statcpp::weighted_covariance: insufficient effective sample size for Bessel correction");
+    }
+    double correction = sum_weights / denominator;
     return cov * correction;
 }
 

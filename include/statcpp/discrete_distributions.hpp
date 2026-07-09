@@ -253,6 +253,9 @@ inline std::uint64_t poisson_quantile(double p, double lambda)
         throw std::invalid_argument("statcpp::poisson_quantile: p must be in [0, 1]");
     }
     if (p == 0.0) return 0;
+    // Infinite support: prob == 1.0 has no finite quantile. Return the maximum
+    // representable value instead of casting +inf to uint64 (undefined behavior).
+    if (p == 1.0) return std::numeric_limits<std::uint64_t>::max();
     if (lambda == 0.0) return 0;
 
     // Start with Gaussian approximation
@@ -367,6 +370,9 @@ inline std::uint64_t geometric_quantile(double prob, double p)
         throw std::invalid_argument("statcpp::geometric_quantile: prob must be in [0, 1]");
     }
     if (prob == 0.0) return 0;
+    // Infinite support: prob == 1.0 has no finite quantile. Return the maximum
+    // representable value instead of casting +inf to uint64 (undefined behavior).
+    if (prob == 1.0) return std::numeric_limits<std::uint64_t>::max();
     if (p == 1.0) return 0;
 
     // Q(prob) = ceil(log(1 - prob) / log(1 - p)) - 1
@@ -654,6 +660,9 @@ inline std::uint64_t nbinom_quantile(double prob, double r, double p)
         throw std::invalid_argument("statcpp::nbinom_quantile: prob must be in [0, 1]");
     }
     if (prob == 0.0) return 0;
+    // Infinite support: prob == 1.0 has no finite quantile. Return the maximum
+    // representable value instead of casting +inf to uint64 (undefined behavior).
+    if (prob == 1.0) return std::numeric_limits<std::uint64_t>::max();
     if (p == 1.0) return 0;
 
     // Start with Gaussian approximation

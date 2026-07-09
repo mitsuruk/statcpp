@@ -186,6 +186,11 @@ inline test_result z_test_proportion_two_sample(std::size_t successes1, std::siz
     double p_pooled = static_cast<double>(successes1 + successes2) / (n1 + n2);
     double se = std::sqrt(p_pooled * (1.0 - p_pooled) * (1.0 / n1 + 1.0 / n2));
 
+    if (se == 0.0) {
+        // p_pooled is 0 or 1, all successes or all failures
+        return {0.0, 1.0, static_cast<double>(trials1 + trials2), alt};
+    }
+
     double z = (p1 - p2) / se;
 
     double p_value;
@@ -515,6 +520,10 @@ test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_la
     double total = 0.0;
     for (auto it = observed_first; it != observed_last; ++it) {
         total += static_cast<double>(*it);
+    }
+
+    if (total == 0.0) {
+        throw std::invalid_argument("statcpp::chisq_test_gof_uniform: total of observed frequencies is zero");
     }
 
     double expected = total / static_cast<double>(n);

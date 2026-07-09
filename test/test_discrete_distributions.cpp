@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "statcpp/discrete_distributions.hpp"
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -371,4 +373,27 @@ TEST(DiscreteDistributionExceptionTest, InvalidParameters) {
     // Hypergeometric: K > N or n > N
     EXPECT_THROW(statcpp::hypergeom_pmf(5, 10, 15, 5), std::invalid_argument);
     EXPECT_THROW(statcpp::hypergeom_pmf(5, 10, 5, 15), std::invalid_argument);
+}
+
+// ============================================================================
+// Quantile prob == 1.0 boundary (review #2): must not cast +inf to uint64 (UB).
+// Infinite-support distributions return the maximum representable value.
+// ============================================================================
+
+/// @brief 正常系境界: poisson_quantile(1.0) は uint64 最大値を返す(UB回避)
+TEST(PoissonQuantileTest, ProbOneReturnsMax) {
+    EXPECT_EQ(statcpp::poisson_quantile(1.0, 5.0),
+              std::numeric_limits<std::uint64_t>::max());
+}
+
+/// @brief 正常系境界: geometric_quantile(1.0) は uint64 最大値を返す(UB回避)
+TEST(GeometricQuantileTest, ProbOneReturnsMax) {
+    EXPECT_EQ(statcpp::geometric_quantile(1.0, 0.5),
+              std::numeric_limits<std::uint64_t>::max());
+}
+
+/// @brief 正常系境界: nbinom_quantile(1.0) は uint64 最大値を返す(UB回避)
+TEST(NbinomQuantileTest, ProbOneReturnsMax) {
+    EXPECT_EQ(statcpp::nbinom_quantile(1.0, 3.0, 0.4),
+              std::numeric_limits<std::uint64_t>::max());
 }

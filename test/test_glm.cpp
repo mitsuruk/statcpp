@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "statcpp/glm.hpp"
+#include "statcpp/linear_regression.hpp"
 #include <cmath>
 #include <vector>
 
@@ -464,4 +465,27 @@ TEST(GLMFitTest, BinomialAICNoSigma) {
     // Binomial: k = p_full = 2 (intercept + 1 predictor), no sigma^2
     double expected_aic = -2.0 * result.log_likelihood + 2.0 * 2.0;
     EXPECT_NEAR(result.aic, expected_aic, 1e-10);
+}
+
+/**
+ * @brief Regression guard for GLM coefficient SE dispersion (review #9).
+ * @test For the gaussian family the coefficient covariance is phi * (X^T W X)^{-1}
+ *       with phi = sigma^2. The SEs must match OLS (multiple_linear_regression).
+ *       The pre-fix code omitted phi, making the GLM SEs a factor of sigma too small.
+ */
+TEST(GLMFitTest, GaussianCoefficientSeMatchesOLS) {
+    // Non-perfect fit so sigma^2 > 0 (otherwise the bug is invisible).
+    std::vector<std::vector<double>> X = {
+        {1.0}, {2.0}, {3.0}, {4.0}, {5.0}, {6.0}, {7.0}, {8.0}
+    };
+    std::vector<double> y = {2.1, 3.9, 6.2, 7.8, 10.3, 11.9, 14.2, 15.7};
+
+    auto glm = statcpp::glm_fit(X, y, statcpp::distribution_family::gaussian,
+                                statcpp::link_function::identity);
+    auto ols = statcpp::multiple_linear_regression(X, y);
+
+    ASSERT_EQ(glm.coefficient_se.size(), ols.coefficient_se.size());
+    for (std::size_t j = 0; j < glm.coefficient_se.size(); ++j) {
+        EXPECT_NEAR(glm.coefficient_se[j], ols.coefficient_se[j], 1e-6);
+    }
 }

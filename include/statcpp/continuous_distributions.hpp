@@ -555,6 +555,12 @@ double beta_rand(double alpha, double beta_param, Engine& engine)
 
     double x = dist_a(engine);
     double y = dist_b(engine);
+    // Extremely small shape parameters can underflow both gamma variates to 0,
+    // yielding 0/0 = NaN. Re-draw until the sum is positive.
+    while (x + y <= 0.0) {
+        x = dist_a(engine);
+        y = dist_b(engine);
+    }
     return x / (x + y);
 }
 

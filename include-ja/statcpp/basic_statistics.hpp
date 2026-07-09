@@ -114,7 +114,11 @@ double mean(Iterator first, Iterator last)
     if (n == 0) {
         throw std::invalid_argument("statcpp::mean: empty range");
     }
-    return static_cast<double>(statcpp::sum(first, last)) / static_cast<double>(n);
+    double total = 0.0;
+    for (auto it = first; it != last; ++it) {
+        total += static_cast<double>(*it);
+    }
+    return total / static_cast<double>(n);
 }
 
 /**
@@ -137,7 +141,11 @@ double mean(Iterator first, Iterator last, Projection proj)
     if (n == 0) {
         throw std::invalid_argument("statcpp::mean: empty range");
     }
-    return static_cast<double>(statcpp::sum(first, last, proj)) / static_cast<double>(n);
+    double total = 0.0;
+    for (auto it = first; it != last; ++it) {
+        total += static_cast<double>(std::invoke(proj, *it));
+    }
+    return total / static_cast<double>(n);
 }
 
 // ============================================================================
@@ -159,6 +167,12 @@ double mean(Iterator first, Iterator last, Projection proj)
 template <typename Iterator>
 double median(Iterator first, Iterator last)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::median requires random access iterators");
+
     auto n = statcpp::count(first, last);
     if (n == 0) {
         throw std::invalid_argument("statcpp::median: empty range");
@@ -188,6 +202,12 @@ double median(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 double median(Iterator first, Iterator last, Projection proj)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::median requires random access iterators");
+
     auto n = statcpp::count(first, last);
     if (n == 0) {
         throw std::invalid_argument("statcpp::median: empty range");
@@ -227,7 +247,15 @@ auto mode(Iterator first, Iterator last)
 
     std::map<value_type, std::size_t> freq;
     for (auto it = first; it != last; ++it) {
+        // NaN 値をスキップ（浮動小数点型のみ）
+        if constexpr (std::is_floating_point_v<value_type>) {
+            if (std::isnan(*it)) continue;
+        }
         ++freq[*it];
+    }
+
+    if (freq.empty()) {
+        throw std::invalid_argument("statcpp::mode: all values are NaN");
     }
 
     auto best = freq.begin();
@@ -264,7 +292,16 @@ auto mode(Iterator first, Iterator last, Projection proj)
 
     std::map<result_type, std::size_t> freq;
     for (auto it = first; it != last; ++it) {
-        ++freq[std::invoke(proj, *it)];
+        // NaN 値をスキップ（浮動小数点型のみ）
+        auto val = std::invoke(proj, *it);
+        if constexpr (std::is_floating_point_v<result_type>) {
+            if (std::isnan(val)) continue;
+        }
+        ++freq[val];
+    }
+
+    if (freq.empty()) {
+        throw std::invalid_argument("statcpp::mode: all values are NaN");
     }
 
     auto best = freq.begin();
@@ -303,7 +340,15 @@ auto modes(Iterator first, Iterator last)
 
     std::map<value_type, std::size_t> freq;
     for (auto it = first; it != last; ++it) {
+        // NaN 値をスキップ（浮動小数点型のみ）
+        if constexpr (std::is_floating_point_v<value_type>) {
+            if (std::isnan(*it)) continue;
+        }
         ++freq[*it];
+    }
+
+    if (freq.empty()) {
+        throw std::invalid_argument("statcpp::modes: all values are NaN");
     }
 
     // 最大頻度を求める
@@ -352,7 +397,16 @@ auto modes(Iterator first, Iterator last, Projection proj)
 
     std::map<result_type, std::size_t> freq;
     for (auto it = first; it != last; ++it) {
-        ++freq[std::invoke(proj, *it)];
+        // NaN 値をスキップ（浮動小数点型のみ）
+        auto val = std::invoke(proj, *it);
+        if constexpr (std::is_floating_point_v<result_type>) {
+            if (std::isnan(val)) continue;
+        }
+        ++freq[val];
+    }
+
+    if (freq.empty()) {
+        throw std::invalid_argument("statcpp::modes: all values are NaN");
     }
 
     // 最大頻度を求める
@@ -533,6 +587,12 @@ double harmonic_mean(Iterator first, Iterator last, Projection proj)
 template <typename Iterator>
 double trimmed_mean(Iterator first, Iterator last, double proportion)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::trimmed_mean requires random access iterators");
+
     if (proportion < 0.0 || proportion >= 0.5) {
         throw std::invalid_argument("statcpp::trimmed_mean: proportion must be in [0.0, 0.5)");
     }
@@ -571,6 +631,12 @@ double trimmed_mean(Iterator first, Iterator last, double proportion)
 template <typename Iterator, typename Projection>
 double trimmed_mean(Iterator first, Iterator last, double proportion, Projection proj)
 {
+    static_assert(
+        std::is_base_of_v<
+            std::random_access_iterator_tag,
+            typename std::iterator_traits<Iterator>::iterator_category>,
+        "statcpp::trimmed_mean requires random access iterators");
+
     if (proportion < 0.0 || proportion >= 0.5) {
         throw std::invalid_argument("statcpp::trimmed_mean: proportion must be in [0.0, 0.5)");
     }
@@ -609,6 +675,41 @@ double trimmed_mean(Iterator first, Iterator last, double proportion, Projection
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、または重みの合計が0の場合
  */
 template <typename Iterator, typename WeightIterator>
+double weighted_mean(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_mean: data and weight ranges must have the same size");
+    }
+    auto n = statcpp::count(first, last);
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_mean: empty range");
+    }
+
+    double sum_weighted = 0.0;
+    double sum_weights = 0.0;
+    auto weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_mean: negative weight");
+        }
+
+        sum_weighted += value * weight;
+        sum_weights += weight;
+    }
+
+    if (sum_weights == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_mean: sum of weights is zero");
+    }
+
+    return sum_weighted / sum_weights;
+}
+
+template <typename Iterator, typename WeightIterator>
+[[deprecated("Use weighted_mean(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_mean(Iterator first, Iterator last, WeightIterator weight_first)
 {
     auto n = statcpp::count(first, last);
@@ -655,6 +756,41 @@ double weighted_mean(Iterator first, Iterator last, WeightIterator weight_first)
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、または重みの合計が0の場合
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
+double weighted_mean(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_mean: data and weight ranges must have the same size");
+    }
+    auto n = statcpp::count(first, last);
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_mean: empty range");
+    }
+
+    double sum_weighted = 0.0;
+    double sum_weights = 0.0;
+    auto weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(std::invoke(proj, *it));
+        double weight = static_cast<double>(*weight_it);
+
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_mean: negative weight");
+        }
+
+        sum_weighted += value * weight;
+        sum_weights += weight;
+    }
+
+    if (sum_weights == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_mean: sum of weights is zero");
+    }
+
+    return sum_weighted / sum_weights;
+}
+
+template <typename Iterator, typename WeightIterator, typename Projection>
+[[deprecated("Use weighted_mean(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_mean(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
     auto n = statcpp::count(first, last);
@@ -693,7 +829,7 @@ double weighted_mean(Iterator first, Iterator last, WeightIterator weight_first,
  * @brief 対数平均 (Logarithmic Mean)
  *
  * 2つの正の値の対数平均を計算します。
- * LM(a, b) = (b - a) / (ln(b) - ln(a)) for a ≠ b
+ * LM(a, b) = (b - a) / (ln(b) - ln(a)) for a != b
  * LM(a, a) = a
  *
  * @tparam T1 第1引数の型
@@ -729,6 +865,60 @@ double logarithmic_mean(T1 a, T2 b)
 // ============================================================================
 
 /**
+ * @brief 重み付き調和平均（範囲安全版）
+ *
+ * 各要素に重みを適用した調和平均を計算します。
+ * データ範囲と重み範囲のサイズが一致することを検証します。
+ *
+ * @tparam Iterator イテレータ型
+ * @tparam WeightIterator 重みのイテレータ型
+ * @param first 開始イテレータ
+ * @param last 終了イテレータ
+ * @param weight_first 重みの開始イテレータ
+ * @param weight_last 重みの終了イテレータ
+ * @return 重み付き調和平均
+ * @throws std::invalid_argument 空の範囲の場合、範囲のサイズが異なる場合、負の重みがある場合、値が0の場合、または重みの合計が0の場合
+ */
+template <typename Iterator, typename WeightIterator>
+double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_harmonic_mean: data and weight ranges must have the same size");
+    }
+
+    auto n = statcpp::count(first, last);
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_harmonic_mean: empty range");
+    }
+
+    double sum_weighted = 0.0;
+    double sum_weights = 0.0;
+    auto weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(*it);
+        double weight = static_cast<double>(*weight_it);
+
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_harmonic_mean: negative weight");
+        }
+
+        if (std::abs(value) < std::numeric_limits<double>::min()) {
+            throw std::invalid_argument("statcpp::weighted_harmonic_mean: zero value");
+        }
+
+        sum_weighted += weight / value;
+        sum_weights += weight;
+    }
+
+    if (sum_weights == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_harmonic_mean: sum of weights is zero");
+    }
+
+    return sum_weights / sum_weighted;
+}
+
+/**
  * @brief 重み付き調和平均
  *
  * 各要素に重みを適用した調和平均を計算します。
@@ -740,8 +930,10 @@ double logarithmic_mean(T1 a, T2 b)
  * @param weight_first 重みの開始イテレータ
  * @return 重み付き調和平均
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、値が0の場合、または重みの合計が0の場合
+ * @deprecated 範囲安全性のため weighted_harmonic_mean(first, last, weight_first, weight_last) オーバーロードを使用してください
  */
 template <typename Iterator, typename WeightIterator>
+[[deprecated("Use weighted_harmonic_mean(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weight_first)
 {
     auto n = statcpp::count(first, last);
@@ -777,6 +969,62 @@ double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weig
 }
 
 /**
+ * @brief 重み付き調和平均（範囲安全版・射影付き）
+ *
+ * 各要素に射影関数を適用した結果の重み付き調和平均を計算します。
+ * データ範囲と重み範囲のサイズが一致することを検証します。
+ *
+ * @tparam Iterator イテレータ型
+ * @tparam WeightIterator 重みのイテレータ型
+ * @tparam Projection 射影関数型
+ * @param first 開始イテレータ
+ * @param last 終了イテレータ
+ * @param weight_first 重みの開始イテレータ
+ * @param weight_last 重みの終了イテレータ
+ * @param proj 射影関数
+ * @return 射影後の重み付き調和平均
+ * @throws std::invalid_argument 空の範囲の場合、範囲のサイズが異なる場合、負の重みがある場合、値が0の場合、または重みの合計が0の場合
+ */
+template <typename Iterator, typename WeightIterator, typename Projection>
+double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
+{
+    if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_harmonic_mean: data and weight ranges must have the same size");
+    }
+
+    auto n = statcpp::count(first, last);
+    if (n == 0) {
+        throw std::invalid_argument("statcpp::weighted_harmonic_mean: empty range");
+    }
+
+    double sum_weighted = 0.0;
+    double sum_weights = 0.0;
+    auto weight_it = weight_first;
+
+    for (auto it = first; it != last; ++it, ++weight_it) {
+        double value = static_cast<double>(std::invoke(proj, *it));
+        double weight = static_cast<double>(*weight_it);
+
+        if (weight < 0.0) {
+            throw std::invalid_argument("statcpp::weighted_harmonic_mean: negative weight");
+        }
+
+        if (std::abs(value) < std::numeric_limits<double>::min()) {
+            throw std::invalid_argument("statcpp::weighted_harmonic_mean: zero value");
+        }
+
+        sum_weighted += weight / value;
+        sum_weights += weight;
+    }
+
+    if (sum_weights == 0.0) {
+        throw std::invalid_argument("statcpp::weighted_harmonic_mean: sum of weights is zero");
+    }
+
+    return sum_weights / sum_weighted;
+}
+
+/**
  * @brief 重み付き調和平均（射影版）
  *
  * 各要素に射影関数を適用した結果の重み付き調和平均を計算します。
@@ -790,8 +1038,10 @@ double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weig
  * @param proj 射影関数
  * @return 射影後の重み付き調和平均
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、値が0の場合、または重みの合計が0の場合
+ * @deprecated 範囲安全性のため weighted_harmonic_mean(first, last, weight_first, weight_last, proj) オーバーロードを使用してください
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
+[[deprecated("Use weighted_harmonic_mean(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
     auto n = statcpp::count(first, last);

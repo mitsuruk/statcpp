@@ -252,6 +252,9 @@ inline std::uint64_t poisson_quantile(double p, double lambda)
         throw std::invalid_argument("statcpp::poisson_quantile: p must be in [0, 1]");
     }
     if (p == 0.0) return 0;
+    // 無限台のため prob == 1.0 に有限の分位点は存在しない. +inf を uint64 へ
+    // キャストする未定義動作を避け, 表現可能な最大値を返す.
+    if (p == 1.0) return std::numeric_limits<std::uint64_t>::max();
     if (lambda == 0.0) return 0;
 
     // Start with Gaussian approximation
@@ -260,11 +263,15 @@ inline std::uint64_t poisson_quantile(double p, double lambda)
     std::uint64_t k = static_cast<std::uint64_t>(std::max(0.0, guess));
 
     // Adjust up or down
+    constexpr std::uint64_t kMaxIter = 1000000;
+    std::uint64_t iter = 0;
     while (k > 0 && poisson_cdf(k - 1, lambda) >= p) {
         --k;
+        if (++iter >= kMaxIter) return k;
     }
     while (poisson_cdf(k, lambda) < p) {
         ++k;
+        if (++iter >= kMaxIter) return k;
     }
 
     return k;
@@ -362,6 +369,9 @@ inline std::uint64_t geometric_quantile(double prob, double p)
         throw std::invalid_argument("statcpp::geometric_quantile: prob must be in [0, 1]");
     }
     if (prob == 0.0) return 0;
+    // 無限台のため prob == 1.0 に有限の分位点は存在しない. +inf を uint64 へ
+    // キャストする未定義動作を避け, 表現可能な最大値を返す.
+    if (prob == 1.0) return std::numeric_limits<std::uint64_t>::max();
     if (p == 1.0) return 0;
 
     // Q(prob) = ceil(log(1 - prob) / log(1 - p)) - 1
@@ -397,157 +407,6 @@ std::uint64_t geometric_rand(double p, Engine& engine)
 inline std::uint64_t geometric_rand(double p)
 {
     return geometric_rand(p, get_random_engine());
-}
-
-// ============================================================================
-// Negative Binomial Distribution
-// ============================================================================
-
-/**
- * @brief 負の二項分布の確率質量関数（PMF）
- *
- * P(X = k) = C(k+r-1, k) * p^r * (1-p)^k
- * X = r回成功するまでの失敗回数（対応範囲: k = 0, 1, 2, ...）
- *
- * @param k 失敗回数
- * @param r 成功回数（分散パラメータ、> 0、非整数も可）
- * @param p 各試行の成功確率
- * @return 確率 P(X = k)
- * @throw std::invalid_argument rが非正、またはpが(0, 1]の範囲外の場合
- *
- * @note パラメータ化の違いについて：
- *       負の二項分布には複数のパラメータ化が存在します。この実装は「失敗回数」を
- *       モデル化する形式（r回成功するまでの失敗回数 X）を使用しています。
- *
- *       - R の dnbinom(x, size, prob): size=r, prob=p で同じ（失敗回数）
- *       - Python scipy.stats.nbinom(k, n, p): n=r, p=p で同じ（失敗回数）
- *       - 一部の教科書: 「r回成功するまでの試行回数」= X + r
- *
- *       また、平均と分散でパラメータ化する「mean-dispersion」形式もあります：
- *       - 平均 μ = r(1-p)/p
- *       - 分散 σ² = r(1-p)/p² = μ + μ²/r
- *       この形式は過分散データのモデリング（GLM等）でよく使われます。
- */
-inline double nbinom_pmf(std::uint64_t k, double r, double p)
-{
-    if (r <= 0.0) {
-        throw std::invalid_argument("statcpp::nbinom_pmf: r must be positive");
-    }
-    if (p <= 0.0 || p > 1.0) {
-        throw std::invalid_argument("statcpp::nbinom_pmf: p must be in (0, 1]");
-    }
-    if (p == 1.0) return (k == 0) ? 1.0 : 0.0;
-
-    double log_pmf = lgamma(k + r) - log_factorial(k) - lgamma(r)
-                   + r * std::log(p) + k * std::log(1.0 - p);
-    return std::exp(log_pmf);
-}
-
-/**
- * @brief 負の二項分布の累積分布関数（CDF）
- *
- * P(X <= k) = I_p(r, k+1) (incomplete beta関数を使用)
- *
- * @param k 失敗回数の上限
- * @param r 成功回数
- * @param p 各試行の成功確率
- * @return 累積確率 P(X <= k)
- * @throw std::invalid_argument rが非正、またはpが(0, 1]の範囲外の場合
- */
-inline double nbinom_cdf(std::uint64_t k, double r, double p)
-{
-    if (r <= 0.0) {
-        throw std::invalid_argument("statcpp::nbinom_cdf: r must be positive");
-    }
-    if (p <= 0.0 || p > 1.0) {
-        throw std::invalid_argument("statcpp::nbinom_cdf: p must be in (0, 1]");
-    }
-    if (p == 1.0) return 1.0;
-
-    return betainc(r, static_cast<double>(k + 1), p);
-}
-
-/**
- * @brief 負の二項分布の分位関数
- *
- * @param prob 確率値
- * @param r 成功回数
- * @param p 各試行の成功確率
- * @return 分位点
- * @throw std::invalid_argument パラメータが不正な範囲の場合
- */
-inline std::uint64_t nbinom_quantile(double prob, double r, double p)
-{
-    if (r <= 0.0) {
-        throw std::invalid_argument("statcpp::nbinom_quantile: r must be positive");
-    }
-    if (p <= 0.0 || p > 1.0) {
-        throw std::invalid_argument("statcpp::nbinom_quantile: p must be in (0, 1]");
-    }
-    if (prob < 0.0 || prob > 1.0) {
-        throw std::invalid_argument("statcpp::nbinom_quantile: prob must be in [0, 1]");
-    }
-    if (prob == 0.0) return 0;
-    if (p == 1.0) return 0;
-
-    // Start with Gaussian approximation
-    double mean_val = r * (1.0 - p) / p;
-    double var_val = r * (1.0 - p) / (p * p);
-    double z = norm_quantile(prob);
-    double guess = mean_val + z * std::sqrt(var_val);
-    std::uint64_t k = static_cast<std::uint64_t>(std::max(0.0, guess));
-
-    // Adjust
-    while (k > 0 && nbinom_cdf(k - 1, r, p) >= prob) {
-        --k;
-    }
-    while (nbinom_cdf(k, r, p) < prob) {
-        ++k;
-    }
-
-    return k;
-}
-
-/**
- * @brief 負の二項分布の乱数生成
- *
- * Poisson-Gamma混合として生成します。
- *
- * @tparam Engine 乱数エンジン型
- * @param r 成功回数
- * @param p 各試行の成功確率
- * @param engine 乱数エンジン
- * @return 生成された乱数
- * @throw std::invalid_argument パラメータが不正な範囲の場合
- */
-template <typename Engine = default_random_engine>
-std::uint64_t nbinom_rand(double r, double p, Engine& engine)
-{
-    if (r <= 0.0) {
-        throw std::invalid_argument("statcpp::nbinom_rand: r must be positive");
-    }
-    if (p <= 0.0 || p > 1.0) {
-        throw std::invalid_argument("statcpp::nbinom_rand: p must be in (0, 1]");
-    }
-
-    // Negative binomial as Poisson-Gamma mixture
-    // X ~ NB(r, p) can be generated as Poisson(Y) where Y ~ Gamma(r, p/(1-p))
-    std::gamma_distribution<double> gamma_dist(r, (1.0 - p) / p);
-    double y = gamma_dist(engine);
-    std::poisson_distribution<std::uint64_t> poisson_dist(y);
-    return poisson_dist(engine);
-}
-
-/**
- * @brief 負の二項分布の乱数生成（デフォルトエンジン使用）
- *
- * @param r 成功回数
- * @param p 各試行の成功確率
- * @return 生成された乱数
- */
-inline std::uint64_t nbinom_rand(double r, double p)
-{
-    return nbinom_rand(r, p, get_random_engine());
 }
 
 // ============================================================================
@@ -711,6 +570,164 @@ inline std::uint64_t hypergeom_rand(std::uint64_t N, std::uint64_t K, std::uint6
 }
 
 // ============================================================================
+// Negative Binomial Distribution
+// ============================================================================
+
+/**
+ * @brief 負の二項分布の確率質量関数（PMF）
+ *
+ * P(X = k) = C(k+r-1, k) * p^r * (1-p)^k
+ * X = r回成功するまでの失敗回数（対応範囲: k = 0, 1, 2, ...）
+ *
+ * @param k 失敗回数
+ * @param r 成功回数（分散パラメータ、> 0、非整数も可）
+ * @param p 各試行の成功確率
+ * @return 確率 P(X = k)
+ * @throw std::invalid_argument rが非正、またはpが(0, 1]の範囲外の場合
+ *
+ * @note パラメータ化の違いについて：
+ *       負の二項分布には複数のパラメータ化が存在します。この実装は「失敗回数」を
+ *       モデル化する形式（r回成功するまでの失敗回数 X）を使用しています。
+ *
+ *       - R の dnbinom(x, size, prob): size=r, prob=p で同じ（失敗回数）
+ *       - Python scipy.stats.nbinom(k, n, p): n=r, p=p で同じ（失敗回数）
+ *       - 一部の教科書: 「r回成功するまでの試行回数」= X + r
+ *
+ *       また、平均と分散でパラメータ化する「mean-dispersion」形式もあります：
+ *       - 平均 μ = r(1-p)/p
+ *       - 分散 σ² = r(1-p)/p² = μ + μ²/r
+ *       この形式は過分散データのモデリング（GLM等）でよく使われます。
+ */
+inline double nbinom_pmf(std::uint64_t k, double r, double p)
+{
+    if (r <= 0.0) {
+        throw std::invalid_argument("statcpp::nbinom_pmf: r must be positive");
+    }
+    if (p <= 0.0 || p > 1.0) {
+        throw std::invalid_argument("statcpp::nbinom_pmf: p must be in (0, 1]");
+    }
+    if (p == 1.0) return (k == 0) ? 1.0 : 0.0;
+
+    double log_pmf = lgamma(k + r) - log_factorial(k) - lgamma(r)
+                   + r * std::log(p) + k * std::log(1.0 - p);
+    return std::exp(log_pmf);
+}
+
+/**
+ * @brief 負の二項分布の累積分布関数（CDF）
+ *
+ * P(X <= k) = I_p(r, k+1) (incomplete beta関数を使用)
+ *
+ * @param k 失敗回数の上限
+ * @param r 成功回数
+ * @param p 各試行の成功確率
+ * @return 累積確率 P(X <= k)
+ * @throw std::invalid_argument rが非正、またはpが(0, 1]の範囲外の場合
+ */
+inline double nbinom_cdf(std::uint64_t k, double r, double p)
+{
+    if (r <= 0.0) {
+        throw std::invalid_argument("statcpp::nbinom_cdf: r must be positive");
+    }
+    if (p <= 0.0 || p > 1.0) {
+        throw std::invalid_argument("statcpp::nbinom_cdf: p must be in (0, 1]");
+    }
+    if (p == 1.0) return 1.0;
+
+    return betainc(r, static_cast<double>(k + 1), p);
+}
+
+/**
+ * @brief 負の二項分布の分位関数
+ *
+ * @param prob 確率値
+ * @param r 成功回数
+ * @param p 各試行の成功確率
+ * @return 分位点
+ * @throw std::invalid_argument パラメータが不正な範囲の場合
+ */
+inline std::uint64_t nbinom_quantile(double prob, double r, double p)
+{
+    if (r <= 0.0) {
+        throw std::invalid_argument("statcpp::nbinom_quantile: r must be positive");
+    }
+    if (p <= 0.0 || p > 1.0) {
+        throw std::invalid_argument("statcpp::nbinom_quantile: p must be in (0, 1]");
+    }
+    if (prob < 0.0 || prob > 1.0) {
+        throw std::invalid_argument("statcpp::nbinom_quantile: prob must be in [0, 1]");
+    }
+    if (prob == 0.0) return 0;
+    // 無限台のため prob == 1.0 に有限の分位点は存在しない. +inf を uint64 へ
+    // キャストする未定義動作を避け, 表現可能な最大値を返す.
+    if (prob == 1.0) return std::numeric_limits<std::uint64_t>::max();
+    if (p == 1.0) return 0;
+
+    // Start with Gaussian approximation
+    double mean_val = r * (1.0 - p) / p;
+    double var_val = r * (1.0 - p) / (p * p);
+    double z = norm_quantile(prob);
+    double guess = mean_val + z * std::sqrt(var_val);
+    std::uint64_t k = static_cast<std::uint64_t>(std::max(0.0, guess));
+
+    // Adjust
+    constexpr std::uint64_t kMaxIter = 1000000;
+    std::uint64_t iter = 0;
+    while (k > 0 && nbinom_cdf(k - 1, r, p) >= prob) {
+        --k;
+        if (++iter >= kMaxIter) return k;
+    }
+    while (nbinom_cdf(k, r, p) < prob) {
+        ++k;
+        if (++iter >= kMaxIter) return k;
+    }
+
+    return k;
+}
+
+/**
+ * @brief 負の二項分布の乱数生成
+ *
+ * Poisson-Gamma混合として生成します。
+ *
+ * @tparam Engine 乱数エンジン型
+ * @param r 成功回数
+ * @param p 各試行の成功確率
+ * @param engine 乱数エンジン
+ * @return 生成された乱数
+ * @throw std::invalid_argument パラメータが不正な範囲の場合
+ */
+template <typename Engine = default_random_engine>
+std::uint64_t nbinom_rand(double r, double p, Engine& engine)
+{
+    if (r <= 0.0) {
+        throw std::invalid_argument("statcpp::nbinom_rand: r must be positive");
+    }
+    if (p <= 0.0 || p > 1.0) {
+        throw std::invalid_argument("statcpp::nbinom_rand: p must be in (0, 1]");
+    }
+
+    // Negative binomial as Poisson-Gamma mixture
+    // X ~ NB(r, p) can be generated as Poisson(Y) where Y ~ Gamma(r, p/(1-p))
+    std::gamma_distribution<double> gamma_dist(r, (1.0 - p) / p);
+    double y = gamma_dist(engine);
+    std::poisson_distribution<std::uint64_t> poisson_dist(y);
+    return poisson_dist(engine);
+}
+
+/**
+ * @brief 負の二項分布の乱数生成（デフォルトエンジン使用）
+ *
+ * @param r 成功回数
+ * @param p 各試行の成功確率
+ * @return 生成された乱数
+ */
+inline std::uint64_t nbinom_rand(double r, double p)
+{
+    return nbinom_rand(r, p, get_random_engine());
+}
+
+// ============================================================================
 // Bernoulli Distribution
 // ============================================================================
 
@@ -763,18 +780,18 @@ inline double bernoulli_cdf(std::uint64_t k, double p)
  *
  * @param prob 確率値
  * @param p 成功確率
- * @return 分位点（0または1）
- * @throw std::invalid_argument probまたはpが不正な範囲の場合
+ * @return P(X <= k) >= prob となる最小のk
  */
 inline std::uint64_t bernoulli_quantile(double prob, double p)
 {
-    if (p < 0.0 || p > 1.0) {
-        throw std::invalid_argument("statcpp::bernoulli_quantile: p must be in [0, 1]");
-    }
     if (prob < 0.0 || prob > 1.0) {
         throw std::invalid_argument("statcpp::bernoulli_quantile: prob must be in [0, 1]");
     }
-    return (prob <= 1.0 - p) ? 0 : 1;
+    if (p < 0.0 || p > 1.0) {
+        throw std::invalid_argument("statcpp::bernoulli_quantile: p must be in [0, 1]");
+    }
+    if (prob <= 1.0 - p) return 0;
+    return 1;
 }
 
 /**

@@ -454,6 +454,9 @@ std::vector<double> diff(Iterator first, Iterator last, std::size_t order = 1)
 template <typename Iterator>
 std::vector<double> seasonal_diff(Iterator first, Iterator last, std::size_t period)
 {
+    if (period == 0) {
+        throw std::invalid_argument("statcpp::seasonal_diff: period must be positive");
+    }
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n <= period) {
         throw std::invalid_argument("statcpp::seasonal_diff: insufficient data for period");

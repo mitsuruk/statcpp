@@ -399,3 +399,25 @@ TEST(RSquaredTest, AdjustedRSquared) {
     EXPECT_LT(adj_r2, r2);
     EXPECT_GT(adj_r2, 0.0);
 }
+
+/**
+ * @brief Regression guard for Cook's distance denominator (review #1).
+ * @test Verifies D_i == studentized_i^2 * h_i / (p * (1 - h_i)), i.e. the (1-h)^2
+ *       form. The pre-fix code used (1-h) and would fail here, most at high leverage.
+ */
+TEST(ResidualDiagnosticsTest, CooksDistanceUsesSquaredLeverage) {
+    // Includes a high-leverage point (x = 20) to amplify the (1-h) vs (1-h)^2 gap.
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 20.0, 10.0};
+    std::vector<double> y = {2.5, 5.1, 7.2, 9.8, 12.3, 14.9, 17.4, 20.1, 8.0, 25.2};
+
+    auto model = statcpp::simple_linear_regression(x.begin(), x.end(), y.begin(), y.end());
+    auto diag = statcpp::compute_residual_diagnostics(model, x.begin(), x.end(), y.begin(), y.end());
+
+    const double p = 2.0;  // intercept + slope
+    for (std::size_t i = 0; i < diag.cooks_distance.size(); ++i) {
+        double h = diag.hat_values[i];
+        double t = diag.studentized_residuals[i];
+        double expected = t * t * h / (p * (1.0 - h));  // = e^2 h / (p s^2 (1-h)^2)
+        EXPECT_NEAR(diag.cooks_distance[i], expected, 1e-9);
+    }
+}

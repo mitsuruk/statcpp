@@ -264,7 +264,7 @@ inline double exponential_cdf(double x, double lambda = 1.0)
         throw std::invalid_argument("statcpp::exponential_cdf: lambda must be positive");
     }
     if (x < 0.0) return 0.0;
-    return 1.0 - std::exp(-lambda * x);
+    return -std::expm1(-lambda * x);
 }
 
 /**
@@ -553,6 +553,12 @@ double beta_rand(double alpha, double beta_param, Engine& engine)
 
     double x = dist_a(engine);
     double y = dist_b(engine);
+    // 極端に小さい shape では両 gamma 変量が 0 にアンダーフローし 0/0 = NaN と
+    // なりうる. 和が正になるまで再抽選する.
+    while (x + y <= 0.0) {
+        x = dist_a(engine);
+        y = dist_b(engine);
+    }
     return x / (x + y);
 }
 

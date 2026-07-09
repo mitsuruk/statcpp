@@ -4,6 +4,23 @@ statcpp ライブラリの変更履歴を記録します.
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います.
 
+## [0.3.0] - 2026-07-09
+
+全モジュールの計算手法レビューに基づく正確性・境界安全性の修正. 公開シグネチャは
+すべて不変だが, 一部の関数は是正された値を返すようになる.
+
+### Fixed (修正)
+
+- **`linear_regression.hpp` — `compute_residual_diagnostics()`**: Cook's 距離の分母を英語版ヘッダで `(1-h)` から `(1-h)²` に是正(日本語版は 0.2.0 で修正済み. `include/` と `include-ja/` の同期ずれを解消). 高レバレッジ点で最大約6倍の過小評価だった.
+- **`discrete_distributions.hpp` — `poisson_quantile()` / `geometric_quantile()` / `nbinom_quantile()`**: `prob == 1.0` のガードを追加. 従来は `+inf` を `uint64` へキャスト(未定義動作). 無限台のため `std::numeric_limits<uint64_t>::max()` を返す.
+- **`continuous_distributions.hpp` — `beta_rand()`**: 極小 shape(例 α=β=0.001)で両 gamma 変量が 0 にアンダーフローした場合に再抽選. 従来は無警告で NaN を返していた.
+- **`data_wrangling.hpp` — `rolling_mean()` / `rolling_sum()`**: NaN は実際に含む窓のみを NaN にする. 従来は差分更新の和が一度 NaN になると以降すべて NaN だった. `rolling_std/min/max` と整合.
+- **`glm.hpp` — `glm_fit()` の係数 SE**: 係数共分散に分散 φ を適用(`φ·(XᵀWX)⁻¹`). φ は binomial/poisson で 1 固定, gaussian/gamma は Pearson 統計量 / 残差df で推定(R の `summary.glm` と同じ). gaussian の SE が OLS と一致し, z 統計量・p 値も連動して是正.
+- **`glm.hpp` — Poisson の null 対数尤度**: 欠落していた `-lgamma(y+1)` 項を追加. McFadden 擬似 R² が null とモデルで整合.
+- **`glm.hpp` — gamma の対数尤度**: 厳密な gamma(shape=ν, mean=μ) 密度 `ν·log(ν/μ) − logΓ(ν) + (ν−1)·log(y) − ν·y/μ` に是正(従来は `ν·log ν` 項が欠落し `log y` の係数が `2ν−2`). gamma の AIC/BIC に影響.
+- **`nonparametric_tests.hpp` — `kruskal_wallis_test()`**: 全同値入力で tie 補正の除数が 0 となり `-inf`/NaN を返していた. H=0, p=1 を返すよう是正.
+- **`nonparametric_tests.hpp` — `shapiro_wilk_test()`**: W ≥ 1(最も正規的, 例: 完全等間隔データ)で p 値が約 0.001(正規性を強く棄却)だったのを約 1 に是正.
+
 ## [0.2.0] - 2026-03-13
 
 ### Added (追加)

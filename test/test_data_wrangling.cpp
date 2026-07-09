@@ -674,3 +674,32 @@ TEST(ValidationTest, Range) {
     EXPECT_TRUE(statcpp::validate_range(data, 0.0, 10.0));
     EXPECT_FALSE(statcpp::validate_range(data, 2.0, 4.0));
 }
+
+/**
+ * @brief Regression guard for rolling NaN containment (review #7).
+ * @test Only windows that actually contain NaN yield NaN; once NaN leaves the
+ *       window the result recovers. The pre-fix incremental sum stayed NaN forever.
+ */
+TEST(RollingTest, NaNContainedInWindowMean) {
+    std::vector<double> data = {1.0, 2.0, statcpp::NA, 4.0, 5.0, 6.0};
+    auto r = statcpp::rolling_mean(data, 2);
+
+    ASSERT_EQ(r.size(), 5u);
+    EXPECT_DOUBLE_EQ(r[0], 1.5);          // (1, 2)
+    EXPECT_TRUE(std::isnan(r[1]));        // (2, NA)
+    EXPECT_TRUE(std::isnan(r[2]));        // (NA, 4)
+    EXPECT_DOUBLE_EQ(r[3], 4.5);          // (4, 5) -> recovered
+    EXPECT_DOUBLE_EQ(r[4], 5.5);          // (5, 6)
+}
+
+/// @brief rolling_sum も同様に NaN を窓内のみに封じ込める(#7)
+TEST(RollingTest, NaNContainedInWindowSum) {
+    std::vector<double> data = {1.0, 2.0, statcpp::NA, 4.0, 5.0};
+    auto r = statcpp::rolling_sum(data, 2);
+
+    ASSERT_EQ(r.size(), 4u);
+    EXPECT_DOUBLE_EQ(r[0], 3.0);          // 1 + 2
+    EXPECT_TRUE(std::isnan(r[1]));        // 2 + NA
+    EXPECT_TRUE(std::isnan(r[2]));        // NA + 4
+    EXPECT_DOUBLE_EQ(r[3], 9.0);          // 4 + 5 -> recovered
+}

@@ -187,6 +187,7 @@ bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
     double alpha = 1.0 - confidence;
     std::size_t lower_idx = static_cast<std::size_t>(std::floor(alpha / 2.0 * static_cast<double>(n_bootstrap)));
     std::size_t upper_idx = static_cast<std::size_t>(std::floor((1.0 - alpha / 2.0) * static_cast<double>(n_bootstrap)));
+    if (upper_idx > 0) upper_idx -= 1;
 
     // Boundary check
     if (lower_idx >= n_bootstrap) lower_idx = n_bootstrap - 1;

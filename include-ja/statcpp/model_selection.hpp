@@ -383,6 +383,66 @@ struct regularized_regression_result {
     bool converged;                     /**< 収束フラグ */
 };
 
+namespace detail {
+
+/**
+ * @brief 特徴量の標準化 (平均0, 標準偏差1)
+ */
+inline void standardize_features(
+    const std::vector<std::vector<double>>& X,
+    std::vector<std::vector<double>>& X_scaled,
+    std::vector<double>& X_mean,
+    std::vector<double>& X_std,
+    std::size_t n, std::size_t p)
+{
+    for (std::size_t j = 0; j < p; ++j) {
+        double sum = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            sum += X[i][j];
+        }
+        X_mean[j] = sum / static_cast<double>(n);
+
+        double ss = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            double d = X[i][j] - X_mean[j];
+            ss += d * d;
+        }
+        X_std[j] = std::sqrt(ss / static_cast<double>(n));
+        if (X_std[j] < 1e-10) X_std[j] = 1.0;
+
+        for (std::size_t i = 0; i < n; ++i) {
+            X_scaled[i][j] = (X[i][j] - X_mean[j]) / X_std[j];
+        }
+    }
+}
+
+/**
+ * @brief 標準化済み係数を元のスケールに逆変換する
+ */
+inline std::vector<double> rescale_coefficients(
+    const std::vector<double>& beta,
+    const std::vector<double>& X_mean,
+    const std::vector<double>& X_std,
+    double y_mean, std::size_t p, bool standardize)
+{
+    std::vector<double> coefficients(p + 1);
+    if (standardize) {
+        coefficients[0] = y_mean;
+        for (std::size_t j = 0; j < p; ++j) {
+            coefficients[j + 1] = beta[j] / X_std[j];
+            coefficients[0] -= coefficients[j + 1] * X_mean[j];
+        }
+    } else {
+        coefficients[0] = y_mean;
+        for (std::size_t j = 0; j < p; ++j) {
+            coefficients[j + 1] = beta[j];
+        }
+    }
+    return coefficients;
+}
+
+} // namespace detail
+
 /**
  * @brief Ridge回帰（L2正則化）を実行する
  *
@@ -432,25 +492,7 @@ inline regularized_regression_result ridge_regression(
     std::vector<double> y_centered(n);
 
     if (standardize) {
-        for (std::size_t j = 0; j < p; ++j) {
-            double sum = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                sum += X[i][j];
-            }
-            X_mean[j] = sum / static_cast<double>(n);
-
-            double ss = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                double d = X[i][j] - X_mean[j];
-                ss += d * d;
-            }
-            X_std[j] = std::sqrt(ss / static_cast<double>(n));
-            if (X_std[j] < 1e-10) X_std[j] = 1.0;
-
-            for (std::size_t i = 0; i < n; ++i) {
-                X_scaled[i][j] = (X[i][j] - X_mean[j]) / X_std[j];
-            }
-        }
+        detail::standardize_features(X, X_scaled, X_mean, X_std, n, p);
     }
 
     for (std::size_t i = 0; i < n; ++i) {
@@ -503,19 +545,7 @@ inline regularized_regression_result ridge_regression(
     }
 
     // 係数を元のスケールに戻す
-    std::vector<double> coefficients(p + 1);
-    if (standardize) {
-        coefficients[0] = y_mean;
-        for (std::size_t j = 0; j < p; ++j) {
-            coefficients[j + 1] = beta[j] / X_std[j];
-            coefficients[0] -= coefficients[j + 1] * X_mean[j];
-        }
-    } else {
-        coefficients[0] = y_mean;
-        for (std::size_t j = 0; j < p; ++j) {
-            coefficients[j + 1] = beta[j];
-        }
-    }
+    auto coefficients = detail::rescale_coefficients(beta, X_mean, X_std, y_mean, p, standardize);
 
     // MSEを計算
     double mse = 0.0;
@@ -581,25 +611,7 @@ inline regularized_regression_result lasso_regression(
     std::vector<double> y_centered(n);
 
     if (standardize) {
-        for (std::size_t j = 0; j < p; ++j) {
-            double sum = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                sum += X[i][j];
-            }
-            X_mean[j] = sum / static_cast<double>(n);
-
-            double ss = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                double d = X[i][j] - X_mean[j];
-                ss += d * d;
-            }
-            X_std[j] = std::sqrt(ss / static_cast<double>(n));
-            if (X_std[j] < 1e-10) X_std[j] = 1.0;
-
-            for (std::size_t i = 0; i < n; ++i) {
-                X_scaled[i][j] = (X[i][j] - X_mean[j]) / X_std[j];
-            }
-        }
+        detail::standardize_features(X, X_scaled, X_mean, X_std, n, p);
     }
 
     for (std::size_t i = 0; i < n; ++i) {
@@ -658,19 +670,7 @@ inline regularized_regression_result lasso_regression(
     }
 
     // 係数を元のスケールに戻す
-    std::vector<double> coefficients(p + 1);
-    if (standardize) {
-        coefficients[0] = y_mean;
-        for (std::size_t j = 0; j < p; ++j) {
-            coefficients[j + 1] = beta[j] / X_std[j];
-            coefficients[0] -= coefficients[j + 1] * X_mean[j];
-        }
-    } else {
-        coefficients[0] = y_mean;
-        for (std::size_t j = 0; j < p; ++j) {
-            coefficients[j + 1] = beta[j];
-        }
-    }
+    auto coefficients = detail::rescale_coefficients(beta, X_mean, X_std, y_mean, p, standardize);
 
     // MSEを計算
     double mse = 0.0;
@@ -741,25 +741,7 @@ inline regularized_regression_result elastic_net_regression(
     std::vector<double> y_centered(n);
 
     if (standardize) {
-        for (std::size_t j = 0; j < p; ++j) {
-            double sum = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                sum += X[i][j];
-            }
-            X_mean[j] = sum / static_cast<double>(n);
-
-            double ss = 0.0;
-            for (std::size_t i = 0; i < n; ++i) {
-                double d = X[i][j] - X_mean[j];
-                ss += d * d;
-            }
-            X_std[j] = std::sqrt(ss / static_cast<double>(n));
-            if (X_std[j] < 1e-10) X_std[j] = 1.0;
-
-            for (std::size_t i = 0; i < n; ++i) {
-                X_scaled[i][j] = (X[i][j] - X_mean[j]) / X_std[j];
-            }
-        }
+        detail::standardize_features(X, X_scaled, X_mean, X_std, n, p);
     }
 
     for (std::size_t i = 0; i < n; ++i) {
@@ -817,19 +799,7 @@ inline regularized_regression_result elastic_net_regression(
     }
 
     // 係数を元のスケールに戻す
-    std::vector<double> coefficients(p + 1);
-    if (standardize) {
-        coefficients[0] = y_mean;
-        for (std::size_t j = 0; j < p; ++j) {
-            coefficients[j + 1] = beta[j] / X_std[j];
-            coefficients[0] -= coefficients[j + 1] * X_mean[j];
-        }
-    } else {
-        coefficients[0] = y_mean;
-        for (std::size_t j = 0; j < p; ++j) {
-            coefficients[j + 1] = beta[j];
-        }
-    }
+    auto coefficients = detail::rescale_coefficients(beta, X_mean, X_std, y_mean, p, standardize);
 
     // MSEを計算
     double mse = 0.0;
@@ -1017,6 +987,15 @@ inline std::vector<double> generate_lambda_grid(
             xy += X[i][j] * (y[i] - y_mean);
         }
         lambda_max = std::max(lambda_max, std::abs(xy) / static_cast<double>(n));
+    }
+
+    if (lambda_max <= 0.0) {
+        throw std::invalid_argument(
+            "statcpp::generate_lambda_grid: lambda_max must be positive (data may be constant)");
+    }
+
+    if (n_lambda <= 1) {
+        return {lambda_max};
     }
 
     double lambda_min = lambda_max * lambda_min_ratio;

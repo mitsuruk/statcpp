@@ -845,7 +845,7 @@ residual_diagnostics compute_residual_diagnostics(
         double se_i = model.residual_se * std::sqrt(1.0 - h_i);
         studentized_residuals[i] = (se_i > 0.0) ? residuals[i] / se_i : 0.0;
         cooks_distance[i] = (standardized_residuals[i] * standardized_residuals[i] / p)
-                          * (h_i / (1.0 - h_i));
+                          * (h_i / ((1.0 - h_i) * (1.0 - h_i)));
     }
 
     // Durbin-Watson statistic
@@ -938,7 +938,7 @@ inline residual_diagnostics compute_residual_diagnostics(
         studentized_residuals[i] = (se_i > 0.0) ? residuals[i] / se_i : 0.0;
 
         cooks_distance[i] = (standardized_residuals[i] * standardized_residuals[i] / p_d)
-                          * (h_i / (1.0 - h_i));
+                          * (h_i / ((1.0 - h_i) * (1.0 - h_i)));
     }
 
     // Durbin-Watson statistic
