@@ -288,20 +288,25 @@ inline std::vector<std::vector<std::size_t>> create_cv_folds(
  * @param X Predictor matrix (each row is one sample)
  * @param y Response variable vector
  * @param k Number of folds (default: 5)
+ * @param shuffle Whether to shuffle before splitting (default: true)
  * @return Cross-validation result
+ * @note Shuffling draws from the global random engine, so the result is not
+ *       reproducible with the default. Pass shuffle = false for contiguous,
+ *       deterministic folds.
  * @throws std::invalid_argument If X and y have different sizes
  */
 inline cv_result cross_validate_linear(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y,
-    std::size_t k = 5)
+    std::size_t k = 5,
+    bool shuffle = true)
 {
     std::size_t n = X.size();
     if (n != y.size()) {
         throw std::invalid_argument("statcpp::cross_validate_linear: X and y must have same size");
     }
 
-    auto folds = create_cv_folds(n, k, true);
+    auto folds = create_cv_folds(n, k, shuffle);
     std::vector<double> fold_errors(k);
 
     for (std::size_t fold = 0; fold < k; ++fold) {
@@ -838,13 +843,14 @@ inline std::pair<double, std::vector<double>> cv_ridge(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y,
     const std::vector<double>& lambda_grid,
-    std::size_t k = 5)
+    std::size_t k = 5,
+    bool shuffle = true)
 {
     std::vector<double> cv_errors(lambda_grid.size());
 
     for (std::size_t l = 0; l < lambda_grid.size(); ++l) {
         double lambda = lambda_grid[l];
-        auto folds = create_cv_folds(X.size(), k, true);
+        auto folds = create_cv_folds(X.size(), k, shuffle);
 
         double total_error = 0.0;
         for (std::size_t fold = 0; fold < k; ++fold) {
@@ -906,13 +912,14 @@ inline std::pair<double, std::vector<double>> cv_lasso(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y,
     const std::vector<double>& lambda_grid,
-    std::size_t k = 5)
+    std::size_t k = 5,
+    bool shuffle = true)
 {
     std::vector<double> cv_errors(lambda_grid.size());
 
     for (std::size_t l = 0; l < lambda_grid.size(); ++l) {
         double lambda = lambda_grid[l];
-        auto folds = create_cv_folds(X.size(), k, true);
+        auto folds = create_cv_folds(X.size(), k, shuffle);
 
         double total_error = 0.0;
         for (std::size_t fold = 0; fold < k; ++fold) {

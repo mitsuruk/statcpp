@@ -286,20 +286,25 @@ inline std::vector<std::vector<std::size_t>> create_cv_folds(
  * @param X 説明変数行列（各行が1サンプル）
  * @param y 目的変数ベクタ
  * @param k フォールド数（デフォルト: 5）
+ * @param shuffle 分割前にシャッフルするか（デフォルト: true）
  * @return 交差検証の結果
+ * @note シャッフルはグローバル乱数エンジンを使用するため、デフォルトでは結果が
+ *       再現しません。連続した決定的なフォールドが必要な場合は shuffle = false を
+ *       指定してください。
  * @throws std::invalid_argument Xとyのサイズが異なる場合
  */
 inline cv_result cross_validate_linear(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y,
-    std::size_t k = 5)
+    std::size_t k = 5,
+    bool shuffle = true)
 {
     std::size_t n = X.size();
     if (n != y.size()) {
         throw std::invalid_argument("statcpp::cross_validate_linear: X and y must have same size");
     }
 
-    auto folds = create_cv_folds(n, k, true);
+    auto folds = create_cv_folds(n, k, shuffle);
     std::vector<double> fold_errors(k);
 
     for (std::size_t fold = 0; fold < k; ++fold) {
@@ -836,13 +841,14 @@ inline std::pair<double, std::vector<double>> cv_ridge(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y,
     const std::vector<double>& lambda_grid,
-    std::size_t k = 5)
+    std::size_t k = 5,
+    bool shuffle = true)
 {
     std::vector<double> cv_errors(lambda_grid.size());
 
     for (std::size_t l = 0; l < lambda_grid.size(); ++l) {
         double lambda = lambda_grid[l];
-        auto folds = create_cv_folds(X.size(), k, true);
+        auto folds = create_cv_folds(X.size(), k, shuffle);
 
         double total_error = 0.0;
         for (std::size_t fold = 0; fold < k; ++fold) {
@@ -904,13 +910,14 @@ inline std::pair<double, std::vector<double>> cv_lasso(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y,
     const std::vector<double>& lambda_grid,
-    std::size_t k = 5)
+    std::size_t k = 5,
+    bool shuffle = true)
 {
     std::vector<double> cv_errors(lambda_grid.size());
 
     for (std::size_t l = 0; l < lambda_grid.size(); ++l) {
         double lambda = lambda_grid[l];
-        auto folds = create_cv_folds(X.size(), k, true);
+        auto folds = create_cv_folds(X.size(), k, shuffle);
 
         double total_error = 0.0;
         for (std::size_t fold = 0; fold < k; ++fold) {
