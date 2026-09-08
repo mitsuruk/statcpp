@@ -275,7 +275,7 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
         z = -8.0;  // Perfect W = 1 (maximally normal): p -> 1
     }
 
-    double p_value = 1.0 - norm_cdf(z);
+    double p_value = norm_sf(z);
     p_value = std::max(0.0, std::min(1.0, p_value));
 
     return {w, p_value, static_cast<double>(n), alternative_hypothesis::less};
@@ -302,11 +302,12 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
  *
  * @note Null hypothesis: Data follows a normal distribution
  * @note Larger D statistic indicates greater deviation from normal distribution
- * @note The current implementation uses an asymptotic approximation formula.
- *       Future versions may adopt more precise critical values (e.g., Dallal & Wilkinson 1986).
- * @note The Lilliefors asymptotic approximation may be imprecise for small samples (n < 20)
- *       or in extreme tail regions (very small p-values). For small samples, consider
- *       using the Shapiro-Wilk test as an alternative.
+ * @note The p-value uses the Dallal & Wilkinson (1986) analytic approximation. It is published
+ *       for p <= 0.10 and calibrated for n >= 5; within that range it reproduces R's
+ *       nortest::lillie.test exactly. Above 0.10 the returned value only indicates that the
+ *       sample is consistent with normality and should not be read as an accurate p-value.
+ * @note All conventional significance levels (0.10, 0.05, 0.01) lie inside the published range.
+ * @note For small samples, consider using the Shapiro-Wilk test as an alternative.
  */
 template <typename Iterator>
 test_result lilliefors_test(Iterator first, Iterator last)
@@ -346,15 +347,26 @@ test_result lilliefors_test(Iterator first, Iterator last)
 
     double d = std::max(d_plus, d_minus);
 
-    // Lilliefors correction for estimated parameters
-    // Use asymptotic approximation
-    // Critical values use an empirical approximation optimized for n<=50.
-    // For larger samples, standard tables should be consulted.
-    double sqrt_n = std::sqrt(static_cast<double>(n));
-    double d_adj = (d - 0.01 + 0.85 / sqrt_n) * (sqrt_n + 0.05 + 0.82 / sqrt_n);
+    // p-value from the Dallal and Wilkinson (1986) analytic approximation to the
+    // null distribution of D when the mean and variance are estimated from the
+    // sample. See "An analytic approximation to the distribution of Lilliefors's
+    // test statistic for normality", The American Statistician 40:294-296.
+    //
+    // The approximation is published for p <= 0.10 and is calibrated for n >= 5.
+    // Every conventional significance level (0.10, 0.05, 0.01) falls inside that
+    // range; above 0.10 the returned value only indicates that the sample is
+    // consistent with normality and should not be read as an accurate p-value.
+    const double n_d = static_cast<double>(n);
+    const double a = n_d + 2.78019;
 
-    // Asymptotic p-value approximation
-    double p_value = 2.0 * std::exp(-2.0 * d_adj * d_adj);
+    // As a function of d the exponent is a downward parabola, so to the left of
+    // its vertex the approximation would increase with d. Clamping at the vertex
+    // keeps the p-value monotonically non-increasing in d over the whole domain.
+    const double d_vertex = 2.99587 / (2.0 * 7.01256 * std::sqrt(a));
+    const double d_eff = std::max(d, d_vertex);
+
+    double p_value = std::exp(-7.01256 * d_eff * d_eff * a + 2.99587 * d_eff * std::sqrt(a) -
+                              0.122119 + 0.974598 / std::sqrt(n_d) + 1.67997 / n_d);
     p_value = std::max(0.0, std::min(1.0, p_value));
 
     return {d, p_value, static_cast<double>(n), alternative_hypothesis::greater};
@@ -629,14 +641,14 @@ test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 
             break;
         case alternative_hypothesis::greater:
             z = (w - mean_w - 0.5) / se;
-            p_value = 1.0 - norm_cdf(z);
+            p_value = norm_sf(z);
             break;
         case alternative_hypothesis::two_sided:
         default:
             z = (w - mean_w) / se;
             if (z < 0) z = (w - mean_w + 0.5) / se;
             else z = (w - mean_w - 0.5) / se;
-            p_value = 2.0 * std::min(norm_cdf(z), 1.0 - norm_cdf(z));
+            p_value = 2.0 * std::min(norm_cdf(z), norm_sf(z));
             break;
     }
 
@@ -771,11 +783,11 @@ test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
             p_value = norm_cdf(z);
             break;
         case alternative_hypothesis::greater:
-            p_value = 1.0 - norm_cdf(z);
+            p_value = norm_sf(z);
             break;
         case alternative_hypothesis::two_sided:
         default:
-            p_value = 2.0 * std::min(norm_cdf(z), 1.0 - norm_cdf(z));
+            p_value = 2.0 * std::min(norm_cdf(z), norm_sf(z));
             break;
     }
 

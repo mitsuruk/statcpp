@@ -91,11 +91,11 @@ test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
             p_value = norm_cdf(z);
             break;
         case alternative_hypothesis::greater:
-            p_value = 1.0 - norm_cdf(z);
+            p_value = norm_sf(z);
             break;
         case alternative_hypothesis::two_sided:
         default:
-            p_value = 2.0 * (1.0 - norm_cdf(std::abs(z)));
+            p_value = 2.0 * norm_sf(std::abs(z));
             break;
     }
 
@@ -142,11 +142,11 @@ inline test_result z_test_proportion(std::size_t successes, std::size_t trials, 
             p_value = norm_cdf(z);
             break;
         case alternative_hypothesis::greater:
-            p_value = 1.0 - norm_cdf(z);
+            p_value = norm_sf(z);
             break;
         case alternative_hypothesis::two_sided:
         default:
-            p_value = 2.0 * (1.0 - norm_cdf(std::abs(z)));
+            p_value = 2.0 * norm_sf(std::abs(z));
             break;
     }
 
@@ -199,11 +199,11 @@ inline test_result z_test_proportion_two_sample(std::size_t successes1, std::siz
             p_value = norm_cdf(z);
             break;
         case alternative_hypothesis::greater:
-            p_value = 1.0 - norm_cdf(z);
+            p_value = norm_sf(z);
             break;
         case alternative_hypothesis::two_sided:
         default:
-            p_value = 2.0 * (1.0 - norm_cdf(std::abs(z)));
+            p_value = 2.0 * norm_sf(std::abs(z));
             break;
     }
 

@@ -409,7 +409,33 @@ inline double erfc(double x)
  */
 inline double norm_cdf(double x)
 {
-    return 0.5 * (1.0 + erf(x / sqrt_2));
+    // Evaluated through erfc rather than as 0.5 (1 + erf(x / sqrt(2))). In the
+    // left tail erf approaches -1, so that sum cancels catastrophically: it loses
+    // all significance below x = -5.8 and underflows to exactly zero below
+    // x = -8.33, where the true value is still far inside the representable
+    // range. The complementary form is computed directly by std::erfc and stays
+    // accurate over the whole domain.
+    return 0.5 * erfc(-x / sqrt_2);
+}
+
+/**
+ * @brief 標準正規分布の上側確率 (Standard normal survival function)
+ *
+ * Z ~ N(0, 1) に対する上側確率 P(Z > x) を計算します。
+ *
+ * @param x 引数 (argument)
+ * @return P(Z > x)
+ *
+ * @note 数学的には 1 - norm_cdf(x) と同じですが、引き算で補数を作ると上側の裾で
+ *       有効数字を失います。x = 8 の時点で既に 7% ずれ、x = 8.30 以降は厳密に 0 を
+ *       返します（真の値はまだ十分表現可能な範囲にあります）。erfc を直接評価する
+ *       ことで 1e-299 程度まで精度を保ちます。
+ * @note z 統計量から p 値を作る場合など、上側確率が必要な場面では
+ *       1 - norm_cdf(x) ではなく本関数を使用してください。
+ */
+inline double norm_sf(double x)
+{
+    return 0.5 * erfc(x / sqrt_2);
 }
 
 /**

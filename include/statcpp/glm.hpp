@@ -549,7 +549,7 @@ inline glm_result glm_fit(
         // z-statistics and p-values
         for (std::size_t j = 0; j < p_full; ++j) {
             z_statistics[j] = beta[j] / coefficient_se[j];
-            p_values[j] = 2.0 * (1.0 - norm_cdf(std::abs(z_statistics[j])));
+            p_values[j] = 2.0 * norm_sf(std::abs(z_statistics[j]));
         }
     }
 

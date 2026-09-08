@@ -393,7 +393,34 @@ inline double erfc(double x)
  */
 inline double norm_cdf(double x)
 {
-    return 0.5 * (1.0 + erf(x / sqrt_2));
+    // Evaluated through erfc rather than as 0.5 (1 + erf(x / sqrt(2))). In the
+    // left tail erf approaches -1, so that sum cancels catastrophically: it loses
+    // all significance below x = -5.8 and underflows to exactly zero below
+    // x = -8.33, where the true value is still far inside the representable
+    // range. The complementary form is computed directly by std::erfc and stays
+    // accurate over the whole domain.
+    return 0.5 * erfc(-x / sqrt_2);
+}
+
+/**
+ * @brief Standard normal survival function
+ *
+ * Computes the upper tail probability P(Z > x) where Z ~ N(0, 1).
+ *
+ * @param x Argument
+ * @return P(Z > x)
+ *
+ * @note Mathematically 1 - norm_cdf(x), but forming that complement by
+ *       subtraction loses all significance in the upper tail: it is already
+ *       seven percent wrong at x = 8 and returns exactly zero from x = 8.30,
+ *       where the true value is still far inside the representable range.
+ *       Evaluating erfc directly stays accurate down to about 1e-299.
+ * @note Use this rather than 1 - norm_cdf(x) whenever an upper tail probability
+ *       is needed, for example when forming a p-value from a z statistic.
+ */
+inline double norm_sf(double x)
+{
+    return 0.5 * erfc(x / sqrt_2);
 }
 
 /**

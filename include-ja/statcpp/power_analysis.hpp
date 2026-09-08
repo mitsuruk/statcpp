@@ -173,10 +173,10 @@ inline double power_t_test_one_sample(double effect_size, std::size_t n,
         // 両側検定: P(|T| > t_crit | ncp)
         // 簡易近似: 正規分布で近似
         double z_crit = detail::critical_z_two_sided(alpha);
-        return 1.0 - norm_cdf(z_crit - ncp) + norm_cdf(-z_crit - ncp);
+        return norm_sf(z_crit - ncp) + norm_cdf(-z_crit - ncp);
     } else if (alternative == "greater") {
         double z_crit = detail::critical_z_one_sided(alpha);
-        return 1.0 - norm_cdf(z_crit - ncp);
+        return norm_sf(z_crit - ncp);
     } else if (alternative == "less") {
         double z_crit = detail::critical_z_one_sided(alpha);
         return norm_cdf(-z_crit - ncp);
@@ -272,10 +272,10 @@ inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::s
 
     if (alternative == "two.sided") {
         double z_crit = detail::critical_z_two_sided(alpha);
-        return 1.0 - norm_cdf(z_crit - ncp) + norm_cdf(-z_crit - ncp);
+        return norm_sf(z_crit - ncp) + norm_cdf(-z_crit - ncp);
     } else if (alternative == "greater") {
         double z_crit = detail::critical_z_one_sided(alpha);
-        return 1.0 - norm_cdf(z_crit - ncp);
+        return norm_sf(z_crit - ncp);
     } else if (alternative == "less") {
         double z_crit = detail::critical_z_one_sided(alpha);
         return norm_cdf(-z_crit - ncp);
@@ -388,17 +388,17 @@ inline double power_prop_test(double p1, double p2, std::size_t n,
         // 帰無仮説下の棄却境界を対立仮説下のスケールに変換
         double boundary = z_crit * se_null;
         double z_power = (diff - boundary) / se_alt;
-        return 1.0 - norm_cdf(-z_power);
+        return norm_sf(-z_power);
     } else if (alternative == "greater") {
         double z_crit = detail::critical_z_one_sided(alpha);
         double boundary = z_crit * se_null;
         double z_power = ((p1 - p2) - boundary) / se_alt;
-        return 1.0 - norm_cdf(-z_power);
+        return norm_sf(-z_power);
     } else if (alternative == "less") {
         double z_crit = detail::critical_z_one_sided(alpha);
         double boundary = z_crit * se_null;
         double z_power = ((p2 - p1) - boundary) / se_alt;
-        return 1.0 - norm_cdf(-z_power);
+        return norm_sf(-z_power);
     } else {
         throw std::invalid_argument("statcpp::power_prop_test: alternative must be 'two.sided', 'greater', or 'less'");
     }
