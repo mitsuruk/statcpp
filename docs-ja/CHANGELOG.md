@@ -4,6 +4,43 @@ statcpp ライブラリの変更履歴を記録します.
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います.
 
+## [0.4.0] - 2026-09-08
+
+ライブラリ全体を R 4.4.2 と照合して発見した数値の是正. 0.3.0 の公開シグネチャは
+すべてそのままコンパイルできる(API の変更は新規関数 1 つと末尾のデフォルト引数のみ).
+ただし **`lilliefors_test()` の挙動は大きく変わる**ため, 下流の結果は変化する.
+詳細は末尾の「アップグレード時の注意」を参照.
+
+### Fixed (修正)
+
+- **`nonparametric_tests.hpp` — `lilliefors_test()` / `ks_test_normal()`**: p 値を Dallal & Wilkinson (1986) の解析的近似に是正. 従来の `p = 2·exp(-2·d_adj²)` は裾用の式を全域に適用しており, `nortest::lillie.test` と全域で乖離していた. 正規に近い標本で R が 0.729 を返すところ 0.0295 を返し, **α = 0.05 で正規性を誤って棄却**していた. 新しい式は p ≤ 0.05 の範囲で R と完全一致(723/723 標本)し, 2,400 標本において α = 0.05 / 0.01 の棄却判定の不一致は 0 件. p > 0.10 は公表された適用範囲外であり, 正規性と矛盾しないことを示すのみ. D 統計量は不変.
+- **`special_functions.hpp` — `norm_cdf()`**: `0.5·(1 + erf(x/√2))` から `0.5·erfc(-x/√2)` に変更. 従来の形は左裾で桁落ちし, x = -8.25 で既に 40% ずれ, x = -8.327 以降は厳密に 0 を返していた(真の値はまだ十分表現可能な範囲にある). 新しい形は x = -37.5 まで R と相対誤差 1.9e-13 で一致し, 中央域も 2.2e-14 から 1.7e-15 に改善. `normal_cdf()` と `lognormal_cdf()` も同時に是正される.
+- **`parametric_tests.hpp`, `nonparametric_tests.hpp`, `glm.hpp`, `power_analysis.hpp` — 上側 p 値**: p 値を `1 - norm_cdf(z)` の形で求めていた 19 箇所を `norm_sf(z)` に変更. 従来は `|z| ≥ 8.30` で厳密に 0 を返していた. ポアソン回帰の切片 p 値は 0 から 1.2688719e-117 になり, R の 1.2688719e-117 と一致. `z_test()`, `z_test_proportion()`, `z_test_proportion_two_sample()`, `mann_whitney_u_test()`, `wilcoxon_signed_rank_test()`, GLM の Wald p 値, 検出力関数が対象.
+
+### Added (追加)
+
+- **`special_functions.hpp` — `norm_sf()`**: 標準正規分布の上側確率 `P(Z > x)` を `erfc` 経由で計算. 上側確率が必要な場面では `1 - norm_cdf(x)` ではなく本関数を使用すること.
+- **`model_selection.hpp` — `cross_validate_linear()` / `cv_ridge()` / `cv_lasso()`**: 末尾に `bool shuffle = true` を追加し `create_cv_folds()` へ委譲. `false` を渡すと連続ブロックの決定的な fold となり, 交差検証が再現可能になる. 既定値は 0.3.0 と同じ挙動.
+
+### Changed (変更)
+
+- **`testWithR/`**: 単独プログラム `verify_vs_r`(57 関数を対象に 167 個の期待値を手作業で転記)を廃止し, 期待値を R から生成する Google Test 群に置き換え. **R と照合可能な公開関数 321 個すべて**を 164 テストで網羅し, 48,598 個の数値を突き合わせる. R は生成時に別プロセスとして実行するだけでリンクしないため, statcpp とテストバイナリは MIT ライセンスのまま.
+- **`testWithR/VERIFIED_FUNCTIONS.md`, `testWithR/NON_VERIFIABLE_FUNCTIONS.md`**: `R_VERIFICATION_INVENTORY.ja.md`(全公開関数の分類)と `VERIFICATION_CHECKLIST.ja.md`(関数単位の進捗)に置き換え.
+
+### Documentation (ドキュメント)
+
+- `README.md`, `README.ja.md`, 両 `API_REFERENCE.md` の公開関数数を是正: ユニーク名 386 個, オーバーロードを含めて 538 個. 従来の 524 という数値は, それが記載されたコミットを含めどのコミットのコードとも一致しなかった.
+- テスト数を 793 から, 単体テスト 857 件 + 照合テスト 164 件に是正.
+- 両 API リファレンスに `norm_sf` を追加し, `betainc_impl` / `lgamma_impl` を公開インターフェースとして意図されていない実装補助関数として明記.
+- 実装されていない Cauchy 分布への言及を削除(英語版 API リファレンスのみ).
+- `testWithR/METHODOLOGY.md` を全面改訂. 分位数の type, `mad()` と平均絶対偏差の別物問題, `fivenum()` と type 7 分位数, 重み付き分散の意味論, `odds_ratios()` の切片の扱いなど, 実測した R との定義差 22 項目を記録.
+
+### アップグレード時の注意
+
+- **ソース互換性**: 削除・改名は一切なし. 既知の下流プロジェクトが参照する 302 個の `statcpp::` シンボルはすべて存在する.
+- **結果の互換性**: `lilliefors_test()` は多くの入力で結論が変わる. 3,000 標本のうち α = 0.05 で 61.6% の棄却判定が反転し, そのすべてが 0.3.0 側の誤った棄却だった. 旧 p 値を固定していたゴールデンファイルや照合の許容誤差は再生成が必要.
+- それ以外の変化は, 0.3.0 が厳密に 0 を返していた遠方の裾に限られる. `power_t_test_one_sample()`, `power_t_test_two_sample()`, `power_prop_test()` の変化は最大 2e-15, `sample_size_*` 5 関数は 3,653 ケースすべてで同一の整数を返した.
+
 ## [0.3.0] - 2026-07-09
 
 全モジュールの計算手法レビューに基づく正確性・境界安全性の修正. 公開シグネチャは

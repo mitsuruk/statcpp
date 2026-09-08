@@ -4,6 +4,44 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-09-08
+
+Numerical corrections found by cross-verifying the whole library against R 4.4.2.
+Every public signature from 0.3.0 still compiles: the only API changes are one new
+function and trailing defaulted parameters. **The behaviour of `lilliefors_test()`
+changes substantially**, so downstream results will differ; see the upgrade note
+below.
+
+### Fixed
+
+- **`nonparametric_tests.hpp` — `lilliefors_test()` / `ks_test_normal()`**: The p-value now uses the Dallal & Wilkinson (1986) analytic approximation. The previous `p = 2·exp(-2·d_adj²)` tail formula was applied over the whole range and disagreed with `nortest::lillie.test` everywhere: for a near-normal sample it returned 0.0295 where R returns 0.729, **falsely rejecting normality at α = 0.05**. The new form reproduces R exactly for p ≤ 0.05 (723 of 723 samples) and produced no disagreement in the reject/accept decision at α = 0.05 or 0.01 over 2,400 samples. Above p = 0.10 the approximation is outside its published range and only indicates consistency with normality. The D statistic is unchanged.
+- **`special_functions.hpp` — `norm_cdf()`**: Evaluated as `0.5·erfc(-x/√2)` instead of `0.5·(1 + erf(x/√2))`. The old form cancelled catastrophically in the left tail: it was already 40% wrong at x = -8.25 and returned exactly zero from x = -8.327, where the true value is still far inside the representable range. The new form agrees with R to 1.9e-13 relative down to x = -37.5, and also improves the centre from 2.2e-14 to 1.7e-15. `normal_cdf()` and `lognormal_cdf()` inherit the fix.
+- **`parametric_tests.hpp`, `nonparametric_tests.hpp`, `glm.hpp`, `power_analysis.hpp` — upper-tail p-values**: Nineteen sites that formed a p-value as `1 - norm_cdf(z)` now use `norm_sf(z)`. The old form returned exactly zero for `|z| ≥ 8.30`. A Poisson regression intercept p-value went from 0 to 1.2688719e-117 against R's 1.2688719e-117. Affects `z_test()`, `z_test_proportion()`, `z_test_proportion_two_sample()`, `mann_whitney_u_test()`, `wilcoxon_signed_rank_test()`, GLM Wald p-values and the power functions.
+
+### Added
+
+- **`special_functions.hpp` — `norm_sf()`**: Standard normal survival function `P(Z > x)`, evaluated through `erfc`. Use it instead of `1 - norm_cdf(x)` whenever an upper tail probability is needed.
+- **`model_selection.hpp` — `cross_validate_linear()` / `cv_ridge()` / `cv_lasso()`**: Added a trailing `bool shuffle = true` parameter, forwarded to `create_cv_folds()`. Passing `false` produces contiguous, deterministic folds, making cross-validation reproducible. The default preserves 0.3.0 behaviour.
+
+### Changed
+
+- **`testWithR/`**: The standalone `verify_vs_r` program (167 hand-transcribed reference values covering 57 functions) has been removed and replaced by a Google Test suite whose reference values are generated from R. It covers **all 321 R-comparable public functions** in 164 tests, comparing 48,598 values. R runs as a separate process at generation time and is not linked, so statcpp and the test binary remain MIT licensed.
+- **`testWithR/VERIFIED_FUNCTIONS.md`, `testWithR/NON_VERIFIABLE_FUNCTIONS.md`**: Replaced by `R_VERIFICATION_INVENTORY.ja.md` (full classification of all public functions) and `VERIFICATION_CHECKLIST.ja.md` (per-function progress).
+
+### Documentation
+
+- Corrected the public function count in `README.md`, `README.ja.md` and both `API_REFERENCE.md` files: 386 unique names, 538 including overloads. The previous figure of 524 did not match the code at any commit, including the one that introduced it.
+- Corrected the test count from 793 to 857 unit tests plus 164 verification tests.
+- Added `norm_sf` to both API references, and documented `betainc_impl` / `lgamma_impl` as implementation helpers that are not part of the intended public interface.
+- Removed an incorrect reference to a Cauchy distribution, which the library does not provide (English API reference only).
+- Rewrote `testWithR/METHODOLOGY.md`, which now records 22 measured definition differences against R, including the quantile type, `mad()` versus mean absolute deviation, `fivenum()` versus type 7 quantiles, weighted variance semantics, and the intercept handling of `odds_ratios()`.
+
+### Upgrade notes
+
+- **Source compatibility**: nothing was removed or renamed. All 302 `statcpp::` symbols referenced by the known downstream projects still exist.
+- **Result compatibility**: `lilliefors_test()` changes its conclusion for a large fraction of inputs. Over 3,000 random samples the reject/accept decision flipped for 61.6% at α = 0.05, and in every case the 0.3.0 result was a false rejection. Golden files and cross-validation tolerances that pinned the old p-value need regenerating.
+- Everything else changes only in the far tail, where 0.3.0 returned exactly zero. `power_t_test_one_sample()`, `power_t_test_two_sample()` and `power_prop_test()` change by at most 2e-15, and the five `sample_size_*` functions returned identical integers across 3,653 checked cases.
+
 ## [0.3.0] - 2026-07-09
 
 Correctness and boundary-safety fixes from a full-library computation review. All

@@ -8,7 +8,7 @@ C++17 ヘッダーオンリー統計ライブラリ
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
 [![Header Only](https://img.shields.io/badge/header--only-yes-green.svg)](https://github.com/mitsuruk/statcpp)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-793-brightgreen.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1021-brightgreen.svg)](https://github.com/mitsuruk/statcpp/actions/workflows/ci.yml)
 [![R Verified](https://img.shields.io/badge/R%20verified-167%20checks-blue.svg)](testWithR/VERIFIED_FUNCTIONS.md)
 
 [English](README.md)
@@ -17,22 +17,22 @@ C++17 ヘッダーオンリー統計ライブラリ
 
 | 用途 | リポジトリ | 説明 |
 | --- | --- | --- |
-| C++ ライブラリ | **statcpp** (このリポジトリ) | C++17 ヘッダーオンリー統計ライブラリ (524 関数) |
+| C++ ライブラリ | **statcpp** (このリポジトリ) | C++17 ヘッダーオンリー統計ライブラリ (386 関数) |
 | UNIX CLI | [statcppCLI](https://github.com/mitsuruk/statcppCLI) | UNIX パイプライン向けコマンドラインツール |
 | SQL (SQLite3) | [sqlite3-stats](https://github.com/mitsuruk/sqlite3-stats) | SQLite3 ロード可能な拡張機能 (249 関数) |
 
 ## 概要
 
-statcpp は C++17 で書かれたヘッダーオンリーの統計ライブラリです。31 個のヘッダーファイルに 524 個の公開関数を提供し、基本的な統計量から高度な統計的検定、回帰分析まで、幅広い統計機能をカバーします。793 件の単体テストと R 4.4.2 に対する 167 件の数値検証チェックを含みます。
+statcpp は C++17 で書かれたヘッダーオンリーの統計ライブラリです。31 個のヘッダーファイルに 386 個の公開関数（オーバーロードを含めると 538 個）を提供し、基本的な統計量から高度な統計的検定、回帰分析まで、幅広い統計機能をカバーします。857 件の単体テストと、R と照合可能な 321 関数すべてを R 4.4.2 と突き合わせる 164 件の検証テストを含みます。
 
 ### 主な特徴
 
-- **524 個の公開関数**: 31 モジュールにわたる包括的な統計機能
+- **386 個の公開関数**: 31 モジュールにわたる包括的な統計機能
 - **ヘッダーオンリー**: ビルド不要、インクルードするだけで使用可能
 - **C++17 標準準拠**: モダンな C++ の機能を活用
 - **STL スタイル**: イテレータベースの直感的な API
 - **射影対応**: 構造体のメンバーなどを直接処理
-- **包括的なテスト**: Google Test による 793 件の単体テスト、R 4.4.2 に対する 167 件の数値検証チェック
+- **包括的なテスト**: Google Test による 857 件の単体テストに加え、R と照合可能な 321 関数すべてを R 4.4.2 と検証する 164 件の照合テスト
 - **クロスプラットフォーム**: macOS、Linux で動作確認済み
 - **バイリンガル対応**: 英語版・日本語版のコメント付きヘッダーを提供
 
