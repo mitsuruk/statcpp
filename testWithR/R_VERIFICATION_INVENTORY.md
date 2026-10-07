@@ -565,7 +565,7 @@ wrong. They have since been corrected. Measurement used Doxygen XML
 |---|---|---|
 |Public functions|524|538 declarations, 386 unique names|
 |Unit tests|793|857|
-|Verification tests|167 checks over 57 functions|164 tests over 321 functions|
+|Verification tests|167 checks over 57 functions|164 tests over 321 functions, plus 23 missing-value cases (v0.5.0)|
 |Header files|31|31|
 
 ### Where 524 came from

@@ -11,7 +11,12 @@ function each one is compared with.
 **All five phases are complete: every one of the 321 comparable functions has been
 checked against R 4.4.2.**
 
-All 164 tests in `statcpp_r_tests` pass.
+All 187 tests in `statcpp_r_tests` pass: 164 for the 321 comparable functions and
+23 for inputs containing missing values.
+
+v0.5.0 added the missing-value cases (`test_vs_r_nan.cpp`, generated into
+`r_reference_nan.hpp`). They check that statcpp follows the default NA handling of
+each R counterpart; see `METHODOLOGY.md`.
 
 Installing `glmnet`, `mice` and `naniar`, and adding a `shuffle` argument to the
 cross-validation functions, brought eight functions into scope that had been
@@ -476,3 +481,15 @@ total corrected from 313 to 312, then restored once `shuffle` was added.
 - [x] `expm1_safe`
 - [x] `kahan_sum`
 - [x] `log1p_safe`
+
+### Missing values (23 cases, v0.5.0)
+
+- [x] NA removed: `t_test`, `t_test_two_sample`, `t_test_welch`, `t_test_paired`, `f_test`
+- [x] NA removed: `wilcoxon_signed_rank_test`, `mann_whitney_u_test`, `kruskal_wallis_test`, `shapiro_wilk_test`
+- [x] NA removed: `one_way_anova`, `kaplan_meier`
+- [x] NA propagated: `mean`, `sample_variance`, `sample_stddev`, `median`, `range`
+- [x] NA propagated: `pearson_correlation`, `spearman_correlation`, `kendall_tau`
+- [x] Element-wise: `bonferroni_correction`, `holm_correction`, `benjamini_hochberg_correction`, `standardize`, `moving_average`
+- [x] Rescaled: `euclidean_distance`, `manhattan_distance`, `minkowski_distance` (both headers)
+- [x] Rows removed: `simple_linear_regression`, `multiple_linear_regression`, `logistic_regression`, `poisson_regression`
+- [x] Ordering: `sort_values`, `argsort`, `rank_transform`, `drop_duplicates`

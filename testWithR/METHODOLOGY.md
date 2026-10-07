@@ -81,6 +81,35 @@ that reason: the ANOVA groups have identical spreads, which makes both the
 Bartlett and Levene statistics exactly zero, and an additive two-way layout
 makes the interaction sum of squares exactly zero.
 
+### Missing values
+
+Since v0.5.0 statcpp follows the default NA handling of each function's R
+counterpart (`docs/NAN_POLICY.md`), and `r_reference_nan.hpp` checks that
+mechanically. Its 23 cases feed NA to R with the default arguments and pass the
+same inputs to statcpp, where NA becomes NaN:
+
+|Class|R functions used for the reference|
+|---|---|
+|NA removed before computing|`t.test` (one-sample, pooled, Welch, paired), `var.test`, `wilcox.test`, `kruskal.test`, `shapiro.test`, `aov`, `survfit`|
+|NA propagated to the result|`mean`, `var`, `sd`, `median`, `range`, `cor` (Pearson, Spearman, Kendall)|
+|NA kept element-wise|`p.adjust` (Bonferroni, Holm, BH), `scale`, `stats::filter`|
+|NA coordinates skipped and the sum rescaled|`dist` (Euclidean, Manhattan, Minkowski)|
+|Incomplete rows removed (`na.omit`)|`lm` (simple and multiple), `glm` (binomial, Poisson)|
+|Ordering and duplicates|`sort`, `order`, `rank(na.last = "keep")`, `unique`|
+
+NaN in a reference matches NaN in the result (`RClose`). Functions that throw on
+NaN have no R value to compare against and are covered by the Google Test suite
+in `test/`.
+
+Run against the v0.4.0 headers, every one of the 23 cases fails, and six of them
+(`wilcox.test`, `kruskal.test`, `survfit`, Spearman's `cor` and the signed-rank and
+Mann-Whitney tests) hang or crash. So the cases do detect the problems they guard
+against.
+
+The only exact zeros among the expected values are structural ones that are
+matched exactly: zero-based indices, the origin of the Kaplan-Meier curve and a
+survival estimate that reaches zero.
+
 ### Regenerating
 
 ```bash

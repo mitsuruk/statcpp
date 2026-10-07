@@ -18,6 +18,7 @@ add_executable(statcpp_r_tests
     test_vs_r_applied.cpp
     test_vs_r_data.cpp
     test_vs_r_conditional.cpp
+    test_vs_r_nan.cpp
 )
 
 target_include_directories(statcpp_r_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -2042,3 +2042,175 @@ local({
 
 write_header("r_reference_crossval.hpp",
              "R reference values for cross-validation with deterministic folds.")
+
+# ===========================================================================
+# Missing values (NaN policy, docs/NAN_POLICY.md)
+#
+# Every case below feeds NA to R with the default arguments and records what R
+# returns. statcpp represents NA as NaN and follows the default NA handling of
+# its R counterpart: functions that drop NA are compared on their full result,
+# functions that propagate NA are compared on NaN. Functions that throw on NaN
+# have no R value to compare against and are covered by the GTest suite instead.
+# ===========================================================================
+
+local({
+    na_x <- c(5.1, NA, 4.9, 5.3, 5.1, 4.8, NA, 5.2, 5.0, 4.9)
+    na_y <- c(4.5, 4.7, NA, 4.3, 4.6, 4.4, 4.8, 4.2)
+    pre  <- c(5.1, 4.9, NA, 5.3, 5.1, 4.8, 5.2)
+    post <- c(5.5, 5.2, 5.6, NA, 5.1, 5.4, 5.6)
+
+    # --- Removal: tests and estimators (class C6) --------------------------
+    r <- t.test(na_x, mu = 5.0)
+    emit("NaTTestOneSample", "R: t.test(x, mu = 5.0) with NA in x (NA removed)",
+         data   = list(x = na_x, mu0 = 5.0),
+         expect = list(statistic = unname(r$statistic), df = unname(r$parameter),
+                       p_value = r$p.value))
+    r <- t.test(na_x, na_y, var.equal = TRUE)
+    emit("NaTTestTwoSample", "R: t.test(x, y, var.equal = TRUE) with NA in both samples",
+         data   = list(x = na_x, y = na_y),
+         expect = list(statistic = unname(r$statistic), df = unname(r$parameter),
+                       p_value = r$p.value))
+    r <- t.test(na_x, na_y)
+    emit("NaTTestWelch", "R: t.test(x, y) with NA in both samples",
+         data   = list(x = na_x, y = na_y),
+         expect = list(statistic = unname(r$statistic), df = unname(r$parameter),
+                       p_value = r$p.value))
+    r <- t.test(pre, post, paired = TRUE)
+    emit("NaTTestPaired", "R: t.test(x, y, paired = TRUE); a pair with NA on either side is removed",
+         data   = list(x = pre, y = post),
+         expect = list(statistic = unname(r$statistic), df = unname(r$parameter),
+                       p_value = r$p.value))
+    r <- var.test(na_x, na_y)
+    emit("NaFTest", "R: var.test(x, y) with NA in both samples",
+         data   = list(x = na_x, y = na_y),
+         expect = list(statistic = unname(r$statistic), df = unname(r$parameter[1]),
+                       df2 = unname(r$parameter[2]), p_value = r$p.value))
+
+    r <- suppressWarnings(wilcox.test(na_x, mu = 4.95, exact = FALSE, correct = TRUE))
+    emit("NaWilcoxonSignedRank", "R: wilcox.test(x, mu = 4.95, exact = FALSE) with NA in x",
+         data   = list(x = na_x, mu0 = 4.95),
+         expect = list(statistic = unname(r$statistic), p_value = r$p.value))
+    r <- suppressWarnings(wilcox.test(na_x, na_y, exact = FALSE, correct = TRUE))
+    emit("NaMannWhitneyU", "R: wilcox.test(x, y, exact = FALSE) with NA in both samples",
+         data   = list(x = na_x, y = na_y),
+         expect = list(statistic = unname(r$statistic), p_value = r$p.value))
+    kw <- list(c(2.9, 3.0, NA, 2.5, 2.6, 3.2), c(3.8, 2.7, 4.0, 2.4, NA),
+               c(2.8, 3.4, 3.7, NA, 2.2, 2.0))
+    r <- kruskal.test(kw)
+    emit("NaKruskalWallis", "R: kruskal.test(groups) with NA in every group",
+         data   = list(groups = kw),
+         expect = list(statistic = unname(r$statistic), df = unname(r$parameter),
+                       p_value = r$p.value))
+    r <- shapiro.test(na_x)
+    emit("NaShapiroWilk", "R: shapiro.test(x) with NA in x (NA removed)",
+         data   = list(x = na_x),
+         expect = list(statistic = unname(r$statistic), p_value = r$p.value),
+         rtol = 1e-6, prtol = 5e-2,
+         caveat = "statcpp and R use different Shapiro-Wilk approximations; only agreement to a few percent is expected.")
+
+    av <- list(c(5.1, 4.9, NA, 5.3, 5.0), c(4.5, 4.7, 4.3, NA, 4.6), c(5.6, NA, 5.9, 5.4, 5.8))
+    g  <- factor(rep(seq_along(av), lengths(av)))
+    s  <- summary(aov(unlist(av) ~ g))[[1]]
+    emit("NaOneWayAnova", "R: summary(aov(y ~ g)) with NA in every group (na.omit)",
+         data   = list(groups = av),
+         expect = list(f_statistic = s$`F value`[1], p_value = s$`Pr(>F)`[1],
+                       df_between = s$Df[1], df_within = s$Df[2],
+                       ss_between = s$`Sum Sq`[1], ss_within = s$`Sum Sq`[2]))
+
+    tt <- c(6, 7, NA, 10, 15, 19, 25, NA, 32, 34)
+    ee <- c(1, 0, 1, 1, 0, 1, 1, 1, 0, 1)
+    fit <- survival::survfit(survival::Surv(tt, ee) ~ 1)
+    ev  <- fit$n.event > 0
+    emit("NaKaplanMeier", "R: survfit(Surv(time, event) ~ 1); observations with NA time are removed",
+         data   = list(times = tt, events = as.double(ee)),
+         expect = list(event_times = c(0, fit$time[ev]), survival = c(1, fit$surv[ev])))
+
+    # --- Propagation: descriptive statistics and correlation (class C1) ------
+    emit("NaDescriptive", "R: mean, var, sd, median and diff(range(x)) are NA when x contains NA",
+         data   = list(x = na_x),
+         expect = list(mean = mean(na_x), variance = var(na_x), stddev = sd(na_x),
+                       median = median(na_x), range = diff(range(na_x))))
+    cx <- c(1.2, 2.3, NA, 4.1, 5.0, 6.2)
+    cy <- c(2.0, 2.9, 3.8, 4.4, 5.1, 6.9)
+    emit("NaCorrelation", "R: cor(x, y, method) is NA when either input contains NA",
+         data   = list(x = cx, y = cy),
+         expect = list(pearson = cor(cx, cy), spearman = cor(cx, cy, method = "spearman"),
+                       kendall = cor(cx, cy, method = "kendall")))
+
+    # --- Element-wise: adjustments, scaling and filters ----------------------
+    pv <- c(0.01, NA, 0.04, 0.03, NA, 0.20, 0.005)
+    emit("NaPAdjust", "R: p.adjust(p, method) counts only the non-NA p-values; NA stays NA",
+         data   = list(p_values = pv),
+         expect = list(bonferroni = p.adjust(pv, "bonferroni"), holm = p.adjust(pv, "holm"),
+                       bh = p.adjust(pv, "BH")))
+    sm <- cbind(c(1, 2, NA, 4, 5), c(2.5, 1.0, 4.0, 3.0, 5.5))
+    emit("NaScale", "R: scale(x); column statistics use the non-NA values, the NA cell stays NA",
+         data   = list(x = sm),
+         expect = list(scaled = unname(scale(sm))),
+         caveat = "No column contains its own mean, so every non-NA reference value is nonzero.")
+    ma <- c(1.5, 2.0, NA, 4.5, 5.0, 6.5, 7.0, 8.5)
+    w  <- 3L
+    f  <- as.numeric(stats::filter(ma, rep(1 / w, w), sides = 1))
+    emit("NaMovingAverage", "R: stats::filter(x, rep(1 / w, w), sides = 1) without the w - 1 leading NA",
+         data   = list(x = ma, window = w),
+         expect = list(average = f[w:length(ma)]))
+
+    # --- Distances: NA coordinates skipped and the sum rescaled (#3) ---------
+    da <- c(1.0, 2.0, NA, 4.0, 6.0, 3.5)
+    db <- c(2.0, NA, 1.0, 1.0, 3.0, 5.0)
+    m  <- rbind(da, db)
+    emit("NaDistance", "R: dist(rbind(a, b), method); NA coordinates are skipped and the sum is scaled by n / n_used",
+         data   = list(a = da, b = db, p = 3.0),
+         expect = list(euclidean = as.numeric(dist(m)), manhattan = as.numeric(dist(m, "manhattan")),
+                       minkowski = as.numeric(dist(m, "minkowski", p = 3))))
+
+    # --- Row removal: models (na.omit) -------------------------------------
+    lx <- c(1.0, 2.0, NA, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)
+    ly <- c(2.1, 3.9, 6.2, 8.1, 9.8, 12.2, NA, 16.1, 18.3)
+    fit <- lm(ly ~ lx); s <- summary(fit)
+    emit("NaSimpleLinearRegression", "R: lm(y ~ x) with NA in x and y (na.omit)",
+         data   = list(x = lx, y = ly),
+         expect = list(intercept = unname(coef(fit)[1]), slope = unname(coef(fit)[2]),
+                       r_squared = s$r.squared, residual_se = s$sigma,
+                       df_residual = fit$df.residual))
+    X  <- cbind(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), c(2, 1, NA, 3, 6, 5, 8, 9, 7, 11))
+    my <- c(3.1, 3.9, 8.2, 7.8, 12.1, NA, 16.3, 17.6, 17.1, 22.4)
+    fit <- lm(my ~ X)
+    emit("NaMultipleLinearRegression", "R: lm(y ~ X) with NA in X and y (na.omit)",
+         data   = list(x = X, y = my),
+         expect = list(coefficients = unname(coef(fit)), r_squared = summary(fit)$r.squared,
+                       df_residual = fit$df.residual))
+    bx <- cbind(c(0.5, 1.2, NA, 2.8, 3.1, 4.0, 4.4, 5.6, 6.1, 7.3, 2.2, 5.0))
+    by <- c(0, 0, 1, 0, 1, 0, 1, 1, NA, 1, 0, 1)
+    fit <- glm(by ~ bx, family = binomial())
+    emit("NaLogisticRegression", "R: glm(y ~ x, family = binomial()) with NA in x and y (na.omit)",
+         data   = list(x = bx, y = by),
+         expect = list(coefficients = unname(coef(fit)), residual_deviance = fit$deviance,
+                       df_residual = fit$df.residual),
+         rtol = 1e-7)
+    px <- cbind(c(0.5, 1.0, 1.5, NA, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0))
+    py <- c(1, 0, 2, 3, NA, 5, 4, 7, 9, 8)
+    fit <- glm(py ~ px, family = poisson())
+    emit("NaPoissonRegression", "R: glm(y ~ x, family = poisson()) with NA in x and y (na.omit)",
+         data   = list(x = px, y = py),
+         expect = list(coefficients = unname(coef(fit)), residual_deviance = fit$deviance,
+                       df_residual = fit$df.residual),
+         rtol = 1e-7)
+
+    # --- Ordering and duplicates ---------------------------------------------
+    sx <- c(3.0, NA, 1.0, 4.0, 1.5, NA, 9.0, 2.0, 6.0, 1.5)
+    emit("NaSortOrder", "R: sort drops NA, order puts NA last, rank(na.last = \"keep\") keeps NA",
+         data   = list(x = sx),
+         expect = list(sorted = sort(sx), sorted_decreasing = sort(sx, decreasing = TRUE),
+                       order = as.double(order(sx) - 1),
+                       order_decreasing = as.double(order(sx, decreasing = TRUE) - 1),
+                       rank = rank(sx, na.last = "keep")),
+         caveat = "Indices are zero-based in C++ and one-based in R; the two ties at 1.5 keep their original order in R, which statcpp's argsort does not promise, so order is compared on the values it selects.")
+    ux <- c(1.0, NA, 2.0, NA, 1.0, 3.5)
+    emit("NaUnique", "R: unique(x) treats every NA as one value",
+         data   = list(x = ux),
+         expect = list(unique = unique(ux)))
+})
+
+write_header("r_reference_nan.hpp",
+             "R reference values for inputs containing missing values (NaN policy).")
