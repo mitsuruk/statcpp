@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "statcpp/nan_utils.hpp"
 #include "statcpp/random_engine.hpp"
 
 namespace statcpp {
@@ -42,10 +43,22 @@ inline double euclidean_distance(const std::vector<double>& a, const std::vector
         throw std::invalid_argument("statcpp::euclidean_distance: dimension mismatch");
     }
 
+    // A coordinate whose difference is NaN is skipped and the sum is scaled up by n / n_used,
+    // as R's dist() does; no usable coordinate gives NaN (docs/NAN_POLICY.md)
     double sum = 0.0;
+    std::size_t n_used = 0;
     for (std::size_t i = 0; i < a.size(); ++i) {
         double diff = a[i] - b[i];
-        sum += diff * diff;
+        if (!std::isnan(diff)) {
+            sum += diff * diff;
+            ++n_used;
+        }
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < a.size()) {
+        sum *= static_cast<double>(a.size()) / static_cast<double>(n_used);
     }
     return std::sqrt(sum);
 }
@@ -66,9 +79,22 @@ inline double manhattan_distance(const std::vector<double>& a, const std::vector
         throw std::invalid_argument("statcpp::manhattan_distance: dimension mismatch");
     }
 
+    // A coordinate whose difference is NaN is skipped and the sum is scaled up by n / n_used,
+    // as R's dist() does; no usable coordinate gives NaN (docs/NAN_POLICY.md)
     double sum = 0.0;
+    std::size_t n_used = 0;
     for (std::size_t i = 0; i < a.size(); ++i) {
-        sum += std::abs(a[i] - b[i]);
+        double diff = a[i] - b[i];
+        if (!std::isnan(diff)) {
+            sum += std::abs(diff);
+            ++n_used;
+        }
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < a.size()) {
+        sum *= static_cast<double>(a.size()) / static_cast<double>(n_used);
     }
     return sum;
 }
@@ -102,6 +128,8 @@ inline std::vector<std::vector<double>> kmeans_plusplus_init(
     const std::vector<std::vector<double>>& data,
     std::size_t k)
 {
+    // Clustering rejects NaN, as R's kmeans does (docs/NAN_POLICY.md #12)
+    detail::require_no_nan_matrix(data, "kmeans_plusplus_init");
     std::size_t n = data.size();
 
     std::vector<std::vector<double>> centroids;
@@ -180,6 +208,9 @@ inline kmeans_result kmeans(
     if (k > data.size()) {
         throw std::invalid_argument("statcpp::kmeans: k exceeds number of data points");
     }
+    // Clustering rejects NaN, as R's kmeans does (docs/NAN_POLICY.md #12)
+    detail::require_param_not_nan(tol, "kmeans", "tol");
+    detail::require_no_nan_matrix(data, "kmeans");
 
     std::size_t n = data.size();
     std::size_t dim = data[0].size();
@@ -306,6 +337,8 @@ inline std::vector<dendrogram_node> hierarchical_clustering(
     if (data.empty()) {
         throw std::invalid_argument("statcpp::hierarchical_clustering: empty data");
     }
+    // Clustering rejects NaN, as R's kmeans does (docs/NAN_POLICY.md #12)
+    detail::require_no_nan_matrix(data, "hierarchical_clustering");
 
     std::size_t n = data.size();
 
@@ -505,6 +538,8 @@ inline double silhouette_score(
     if (data.size() != labels.size()) {
         throw std::invalid_argument("statcpp::silhouette_score: data and labels size mismatch");
     }
+    // Clustering rejects NaN, as R's kmeans does (docs/NAN_POLICY.md #12)
+    detail::require_no_nan_matrix(data, "silhouette_score");
 
     std::size_t n = data.size();
 

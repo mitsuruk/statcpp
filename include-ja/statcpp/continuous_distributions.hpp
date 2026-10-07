@@ -36,6 +36,10 @@ namespace statcpp {
  */
 inline double uniform_pdf(double x, double a = 0.0, double b = 1.0)
 {
+    // R の dunif() と同じく、引数が NaN なら NaN を返す(docs-ja/NAN_POLICY.md)
+    if (std::isnan(x) || std::isnan(a) || std::isnan(b)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (a >= b) {
         throw std::invalid_argument("statcpp::uniform_pdf: a must be less than b");
     }
@@ -101,6 +105,10 @@ inline double uniform_quantile(double p, double a = 0.0, double b = 1.0)
 template <typename Engine = default_random_engine>
 double uniform_rand(double a, double b, Engine& engine)
 {
+    // R の runif() と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+    if (std::isnan(a) || std::isnan(b)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (a >= b) {
         throw std::invalid_argument("statcpp::uniform_rand: a must be less than b");
     }
@@ -206,6 +214,10 @@ inline double normal_quantile(double p, double mu = 0.0, double sigma = 1.0)
 template <typename Engine = default_random_engine>
 double normal_rand(double mu, double sigma, Engine& engine)
 {
+    // R の rnorm() と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+    if (std::isnan(mu) || std::isnan(sigma)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (sigma <= 0.0) {
         throw std::invalid_argument("statcpp::normal_rand: sigma must be positive");
     }
@@ -301,6 +313,10 @@ inline double exponential_quantile(double p, double lambda = 1.0)
 template <typename Engine = default_random_engine>
 double exponential_rand(double lambda, Engine& engine)
 {
+    // R の rexp() と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+    if (std::isnan(lambda)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (lambda <= 0.0) {
         throw std::invalid_argument("statcpp::exponential_rand: lambda must be positive");
     }
@@ -416,6 +432,10 @@ inline double gamma_quantile(double p, double shape, double rate = 1.0)
 template <typename Engine = default_random_engine>
 double gamma_rand(double shape, double rate, Engine& engine)
 {
+    if (std::isnan(shape) || std::isnan(rate)) {
+        // R の rgamma と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (shape <= 0.0) {
         throw std::invalid_argument("statcpp::gamma_rand: shape must be positive");
     }
@@ -541,6 +561,10 @@ inline double beta_quantile(double p, double alpha, double beta_param)
 template <typename Engine = default_random_engine>
 double beta_rand(double alpha, double beta_param, Engine& engine)
 {
+    if (std::isnan(alpha) || std::isnan(beta_param)) {
+        // R の rbeta と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (alpha <= 0.0) {
         throw std::invalid_argument("statcpp::beta_rand: alpha must be positive");
     }
@@ -644,6 +668,10 @@ inline double chisq_quantile(double p, double df)
 template <typename Engine = default_random_engine>
 double chisq_rand(double df, Engine& engine)
 {
+    if (std::isnan(df)) {
+        // R の rchisq と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (df <= 0.0) {
         throw std::invalid_argument("statcpp::chisq_rand: df must be positive");
     }
@@ -734,6 +762,10 @@ inline double t_cdf(double x, double df)
  */
 inline double t_quantile(double p, double df)
 {
+    // R の qt() と同じく、引数が NaN なら NaN を返す(docs-ja/NAN_POLICY.md)
+    if (std::isnan(p) || std::isnan(df)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (df <= 0.0) {
         throw std::invalid_argument("statcpp::t_quantile: df must be positive");
     }
@@ -792,6 +824,10 @@ inline double t_quantile(double p, double df)
 template <typename Engine = default_random_engine>
 double t_rand(double df, Engine& engine)
 {
+    if (std::isnan(df)) {
+        // R の rt と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (df <= 0.0) {
         throw std::invalid_argument("statcpp::t_rand: df must be positive");
     }
@@ -886,6 +922,10 @@ inline double f_cdf(double x, double df1, double df2)
  */
 inline double f_quantile(double p, double df1, double df2)
 {
+    // R の qf() と同じく、引数が NaN なら NaN を返す(docs-ja/NAN_POLICY.md)
+    if (std::isnan(p) || std::isnan(df1) || std::isnan(df2)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (df1 <= 0.0) {
         throw std::invalid_argument("statcpp::f_quantile: df1 must be positive");
     }
@@ -950,6 +990,10 @@ inline double f_quantile(double p, double df1, double df2)
 template <typename Engine = default_random_engine>
 double f_rand(double df1, double df2, Engine& engine)
 {
+    if (std::isnan(df1) || std::isnan(df2)) {
+        // R の rf と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (df1 <= 0.0) {
         throw std::invalid_argument("statcpp::f_rand: df1 must be positive");
     }
@@ -1060,6 +1104,10 @@ inline double lognormal_quantile(double p, double mu = 0.0, double sigma = 1.0)
 template <typename Engine = default_random_engine>
 double lognormal_rand(double mu, double sigma, Engine& engine)
 {
+    // R の rlnorm() と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+    if (std::isnan(mu) || std::isnan(sigma)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (sigma <= 0.0) {
         throw std::invalid_argument("statcpp::lognormal_rand: sigma must be positive");
     }
@@ -1131,6 +1179,10 @@ inline double weibull_pdf(double x, double shape, double scale = 1.0)
  */
 inline double weibull_cdf(double x, double shape, double scale = 1.0)
 {
+    // R の pweibull() と同じく、引数が NaN なら NaN を返す(docs-ja/NAN_POLICY.md)
+    if (std::isnan(x) || std::isnan(shape) || std::isnan(scale)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (shape <= 0.0) {
         throw std::invalid_argument("statcpp::weibull_cdf: shape must be positive");
     }
@@ -1184,6 +1236,10 @@ inline double weibull_quantile(double p, double shape, double scale = 1.0)
 template <typename Engine = default_random_engine>
 double weibull_rand(double shape, double scale, Engine& engine)
 {
+    // R の rweibull() と同じく、パラメータが NaN なら NaN を返す。std::*_distribution に NaN を渡してはならない
+    if (std::isnan(shape) || std::isnan(scale)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (shape <= 0.0) {
         throw std::invalid_argument("statcpp::weibull_rand: shape must be positive");
     }
@@ -1227,6 +1283,10 @@ inline double weibull_rand(double shape, double scale = 1.0)
  */
 inline double studentized_range_cdf(double q, double k, double df)
 {
+    // R の ptukey() と同じく、引数が NaN なら NaN を返す(docs-ja/NAN_POLICY.md)
+    if (std::isnan(q) || std::isnan(k) || std::isnan(df)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (k < 2.0) {
         throw std::invalid_argument("statcpp::studentized_range_cdf: k must be >= 2");
     }
@@ -1446,6 +1506,10 @@ inline double studentized_range_cdf(double q, double k, double df)
  */
 inline double studentized_range_quantile(double p, double k, double df)
 {
+    // R の qtukey() と同じく、引数が NaN なら NaN を返す(docs-ja/NAN_POLICY.md)
+    if (std::isnan(p) || std::isnan(k) || std::isnan(df)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (k < 2.0) {
         throw std::invalid_argument("statcpp::studentized_range_quantile: k must be >= 2");
     }

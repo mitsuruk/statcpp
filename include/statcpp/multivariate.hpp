@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "statcpp/nan_utils.hpp"
 #include "statcpp/linear_regression.hpp"  // for detail::validate_matrix_structure
 
 namespace statcpp {
@@ -119,6 +120,13 @@ inline std::vector<std::vector<double>> correlation_matrix(
         }
     }
 
+    // R's cor() reports 1 on the diagonal even for a variable containing NA (docs/NAN_POLICY.md)
+    for (std::size_t j = 0; j < p; ++j) {
+        if (std::isnan(corr[j][j])) {
+            corr[j][j] = 1.0;
+        }
+    }
+
     return corr;
 }
 
@@ -154,16 +162,30 @@ inline std::vector<std::vector<double>> standardize(
     std::vector<double> stddevs(p, 0.0);
 
     for (std::size_t j = 0; j < p; ++j) {
+        // As R's scale() does, the column statistics use the non-NaN values only and a NaN
+        // cell stays NaN in the result (docs/NAN_POLICY.md #11)
+        std::size_t n_j = 0;
         for (std::size_t i = 0; i < n; ++i) {
-            means[j] += data[i][j];
+            if (!std::isnan(data[i][j])) {
+                means[j] += data[i][j];
+                ++n_j;
+            }
         }
-        means[j] /= static_cast<double>(n);
+        if (n_j < 2) {
+            // The standard deviation needs 2 values; otherwise the whole column is NaN
+            means[j] = std::numeric_limits<double>::quiet_NaN();
+            stddevs[j] = std::numeric_limits<double>::quiet_NaN();
+            continue;
+        }
+        means[j] /= static_cast<double>(n_j);
 
         for (std::size_t i = 0; i < n; ++i) {
-            double diff = data[i][j] - means[j];
-            stddevs[j] += diff * diff;
+            if (!std::isnan(data[i][j])) {
+                double diff = data[i][j] - means[j];
+                stddevs[j] += diff * diff;
+            }
         }
-        stddevs[j] = std::sqrt(stddevs[j] / static_cast<double>(n - 1));
+        stddevs[j] = std::sqrt(stddevs[j] / static_cast<double>(n_j - 1));
 
         if (stddevs[j] == 0.0) {
             throw std::invalid_argument("statcpp::standardize: zero variance variable");
@@ -261,6 +283,9 @@ inline std::pair<double, std::vector<double>> power_iteration(
     std::size_t max_iter = 1000,
     double tol = 1e-10)
 {
+    // NaN is rejected (docs/NAN_POLICY.md)
+    detail::require_no_nan_matrix(matrix, "power_iteration");
+    detail::require_param_not_nan(tol, "power_iteration", "tol");
     std::size_t n = matrix.size();
     std::vector<double> v(n, 1.0 / std::sqrt(static_cast<double>(n)));
 
@@ -327,6 +352,8 @@ inline pca_result pca(const std::vector<std::vector<double>>& data,
 {
     // Validate matrix structure
     detail::validate_matrix_structure(data, "pca");
+    // NaN is rejected (docs/NAN_POLICY.md)
+    detail::require_no_nan_matrix(data, "pca");
 
     std::size_t p = data[0].size();
 
@@ -388,6 +415,8 @@ inline std::vector<std::vector<double>> pca_transform(
 {
     // Validate matrix structure
     detail::validate_matrix_structure(data, "pca_transform");
+    // NaN is rejected (docs/NAN_POLICY.md)
+    detail::require_no_nan_matrix(data, "pca_transform");
 
     // Also validate PCA components structure
     if (pca.components.empty() || pca.components[0].empty()) {

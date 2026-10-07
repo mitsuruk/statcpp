@@ -11,10 +11,12 @@
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/dispersion_spread.hpp"
 #include "statcpp/continuous_distributions.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -72,6 +74,13 @@ template <typename Iterator>
 test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
                    alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    // NaN is removed before testing, as R's t.test() does (docs/NAN_POLICY.md)
+    detail::require_param_not_nan(mu0, "z_test", "mu0");
+    detail::require_param_not_nan(sigma, "z_test", "sigma");
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return z_test(values.begin(), values.end(), mu0, sigma, alt);
+    }
     if (sigma <= 0.0) {
         throw std::invalid_argument("statcpp::z_test: sigma must be positive");
     }
@@ -121,6 +130,7 @@ test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
 inline test_result z_test_proportion(std::size_t successes, std::size_t trials, double p0,
                                      alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    detail::require_param_not_nan(p0, "z_test_proportion", "p0");
     if (p0 <= 0.0 || p0 >= 1.0) {
         throw std::invalid_argument("statcpp::z_test_proportion: p0 must be in (0, 1)");
     }
@@ -231,6 +241,12 @@ template <typename Iterator>
 test_result t_test(Iterator first, Iterator last, double mu0,
                    alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    // NaN is removed before testing, as R's t.test() does (docs/NAN_POLICY.md)
+    detail::require_param_not_nan(mu0, "t_test", "mu0");
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return t_test(values.begin(), values.end(), mu0, alt);
+    }
     auto n = statcpp::count(first, last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::t_test: need at least 2 elements");
@@ -285,6 +301,12 @@ test_result t_test_two_sample(Iterator1 first1, Iterator1 last1,
                                Iterator2 first2, Iterator2 last2,
                                alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    // NaN is removed before testing, as R's t.test() does (docs/NAN_POLICY.md)
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return t_test_two_sample(x.begin(), x.end(), y.begin(), y.end(), alt);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -346,6 +368,12 @@ test_result t_test_welch(Iterator1 first1, Iterator1 last1,
                           Iterator2 first2, Iterator2 last2,
                           alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    // NaN is removed before testing, as R's t.test() does (docs/NAN_POLICY.md)
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return t_test_welch(x.begin(), x.end(), y.begin(), y.end(), alt);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -416,6 +444,12 @@ test_result t_test_paired(Iterator1 first1, Iterator1 last1,
                            Iterator2 first2, Iterator2 last2,
                            alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    // A pair is removed when either value is NaN, as R's t.test(paired = TRUE) does (docs/NAN_POLICY.md)
+    if (std::distance(first1, last1) == std::distance(first2, last2) &&
+        (detail::has_nan(first1, last1) || detail::has_nan(first2, last2))) {
+        const auto [x, y] = detail::drop_nan_pairs(first1, last1, first2);
+        return t_test_paired(x.begin(), x.end(), y.begin(), y.end(), alt);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -464,6 +498,10 @@ template <typename Iterator1, typename Iterator2>
 test_result chisq_test_gof(Iterator1 observed_first, Iterator1 observed_last,
                            Iterator2 expected_first, Iterator2 expected_last)
 {
+    // R's chisq.test() is an error when the counts contain NA (docs/NAN_POLICY.md)
+    if (detail::has_nan(observed_first, observed_last) || detail::has_nan(expected_first, expected_last)) {
+        throw std::invalid_argument("statcpp::chisq_test_gof: data contains NaN");
+    }
     auto n_obs = statcpp::count(observed_first, observed_last);
     auto n_exp = statcpp::count(expected_first, expected_last);
 
@@ -512,6 +550,8 @@ test_result chisq_test_gof(Iterator1 observed_first, Iterator1 observed_last,
 template <typename Iterator>
 test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_last)
 {
+    // R's chisq.test() is an error when the counts contain NA (docs/NAN_POLICY.md)
+    detail::require_no_nan(observed_first, observed_last, "chisq_test_gof_uniform");
     auto n = statcpp::count(observed_first, observed_last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::chisq_test_gof_uniform: need at least 2 categories");
@@ -555,6 +595,10 @@ test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_la
  */
 inline test_result chisq_test_independence(const std::vector<std::vector<double>>& contingency_table)
 {
+    // R's chisq.test() is an error when the counts contain NA (docs/NAN_POLICY.md)
+    for (const auto& row : contingency_table) {
+        detail::require_no_nan(row.begin(), row.end(), "chisq_test_independence");
+    }
     std::size_t rows = contingency_table.size();
     if (rows < 2) {
         throw std::invalid_argument("statcpp::chisq_test_independence: need at least 2 rows");
@@ -635,6 +679,12 @@ test_result f_test(Iterator1 first1, Iterator1 last1,
                    Iterator2 first2, Iterator2 last2,
                    alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    // NaN is removed before testing, as R's var.test() does (docs/NAN_POLICY.md)
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return f_test(x.begin(), x.end(), y.begin(), y.end(), alt);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -689,6 +739,10 @@ test_result f_test(Iterator1 first1, Iterator1 last1,
  */
 inline std::vector<double> bonferroni_correction(const std::vector<double>& p_values)
 {
+    // NaN p-values stay NaN and are not counted in the number of tests, as R's p.adjust() does (docs/NAN_POLICY.md)
+    if (detail::has_nan(p_values.begin(), p_values.end())) {
+        return detail::map_non_nan(p_values, [](const std::vector<double>& p) { return bonferroni_correction(p); });
+    }
     std::size_t n = p_values.size();
     std::vector<double> adjusted(n);
 
@@ -710,6 +764,11 @@ inline std::vector<double> bonferroni_correction(const std::vector<double>& p_va
  */
 inline std::vector<double> benjamini_hochberg_correction(const std::vector<double>& p_values)
 {
+    // NaN p-values stay NaN and are not counted in the number of tests, as R's p.adjust() does (docs/NAN_POLICY.md)
+    if (detail::has_nan(p_values.begin(), p_values.end())) {
+        return detail::map_non_nan(p_values,
+                                   [](const std::vector<double>& p) { return benjamini_hochberg_correction(p); });
+    }
     std::size_t n = p_values.size();
     if (n == 0) return {};
 
@@ -750,6 +809,10 @@ inline std::vector<double> benjamini_hochberg_correction(const std::vector<doubl
  */
 inline std::vector<double> holm_correction(const std::vector<double>& p_values)
 {
+    // NaN p-values stay NaN and are not counted in the number of tests, as R's p.adjust() does (docs/NAN_POLICY.md)
+    if (detail::has_nan(p_values.begin(), p_values.end())) {
+        return detail::map_non_nan(p_values, [](const std::vector<double>& p) { return holm_correction(p); });
+    }
     std::size_t n = p_values.size();
     if (n == 0) return {};
 

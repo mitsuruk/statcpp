@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <vector>
 #include <string>
 
 #include "statcpp/data_wrangling.hpp"
+#include "statcpp/numerical_utils.hpp"
 
 // ============================================================================
 // Missing Data Tests
@@ -702,4 +705,171 @@ TEST(RollingTest, NaNContainedInWindowSum) {
     EXPECT_TRUE(std::isnan(r[1]));        // 2 + NA
     EXPECT_TRUE(std::isnan(r[2]));        // NA + 4
     EXPECT_DOUBLE_EQ(r[3], 9.0);          // 4 + 5 -> recovered
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that bin_equal_width rejects NaN
+ * @test Verifies it throws, since a bin number cannot represent NA (it was undefined behaviour)
+ */
+TEST(DataWranglingNanTest, BinEqualWidthThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_THROW(statcpp::bin_equal_width({1.0, nan, 3.0}, 2), std::invalid_argument);
+    EXPECT_THROW(statcpp::bin_equal_width({nan, 1.0, 3.0}, 2), std::invalid_argument);
+}
+
+/**
+ * @brief Tests stratified_sample with NaN
+ * @test Verifies a NaN stratum key and a NaN ratio throw, while NaN data values pass through
+ */
+TEST(DataWranglingNanTest, StratifiedSample) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> strata = {1.0, 1.0, nan, 2.0};
+    std::vector<double> clean_strata = {1.0, 1.0, 2.0, 2.0};
+    std::vector<double> data = {10.0, nan, 30.0, 40.0};
+    EXPECT_THROW(statcpp::stratified_sample(strata, data, 1.0), std::invalid_argument);
+    EXPECT_THROW(statcpp::stratified_sample(clean_strata, data, nan), std::invalid_argument);
+    auto r = statcpp::stratified_sample(clean_strata, data, 1.0);
+    EXPECT_EQ(r.size(), 4u);
+}
+
+namespace {
+
+const double kWNaN = std::numeric_limits<double>::quiet_NaN();
+
+}  // namespace
+
+/**
+ * @brief Tests that fillna_median fills with the median of the observed values
+ * @test Expected value: median(c(9, 1, 5, 3)) = 4 in R (the unsorted values used to give 3)
+ */
+TEST(DataWranglingNanTest, FillnaMedianUsesTrueMedian) {
+    auto r = statcpp::fillna_median({9.0, kWNaN, 1.0, 5.0, 3.0});
+    ASSERT_EQ(r.size(), 5u);
+    EXPECT_DOUBLE_EQ(r[1], 4.0);
+    EXPECT_DOUBLE_EQ(r[0], 9.0);
+}
+
+/**
+ * @brief Tests that sort_values drops NaN and argsort places NaN last
+ * @test Expected values: sort(x), sort(x, decreasing = TRUE), order(x) - 1 and order(x, decreasing = TRUE) - 1 in R
+ */
+TEST(DataWranglingNanTest, SortingLikeR) {
+    std::vector<double> x = {3, kWNaN, 1, 4, 1.5, kWNaN, 9, 2, 6};
+    EXPECT_EQ(statcpp::sort_values(x), (std::vector<double>{1, 1.5, 2, 3, 4, 6, 9}));
+    EXPECT_EQ(statcpp::sort_values(x, false), (std::vector<double>{9, 6, 4, 3, 2, 1.5, 1}));
+    EXPECT_EQ(statcpp::argsort(x), (std::vector<std::size_t>{2, 4, 7, 0, 3, 8, 6, 1, 5}));
+    EXPECT_EQ(statcpp::argsort(x, false), (std::vector<std::size_t>{6, 8, 3, 0, 7, 4, 2, 1, 5}));
+
+    // A large input exercises the introsort path, which NaN used to corrupt
+    std::vector<double> big;
+    for (int i = 0; i < 200; ++i) {
+        big.push_back(static_cast<double>((i * 37) % 200));
+    }
+    big[50] = kWNaN;
+    auto sorted = statcpp::sort_values(big);
+    ASSERT_EQ(sorted.size(), 199u);
+    EXPECT_TRUE(std::is_sorted(sorted.begin(), sorted.end()));
+    auto idx = statcpp::argsort(big);
+    EXPECT_EQ(idx.back(), 50u);
+    for (std::size_t i = 1; i + 1 < idx.size(); ++i) {
+        EXPECT_LE(big[idx[i - 1]], big[idx[i]]);
+    }
+}
+
+/**
+ * @brief Tests that rolling_min and rolling_max give NaN for every window containing NaN
+ * @test Verifies the result does not depend on the position of NaN in the window
+ */
+TEST(DataWranglingNanTest, RollingMinMaxElementwise) {
+    std::vector<double> x = {4, 1, 3, kWNaN, 5, 2};
+    auto mn = statcpp::rolling_min(x, 2);
+    auto mx = statcpp::rolling_max(x, 2);
+    ASSERT_EQ(mn.size(), 5u);
+    EXPECT_DOUBLE_EQ(mn[0], 1.0);
+    EXPECT_DOUBLE_EQ(mn[1], 1.0);
+    EXPECT_TRUE(std::isnan(mn[2]));
+    EXPECT_TRUE(std::isnan(mn[3]));
+    EXPECT_DOUBLE_EQ(mn[4], 2.0);
+    EXPECT_DOUBLE_EQ(mx[1], 3.0);
+    EXPECT_TRUE(std::isnan(mx[2]));
+    EXPECT_TRUE(std::isnan(mx[3]));
+    EXPECT_DOUBLE_EQ(mx[4], 5.0);
+}
+
+/**
+ * @brief Tests that the duplicate functions treat NaN values as equal to each other
+ * @test Expected values: unique(c(1, NA, 2, NA, 1)) and the duplicated values in R
+ */
+TEST(DataWranglingNanTest, DuplicatesTreatNaNAsOneValue) {
+    std::vector<double> x = {1, kWNaN, 2, kWNaN, 1};
+    auto u = statcpp::drop_duplicates(x);
+    ASSERT_EQ(u.size(), 3u);
+    EXPECT_DOUBLE_EQ(u[0], 1.0);
+    EXPECT_TRUE(std::isnan(u[1]));
+    EXPECT_DOUBLE_EQ(u[2], 2.0);
+
+    auto d = statcpp::get_duplicates(x);
+    ASSERT_EQ(d.size(), 2u);
+    EXPECT_EQ(std::count_if(d.begin(), d.end(), [](double v) { return std::isnan(v); }), 1);
+    EXPECT_EQ(std::count(d.begin(), d.end(), 1.0), 1);
+    EXPECT_TRUE(statcpp::get_duplicates(std::vector<double>{1, kWNaN, 2}).empty());
+}
+
+/**
+ * @brief Tests that the categorical encoders reject NaN
+ * @test Verifies policy section 5 (NaN used to be merged into a neighbouring category)
+ */
+TEST(DataWranglingNanTest, EncodersThrow) {
+    std::vector<double> x = {3, kWNaN, 1, 3};
+    EXPECT_THROW(statcpp::value_counts(x), std::invalid_argument);
+    EXPECT_THROW(statcpp::label_encode(x), std::invalid_argument);
+    EXPECT_THROW(statcpp::one_hot_encode(x), std::invalid_argument);
+    EXPECT_THROW(statcpp::bin_equal_freq(x, 2), std::invalid_argument);
+    EXPECT_NO_THROW(statcpp::value_counts(std::vector<int>{1, 2, 2}));
+}
+
+/**
+ * @brief Tests that the group functions drop rows with a NaN key
+ * @test Expected values: tapply(c(10, 20, 30, 40), c(1, NA, 2, 1), sum) in R (the NaN key used to merge into a group)
+ */
+TEST(DataWranglingNanTest, GroupsDropNaNKeys) {
+    std::vector<double> keys = {1, kWNaN, 2, 1};
+    std::vector<double> values = {10, 20, 30, 40};
+    auto g = statcpp::group_by(keys, values);
+    ASSERT_EQ(g.groups.size(), 2u);
+    auto s = statcpp::group_sum(keys, values);
+    EXPECT_EQ(s.keys, (std::vector<double>{1, 2}));
+    EXPECT_EQ(s.values, (std::vector<double>{50, 30}));
+    auto m = statcpp::group_mean(keys, values);
+    EXPECT_EQ(m.values, (std::vector<double>{25, 30}));
+    auto c = statcpp::group_count(keys, values);
+    EXPECT_EQ(c.values, (std::vector<double>{2, 1}));
+}
+
+/**
+ * @brief Tests that the range functions reject a NaN bound
+ * @test Verifies policy #9 (a NaN bound used to give an empty result or true)
+ */
+TEST(DataWranglingNanTest, RangeNaNBoundThrows) {
+    std::vector<double> x = {1, 2, 3};
+    EXPECT_THROW(statcpp::filter_range(x, kWNaN, 2.0), std::invalid_argument);
+    EXPECT_THROW(statcpp::filter_range(x, 0.0, kWNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::validate_range(x, kWNaN, 2.0), std::invalid_argument);
+    EXPECT_THROW(statcpp::validate_range(x, 0.0, kWNaN), std::invalid_argument);
+    EXPECT_EQ(statcpp::filter_range(std::vector<double>{1, kWNaN, 3}, 0.0, 2.0), (std::vector<double>{1}));
+}
+
+/**
+ * @brief Tests that clamp returns NaN when any argument is NaN
+ * @test Verifies R's pmin(pmax(x, lo), hi) behaviour (NaN x used to give min_val)
+ */
+TEST(DataWranglingNanTest, ClampReturnsNaN) {
+    EXPECT_TRUE(std::isnan(statcpp::clamp(kWNaN, 0.0, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::clamp(0.5, kWNaN, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::clamp(5.0, 0.0, kWNaN)));
+    EXPECT_DOUBLE_EQ(statcpp::clamp(5.0, 0.0, 1.0), 1.0);
 }

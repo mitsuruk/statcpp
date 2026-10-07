@@ -10,6 +10,7 @@
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/dispersion_spread.hpp"
 #include "statcpp/continuous_distributions.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -117,6 +118,12 @@ struct confidence_interval {
 template <typename Iterator>
 confidence_interval ci_mean(Iterator first, Iterator last, double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "ci_mean", "confidence");
+    if (detail::has_nan(first, last)) {
+        // R の t.test と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return ci_mean(values.begin(), values.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_mean: confidence must be in (0, 1)");
     }
@@ -153,6 +160,12 @@ confidence_interval ci_mean(Iterator first, Iterator last, double confidence = 0
 template <typename Iterator, typename Projection>
 confidence_interval ci_mean(Iterator first, Iterator last, double confidence, Projection proj)
 {
+    detail::require_param_not_nan(confidence, "ci_mean", "confidence");
+    if (detail::has_nan(first, last, proj)) {
+        // R の t.test と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last, proj);
+        return ci_mean(values.begin(), values.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_mean: confidence must be in (0, 1)");
     }
@@ -192,6 +205,12 @@ confidence_interval ci_mean(Iterator first, Iterator last, double confidence, Pr
 template <typename Iterator>
 confidence_interval ci_mean_z(Iterator first, Iterator last, double sigma, double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "ci_mean_z", "confidence");
+    if (detail::has_nan(first, last)) {
+        // R の t.test と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return ci_mean_z(values.begin(), values.end(), sigma, confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_mean_z: confidence must be in (0, 1)");
     }
@@ -230,6 +249,8 @@ confidence_interval ci_mean_z(Iterator first, Iterator last, double sigma, doubl
  */
 inline confidence_interval ci_proportion(std::size_t successes, std::size_t trials, double confidence = 0.95)
 {
+    // NaN は下の (0, 1) の範囲チェックを通過してしまう(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(confidence, "ci_proportion", "confidence");
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_proportion: confidence must be in (0, 1)");
     }
@@ -266,6 +287,8 @@ inline confidence_interval ci_proportion(std::size_t successes, std::size_t tria
  */
 inline confidence_interval ci_proportion_wilson(std::size_t successes, std::size_t trials, double confidence = 0.95)
 {
+    // NaN は下の (0, 1) の範囲チェックを通過してしまう(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(confidence, "ci_proportion_wilson", "confidence");
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_proportion_wilson: confidence must be in (0, 1)");
     }
@@ -307,6 +330,12 @@ inline confidence_interval ci_proportion_wilson(std::size_t successes, std::size
 template <typename Iterator>
 confidence_interval ci_variance(Iterator first, Iterator last, double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "ci_variance", "confidence");
+    if (detail::has_nan(first, last)) {
+        // R の t.test と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return ci_variance(values.begin(), values.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_variance: confidence must be in (0, 1)");
     }
@@ -353,6 +382,13 @@ confidence_interval ci_mean_diff(Iterator1 first1, Iterator1 last1,
                                   Iterator2 first2, Iterator2 last2,
                                   double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "ci_mean_diff", "confidence");
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        // R の t.test と同じく、各標本から NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return ci_mean_diff(x.begin(), x.end(), y.begin(), y.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_mean_diff: confidence must be in (0, 1)");
     }
@@ -404,6 +440,13 @@ confidence_interval ci_mean_diff_welch(Iterator1 first1, Iterator1 last1,
                                         Iterator2 first2, Iterator2 last2,
                                         double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "ci_mean_diff_welch", "confidence");
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        // R の t.test と同じく、各標本から NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return ci_mean_diff_welch(x.begin(), x.end(), y.begin(), y.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::ci_mean_diff_welch: confidence must be in (0, 1)");
     }
@@ -464,6 +507,12 @@ confidence_interval ci_mean_diff_welch(Iterator1 first1, Iterator1 last1,
 template <typename Iterator>
 double margin_of_error_mean(Iterator first, Iterator last, double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "margin_of_error_mean", "confidence");
+    if (detail::has_nan(first, last)) {
+        // R の t.test と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return margin_of_error_mean(values.begin(), values.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::margin_of_error_mean: confidence must be in (0, 1)");
     }
@@ -496,6 +545,12 @@ double margin_of_error_mean(Iterator first, Iterator last, double confidence = 0
 template <typename Iterator, typename Projection>
 double margin_of_error_mean(Iterator first, Iterator last, double confidence, Projection proj)
 {
+    detail::require_param_not_nan(confidence, "margin_of_error_mean", "confidence");
+    if (detail::has_nan(first, last, proj)) {
+        // R の t.test と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last, proj);
+        return margin_of_error_mean(values.begin(), values.end(), confidence);
+    }
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::margin_of_error_mean: confidence must be in (0, 1)");
     }
@@ -590,6 +645,10 @@ inline std::size_t sample_size_for_moe_proportion(double margin_of_error,
                                                    double confidence_level = 0.95,
                                                    double p_estimate = 0.5)
 {
+    // std::size_t のサンプルサイズでは NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(margin_of_error, "sample_size_for_moe_proportion", "margin_of_error");
+    detail::require_param_not_nan(confidence_level, "sample_size_for_moe_proportion", "confidence_level");
+    detail::require_param_not_nan(p_estimate, "sample_size_for_moe_proportion", "p_estimate");
     if (margin_of_error <= 0.0 || margin_of_error >= 1.0) {
         throw std::invalid_argument("statcpp::sample_size_for_moe_proportion: margin_of_error must be in (0, 1)");
     }
@@ -626,6 +685,10 @@ inline std::size_t sample_size_for_moe_mean(double margin_of_error,
                                              double sigma,
                                              double confidence_level = 0.95)
 {
+    // std::size_t のサンプルサイズでは NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(margin_of_error, "sample_size_for_moe_mean", "margin_of_error");
+    detail::require_param_not_nan(sigma, "sample_size_for_moe_mean", "sigma");
+    detail::require_param_not_nan(confidence_level, "sample_size_for_moe_mean", "confidence_level");
     if (margin_of_error <= 0.0) {
         throw std::invalid_argument("statcpp::sample_size_for_moe_mean: margin_of_error must be positive");
     }

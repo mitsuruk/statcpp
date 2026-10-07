@@ -397,3 +397,50 @@ TEST(NbinomQuantileTest, ProbOneReturnsMax) {
     EXPECT_EQ(statcpp::nbinom_quantile(1.0, 3.0, 0.4),
               std::numeric_limits<std::uint64_t>::max());
 }
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that integer-valued random generation rejects a NaN parameter
+ * @test Verifies that a NaN parameter throws, since a std::uint64_t result cannot represent NA (NAN_POLICY section 5)
+ */
+TEST(DiscreteRandNanTest, NaNParameterThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_THROW(statcpp::poisson_rand(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::geometric_rand(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::nbinom_rand(nan, 0.5), std::invalid_argument);
+    EXPECT_THROW(statcpp::nbinom_rand(3.0, nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that discrete_uniform_quantile rejects a NaN probability
+ * @test Verifies it throws, since an integer quantile cannot represent NA (it was undefined behaviour)
+ */
+TEST(DiscreteQuantileNanTest, DiscreteUniformThrows) {
+    EXPECT_THROW(statcpp::discrete_uniform_quantile(std::numeric_limits<double>::quiet_NaN(), 1, 6),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the integer-valued quantiles and generators reject NaN
+ * @test Verifies they throw, since an integer result cannot represent NA (they used to return arbitrary integers)
+ */
+TEST(DiscreteQuantileNanTest, IntegerResultsThrow) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_THROW(statcpp::binomial_quantile(nan, 10, 0.5), std::invalid_argument);
+    EXPECT_THROW(statcpp::binomial_quantile(0.5, 10, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::poisson_quantile(nan, 3.0), std::invalid_argument);
+    EXPECT_THROW(statcpp::poisson_quantile(0.5, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::geometric_quantile(nan, 0.3), std::invalid_argument);
+    EXPECT_THROW(statcpp::geometric_quantile(0.5, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::hypergeom_quantile(nan, 20, 7, 12), std::invalid_argument);
+    EXPECT_THROW(statcpp::nbinom_quantile(nan, 3.0, 0.4), std::invalid_argument);
+    EXPECT_THROW(statcpp::nbinom_quantile(0.5, nan, 0.4), std::invalid_argument);
+    EXPECT_THROW(statcpp::nbinom_quantile(0.5, 3.0, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::bernoulli_quantile(nan, 0.3), std::invalid_argument);
+    EXPECT_THROW(statcpp::bernoulli_quantile(0.5, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::binomial_rand(10, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::bernoulli_rand(nan), std::invalid_argument);
+}

@@ -19,6 +19,7 @@
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/dispersion_spread.hpp"
 #include "statcpp/order_statistics.hpp"
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -47,6 +48,10 @@ double mad(Iterator first, Iterator last)
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::mad: empty range");
+    }
+    if (detail::has_nan(first, last)) {
+        // R の mad() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     // データをコピーしてソート（中央値計算のため）
@@ -143,6 +148,9 @@ outlier_detection_result detect_outliers_iqr(Iterator first, Iterator last, doub
     if (n == 0) {
         throw std::invalid_argument("statcpp::detect_outliers_iqr: empty range");
     }
+    // 点ごとの外れ値フラグでは欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(k, "detect_outliers_iqr", "k");
+    detail::require_no_nan(first, last, "detect_outliers_iqr");
 
     // データをコピーしてソート
     std::vector<double> sorted_data;
@@ -260,6 +268,9 @@ outlier_detection_result detect_outliers_modified_zscore(Iterator first, Iterato
     if (n == 0) {
         throw std::invalid_argument("statcpp::detect_outliers_modified_zscore: empty range");
     }
+    // 点ごとの外れ値フラグでは欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(threshold, "detect_outliers_modified_zscore", "threshold");
+    detail::require_no_nan(first, last, "detect_outliers_modified_zscore");
 
     // データをコピーしてソート
     std::vector<double> sorted_data;
@@ -328,6 +339,7 @@ std::vector<double> winsorize(Iterator first, Iterator last, double limits = 0.0
     if (n == 0) {
         throw std::invalid_argument("statcpp::winsorize: empty range");
     }
+    detail::require_param_not_nan(limits, "winsorize", "limits");
     if (limits < 0.0 || limits >= 0.5) {
         throw std::invalid_argument("statcpp::winsorize: limits must be in [0, 0.5)");
     }
@@ -336,7 +348,13 @@ std::vector<double> winsorize(Iterator first, Iterator last, double limits = 0.0
     std::vector<double> sorted_data;
     sorted_data.reserve(n);
     for (auto it = first; it != last; ++it) {
-        sorted_data.push_back(static_cast<double>(*it));
+        // 閾値は NaN 以外の値から求め、NaN の要素は結果でも NaN のまま残す(docs-ja/NAN_POLICY.md)
+        if (!std::isnan(static_cast<double>(*it))) {
+            sorted_data.push_back(static_cast<double>(*it));
+        }
+    }
+    if (sorted_data.empty()) {
+        return std::vector<double>(n, std::numeric_limits<double>::quiet_NaN());
     }
     std::sort(sorted_data.begin(), sorted_data.end());
 
@@ -507,6 +525,11 @@ double hodges_lehmann(Iterator first, Iterator last)
     if (n == 0) {
         throw std::invalid_argument("statcpp::hodges_lehmann: empty range");
     }
+    if (detail::has_nan(first, last)) {
+        // NaN を除去してから推定する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return hodges_lehmann(values.begin(), values.end());
+    }
 
     std::vector<double> data;
     data.reserve(n);
@@ -550,6 +573,11 @@ double biweight_midvariance(Iterator first, Iterator last, double c = 9.0)
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n < 2) {
         throw std::invalid_argument("statcpp::biweight_midvariance: need at least 2 elements");
+    }
+    detail::require_param_not_nan(c, "biweight_midvariance", "c");
+    if (detail::has_nan(first, last)) {
+        // 基になる mad() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     // データをコピーしてソート

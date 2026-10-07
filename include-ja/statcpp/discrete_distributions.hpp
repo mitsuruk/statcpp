@@ -10,6 +10,7 @@
 
 #include "statcpp/special_functions.hpp"
 #include "statcpp/random_engine.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -132,6 +133,9 @@ inline double binomial_cdf(std::uint64_t k, std::uint64_t n, double p)
  */
 inline std::uint64_t binomial_quantile(double prob, std::uint64_t n, double p)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(prob, "binomial_quantile", "prob");
+    detail::require_param_not_nan(p, "binomial_quantile", "p");
     if (p < 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::binomial_quantile: p must be in [0, 1]");
     }
@@ -170,6 +174,8 @@ inline std::uint64_t binomial_quantile(double prob, std::uint64_t n, double p)
 template <typename Engine = default_random_engine>
 std::uint64_t binomial_rand(std::uint64_t n, double p, Engine& engine)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(p, "binomial_rand", "p");
     if (p < 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::binomial_rand: p must be in [0, 1]");
     }
@@ -245,6 +251,9 @@ inline double poisson_cdf(std::uint64_t k, double lambda)
  */
 inline std::uint64_t poisson_quantile(double p, double lambda)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(p, "poisson_quantile", "p");
+    detail::require_param_not_nan(lambda, "poisson_quantile", "lambda");
     if (lambda < 0.0) {
         throw std::invalid_argument("statcpp::poisson_quantile: lambda must be non-negative");
     }
@@ -289,6 +298,8 @@ inline std::uint64_t poisson_quantile(double p, double lambda)
 template <typename Engine = default_random_engine>
 std::uint64_t poisson_rand(double lambda, Engine& engine)
 {
+    // std::uint64_t では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(lambda, "poisson_rand", "lambda");
     if (lambda < 0.0) {
         throw std::invalid_argument("statcpp::poisson_rand: lambda must be non-negative");
     }
@@ -362,6 +373,9 @@ inline double geometric_cdf(std::uint64_t k, double p)
  */
 inline std::uint64_t geometric_quantile(double prob, double p)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(prob, "geometric_quantile", "prob");
+    detail::require_param_not_nan(p, "geometric_quantile", "p");
     if (p <= 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::geometric_quantile: p must be in (0, 1]");
     }
@@ -391,6 +405,8 @@ inline std::uint64_t geometric_quantile(double prob, double p)
 template <typename Engine = default_random_engine>
 std::uint64_t geometric_rand(double p, Engine& engine)
 {
+    // std::uint64_t では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(p, "geometric_rand", "p");
     if (p <= 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::geometric_rand: p must be in (0, 1]");
     }
@@ -489,6 +505,8 @@ inline double hypergeom_cdf(std::uint64_t k, std::uint64_t N, std::uint64_t K, s
  */
 inline std::uint64_t hypergeom_quantile(double p, std::uint64_t N, std::uint64_t K, std::uint64_t n)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(p, "hypergeom_quantile", "p");
     if (K > N) {
         throw std::invalid_argument("statcpp::hypergeom_quantile: K must be <= N");
     }
@@ -648,6 +666,10 @@ inline double nbinom_cdf(std::uint64_t k, double r, double p)
  */
 inline std::uint64_t nbinom_quantile(double prob, double r, double p)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(prob, "nbinom_quantile", "prob");
+    detail::require_param_not_nan(r, "nbinom_quantile", "r");
+    detail::require_param_not_nan(p, "nbinom_quantile", "p");
     if (r <= 0.0) {
         throw std::invalid_argument("statcpp::nbinom_quantile: r must be positive");
     }
@@ -700,6 +722,9 @@ inline std::uint64_t nbinom_quantile(double prob, double r, double p)
 template <typename Engine = default_random_engine>
 std::uint64_t nbinom_rand(double r, double p, Engine& engine)
 {
+    // std::uint64_t では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(r, "nbinom_rand", "r");
+    detail::require_param_not_nan(p, "nbinom_rand", "p");
     if (r <= 0.0) {
         throw std::invalid_argument("statcpp::nbinom_rand: r must be positive");
     }
@@ -784,6 +809,9 @@ inline double bernoulli_cdf(std::uint64_t k, double p)
  */
 inline std::uint64_t bernoulli_quantile(double prob, double p)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(prob, "bernoulli_quantile", "prob");
+    detail::require_param_not_nan(p, "bernoulli_quantile", "p");
     if (prob < 0.0 || prob > 1.0) {
         throw std::invalid_argument("statcpp::bernoulli_quantile: prob must be in [0, 1]");
     }
@@ -806,6 +834,8 @@ inline std::uint64_t bernoulli_quantile(double prob, double p)
 template <typename Engine = default_random_engine>
 std::uint64_t bernoulli_rand(double p, Engine& engine)
 {
+    // 整数の結果では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(p, "bernoulli_rand", "p");
     if (p < 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::bernoulli_rand: p must be in [0, 1]");
     }
@@ -887,6 +917,8 @@ inline std::int64_t discrete_uniform_quantile(double p, std::int64_t a, std::int
     if (a > b) {
         throw std::invalid_argument("statcpp::discrete_uniform_quantile: a must be <= b");
     }
+    // 整数の分位点では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(p, "discrete_uniform_quantile", "p");
     if (p < 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::discrete_uniform_quantile: p must be in [0, 1]");
     }

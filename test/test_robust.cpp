@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include "statcpp/robust.hpp"
@@ -279,4 +280,79 @@ TEST(BiweightMidvarianceTest, Basic) {
 TEST(BiweightMidvarianceTest, Insufficient) {
     std::vector<double> data = {1};
     EXPECT_THROW(statcpp::biweight_midvariance(data.begin(), data.end()), std::invalid_argument);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests MAD with NaN
+ * @test Verifies R's mad() default: NaN data gives NaN, wherever the NaN is
+ */
+TEST(RobustNanTest, MadReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> middle = {1.0, 2.0, nan, 4.0, 10.0};
+    std::vector<double> first = {nan, 1.0, 2.0, 4.0, 10.0};
+    EXPECT_TRUE(std::isnan(statcpp::mad(middle.begin(), middle.end())));
+    EXPECT_TRUE(std::isnan(statcpp::mad(first.begin(), first.end())));
+    EXPECT_TRUE(std::isnan(statcpp::mad_scaled(middle.begin(), middle.end())));
+}
+
+/**
+ * @brief Tests that the outlier detectors reject NaN data and NaN parameters
+ * @test Verifies they throw, since per-point outlier flags cannot represent a missing value (policy section 5)
+ */
+TEST(RobustNanTest, OutlierDetectionThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, 3.0, nan, 4.0, 5.0, 30.0};
+    std::vector<double> clean = {1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 30.0};
+    EXPECT_THROW(statcpp::detect_outliers_iqr(with_nan.begin(), with_nan.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::detect_outliers_iqr(clean.begin(), clean.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::detect_outliers_modified_zscore(with_nan.begin(), with_nan.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::detect_outliers_modified_zscore(clean.begin(), clean.end(), nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests winsorize with NaN
+ * @test Verifies the limits come from the non-NaN data, NaN stays NaN, and a NaN limits parameter throws
+ */
+TEST(RobustNanTest, WinsorizeKeepsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, nan, 3.0, 4.0, 100.0};
+    std::vector<double> clean = {1.0, 2.0, 3.0, 4.0, 100.0};
+    auto r = statcpp::winsorize(with_nan.begin(), with_nan.end(), 0.2);
+    auto e = statcpp::winsorize(clean.begin(), clean.end(), 0.2);
+    ASSERT_EQ(r.size(), 6u);
+    EXPECT_DOUBLE_EQ(r[0], e[0]);
+    EXPECT_DOUBLE_EQ(r[1], e[1]);
+    EXPECT_TRUE(std::isnan(r[2]));
+    EXPECT_DOUBLE_EQ(r[3], e[2]);
+    EXPECT_DOUBLE_EQ(r[4], e[3]);
+    EXPECT_DOUBLE_EQ(r[5], e[4]);
+    EXPECT_THROW(statcpp::winsorize(clean.begin(), clean.end(), nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the Hodges-Lehmann estimator drops NaN
+ * @test Verifies the result equals the result on the data without NaN
+ */
+TEST(RobustNanTest, HodgesLehmannDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {3.1, nan, 2.4, 5.0, 4.2};
+    std::vector<double> clean = {3.1, 2.4, 5.0, 4.2};
+    EXPECT_DOUBLE_EQ(statcpp::hodges_lehmann(with_nan.begin(), with_nan.end()),
+                     statcpp::hodges_lehmann(clean.begin(), clean.end()));
+}
+
+/**
+ * @brief Tests biweight midvariance with NaN
+ * @test Verifies NaN data gives NaN and a NaN tuning constant throws (it returned 0 before)
+ */
+TEST(RobustNanTest, BiweightMidvariance) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, nan, 4.0, 5.0, 7.0};
+    std::vector<double> clean = {1.0, 2.0, 3.0, 4.0, 5.0, 7.0};
+    EXPECT_TRUE(std::isnan(statcpp::biweight_midvariance(with_nan.begin(), with_nan.end())));
+    EXPECT_THROW(statcpp::biweight_midvariance(clean.begin(), clean.end(), nan), std::invalid_argument);
 }

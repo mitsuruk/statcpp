@@ -198,6 +198,10 @@ inline double expm1_safe(double x)
  */
 inline double clamp(double x, double min_val, double max_val)
 {
+    // Any NaN argument gives NaN, as R's pmin(pmax(x, lo), hi) does (docs/NAN_POLICY.md)
+    if (std::isnan(x) || std::isnan(min_val) || std::isnan(max_val)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (min_val > max_val) {
         throw std::invalid_argument("statcpp::clamp: min_val must be <= max_val");
     }

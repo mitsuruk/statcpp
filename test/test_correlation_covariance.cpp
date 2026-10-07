@@ -2,6 +2,8 @@
 #include "statcpp/correlation_covariance.hpp"
 #include <vector>
 #include <cmath>
+#include <utility>
+#include <limits>
 
 // ============================================================================
 // Population Covariance Tests
@@ -418,5 +420,72 @@ TEST(WeightedCovarianceTest, NegativeWeight) {
     std::vector<double> y = {1.0, 2.0, 3.0};
     std::vector<double> w = {1.0, -1.0, 1.0};
     EXPECT_THROW(statcpp::weighted_covariance(x.begin(), x.end(), y.begin(), y.end(), w.begin()),
+                 std::invalid_argument);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that Spearman's correlation returns NaN when either input contains NaN
+ * @test Verifies R's cor(method = "spearman") default (use = "everything") for NaN in x and in y
+ */
+TEST(SpearmanNanTest, ReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> clean = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> with_nan = {1.0, 2.0, nan, 4.0, 5.0};
+    EXPECT_TRUE(std::isnan(statcpp::spearman_correlation(
+        with_nan.begin(), with_nan.end(), clean.begin(), clean.end())));
+    EXPECT_TRUE(std::isnan(statcpp::spearman_correlation(
+        clean.begin(), clean.end(), with_nan.begin(), with_nan.end())));
+}
+
+/**
+ * @brief Tests that Spearman's correlation with projections returns NaN for a NaN projected value
+ * @test Verifies the projection overload follows the same rule
+ */
+TEST(SpearmanNanTest, ProjectionReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<std::pair<double, double>> data = {{1.0, 2.0}, {2.0, nan}, {3.0, 5.0}, {4.0, 4.0}};
+    auto first = [](const std::pair<double, double>& p) { return p.first; };
+    auto second = [](const std::pair<double, double>& p) { return p.second; };
+    EXPECT_TRUE(std::isnan(statcpp::spearman_correlation(data.begin(), data.end(), data.begin(), data.end(),
+                                                          first, second)));
+}
+
+/**
+ * @brief Tests that kendall_tau returns NaN when either input contains NaN
+ * @test Verifies R's cor(method = "kendall") behaviour (NaN pairs were counted as discordant)
+ */
+TEST(KendallNanTest, ReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0, nan, 4.0, 5.0};
+    std::vector<double> y = {2.0, 1.0, 4.0, 3.0, 5.0};
+    EXPECT_TRUE(std::isnan(statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end())));
+    EXPECT_TRUE(std::isnan(statcpp::kendall_tau(y.begin(), y.end(), x.begin(), x.end())));
+    auto id = [](double v) { return v; };
+    EXPECT_TRUE(std::isnan(statcpp::kendall_tau(x.begin(), x.end(), y.begin(), y.end(), id, id)));
+}
+
+/**
+ * @brief Tests that weighted_covariance rejects NaN in the data and in the weights
+ * @test Verifies R's cov.wt behaviour, which raises an error
+ */
+TEST(WeightedCovarianceNanTest, Throws) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0};
+    std::vector<double> x_nan = {1.0, nan, 3.0, 4.0};
+    std::vector<double> y = {2.0, 4.0, 5.0, 8.0};
+    std::vector<double> w = {0.1, 0.2, 0.3, 0.4};
+    std::vector<double> w_nan = {0.1, nan, 0.3, 0.4};
+    auto id = [](double v) { return v; };
+    EXPECT_THROW(statcpp::weighted_covariance(x_nan.begin(), x_nan.end(), y.begin(), y.end(), w.begin()),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_covariance(y.begin(), y.end(), x_nan.begin(), x_nan.end(), w.begin()),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_covariance(x.begin(), x.end(), y.begin(), y.end(), w_nan.begin()),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_covariance(x_nan.begin(), x_nan.end(), y.begin(), y.end(), w.begin(), id, id),
                  std::invalid_argument);
 }

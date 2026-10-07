@@ -14,11 +14,13 @@
 #include "statcpp/order_statistics.hpp"
 #include "statcpp/continuous_distributions.hpp"
 #include "statcpp/random_engine.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <stdexcept>
@@ -140,6 +142,7 @@ bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
                            std::size_t n_bootstrap = 1000, double confidence = 0.95,
                            Engine& engine = get_random_engine())
 {
+    detail::require_param_not_nan(confidence, "bootstrap", "confidence");
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::bootstrap: confidence must be in (0, 1)");
     }
@@ -169,7 +172,7 @@ bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
 
     // Sort replicates for percentile CI
     std::vector<double> sorted_replicates = replicates;
-    std::sort(sorted_replicates.begin(), sorted_replicates.end());
+    std::sort(sorted_replicates.begin(), sorted_replicates.end(), detail::nan_last_less{});
 
     // Standard error
     double mean_rep = std::accumulate(replicates.begin(), replicates.end(), 0.0) / n_bootstrap;
@@ -222,6 +225,11 @@ bootstrap_result bootstrap_mean(Iterator first, Iterator last,
                                 std::size_t n_bootstrap = 1000, double confidence = 0.95,
                                 Engine& engine = get_random_engine())
 {
+    if (detail::has_nan(first, last)) {
+        // NaN is removed before resampling (docs/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return bootstrap_mean(values.begin(), values.end(), n_bootstrap, confidence, engine);
+    }
     auto stat_func = [](auto f, auto l) { return statcpp::mean(f, l); };
     return bootstrap(first, last, stat_func, n_bootstrap, confidence, engine);
 }
@@ -248,6 +256,11 @@ bootstrap_result bootstrap_median(Iterator first, Iterator last,
                                   std::size_t n_bootstrap = 1000, double confidence = 0.95,
                                   Engine& engine = get_random_engine())
 {
+    if (detail::has_nan(first, last)) {
+        // NaN is removed before resampling (docs/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return bootstrap_median(values.begin(), values.end(), n_bootstrap, confidence, engine);
+    }
     auto stat_func = [](auto f, auto l) {
         std::vector<typename std::iterator_traits<decltype(f)>::value_type> sorted(f, l);
         std::sort(sorted.begin(), sorted.end());
@@ -278,6 +291,11 @@ bootstrap_result bootstrap_stddev(Iterator first, Iterator last,
                                   std::size_t n_bootstrap = 1000, double confidence = 0.95,
                                   Engine& engine = get_random_engine())
 {
+    if (detail::has_nan(first, last)) {
+        // NaN is removed before resampling (docs/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return bootstrap_stddev(values.begin(), values.end(), n_bootstrap, confidence, engine);
+    }
     auto stat_func = [](auto f, auto l) { return statcpp::sample_stddev(f, l); };
     return bootstrap(first, last, stat_func, n_bootstrap, confidence, engine);
 }
@@ -311,6 +329,7 @@ bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_fun
                                std::size_t n_bootstrap = 1000, double confidence = 0.95,
                                Engine& engine = get_random_engine())
 {
+    detail::require_param_not_nan(confidence, "bootstrap_bca", "confidence");
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::bootstrap_bca: confidence must be in (0, 1)");
     }
@@ -382,7 +401,7 @@ bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_fun
 
     // Sort replicates
     std::vector<double> sorted_replicates = replicates;
-    std::sort(sorted_replicates.begin(), sorted_replicates.end());
+    std::sort(sorted_replicates.begin(), sorted_replicates.end(), detail::nan_last_less{});
 
     auto clamp_index = [&](double a_val) -> std::size_t {
         double idx = a_val * static_cast<double>(n_bootstrap);
@@ -390,11 +409,10 @@ bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_fun
         if (idx >= static_cast<double>(n_bootstrap)) return n_bootstrap - 1;
         return static_cast<std::size_t>(idx);
     };
-    std::size_t lower_idx = clamp_index(alpha1);
-    std::size_t upper_idx = clamp_index(alpha2);
-
-    double ci_lower = sorted_replicates[lower_idx];
-    double ci_upper = sorted_replicates[upper_idx];
+    // alpha1 / alpha2 are NaN when the statistic is NaN; casting them to an index would be undefined behaviour
+    const double nan_value = std::numeric_limits<double>::quiet_NaN();
+    double ci_lower = std::isnan(alpha1) ? nan_value : sorted_replicates[clamp_index(alpha1)];
+    double ci_upper = std::isnan(alpha2) ? nan_value : sorted_replicates[clamp_index(alpha2)];
 
     // Standard error
     double mean_rep = std::accumulate(replicates.begin(), replicates.end(), 0.0) / n_bootstrap;
@@ -459,6 +477,13 @@ permutation_result permutation_test_two_sample(Iterator1 first1, Iterator1 last1
                                                 std::size_t n_permutations = 10000,
                                                 Engine& engine = get_random_engine())
 {
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        // NaN is removed before testing, as R's t.test does. Otherwise every permuted statistic
+        // is NaN and the p-value is falsely small (docs/NAN_POLICY.md)
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return permutation_test_two_sample(x.begin(), x.end(), y.begin(), y.end(), n_permutations, engine);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -540,6 +565,13 @@ permutation_result permutation_test_paired(Iterator1 first1, Iterator1 last1,
                                             std::size_t n_permutations = 10000,
                                             Engine& engine = get_random_engine())
 {
+    if (std::distance(first1, last1) == std::distance(first2, last2) &&
+        (detail::has_nan(first1, last1) || detail::has_nan(first2, last2))) {
+        // Pairs containing NaN are removed before testing, as R's t.test(paired = TRUE) does. Otherwise every
+        // permuted statistic is NaN and the p-value is falsely small (docs/NAN_POLICY.md)
+        const auto [x, y] = detail::drop_nan_pairs(first1, last1, first2);
+        return permutation_test_paired(x.begin(), x.end(), y.begin(), y.end(), n_permutations, engine);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -627,6 +659,13 @@ permutation_result permutation_test_correlation(Iterator1 first1, Iterator1 last
                                                  std::size_t n_permutations = 10000,
                                                  Engine& engine = get_random_engine())
 {
+    if (std::distance(first1, last1) == std::distance(first2, last2) &&
+        (detail::has_nan(first1, last1) || detail::has_nan(first2, last2))) {
+        // Pairs containing NaN are removed before testing, as R's cor.test does. Otherwise every
+        // permuted statistic is NaN and the p-value is falsely small (docs/NAN_POLICY.md)
+        const auto [x, y] = detail::drop_nan_pairs(first1, last1, first2);
+        return permutation_test_correlation(x.begin(), x.end(), y.begin(), y.end(), n_permutations, engine);
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 

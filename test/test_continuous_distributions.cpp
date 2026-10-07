@@ -576,3 +576,66 @@ TEST(BetaRandTest, ExtremeSmallShapeNoNaN) {
         ASSERT_LE(v, 1.0);
     }
 }
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that random generation with a NaN parameter returns NaN
+ * @test Verifies R's behaviour (rgamma(1, NaN) is NaN) for every parameter, instead of hanging in the standard library
+ */
+TEST(ContinuousRandNanTest, NaNParameterReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_TRUE(std::isnan(statcpp::gamma_rand(nan)));
+    EXPECT_TRUE(std::isnan(statcpp::gamma_rand(2.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::beta_rand(nan, 2.0)));
+    EXPECT_TRUE(std::isnan(statcpp::beta_rand(2.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::chisq_rand(nan)));
+    EXPECT_TRUE(std::isnan(statcpp::t_rand(nan)));
+    EXPECT_TRUE(std::isnan(statcpp::f_rand(nan, 5.0)));
+    EXPECT_TRUE(std::isnan(statcpp::f_rand(5.0, nan)));
+}
+
+/**
+ * @brief Tests that distribution functions return NaN for a NaN argument
+ * @test Verifies R's behaviour (dunif(NaN), qt(0.5, NaN), qf(0.5, 5, NaN), pweibull(1, NaN), ptukey(2, 3, NaN) are NaN);
+ *       these used to return finite values such as 1 or -0.5244
+ */
+TEST(ContinuousNanTest, EvaluationReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_TRUE(std::isnan(statcpp::uniform_pdf(nan)));
+    EXPECT_TRUE(std::isnan(statcpp::uniform_pdf(0.5, nan, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::uniform_pdf(0.5, 0.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::t_quantile(nan, 5.0)));
+    EXPECT_TRUE(std::isnan(statcpp::t_quantile(0.5, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::f_quantile(nan, 5.0, 10.0)));
+    EXPECT_TRUE(std::isnan(statcpp::f_quantile(0.5, nan, 10.0)));
+    EXPECT_TRUE(std::isnan(statcpp::f_quantile(0.5, 5.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::weibull_cdf(nan, 2.0, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::weibull_cdf(1.0, nan, 1.0)));  // x == scale used to give 1 - exp(-1)
+    EXPECT_TRUE(std::isnan(statcpp::weibull_cdf(1.0, 2.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::studentized_range_cdf(nan, 3.0, 10.0)));
+    EXPECT_TRUE(std::isnan(statcpp::studentized_range_cdf(2.0, nan, 10.0)));
+    EXPECT_TRUE(std::isnan(statcpp::studentized_range_cdf(2.0, 3.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::studentized_range_quantile(nan, 3.0, 10.0)));
+    EXPECT_TRUE(std::isnan(statcpp::studentized_range_quantile(0.5, nan, 10.0)));
+    EXPECT_TRUE(std::isnan(statcpp::studentized_range_quantile(0.5, 3.0, nan)));
+}
+
+/**
+ * @brief Tests that the remaining continuous random generators return NaN for a NaN parameter
+ * @test Verifies R's behaviour (rnorm(1, NaN) is NaN) without passing NaN to std::*_distribution
+ */
+TEST(ContinuousRandNanTest, RemainingGeneratorsReturnNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_TRUE(std::isnan(statcpp::normal_rand(nan, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::normal_rand(0.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::uniform_rand(nan, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::uniform_rand(0.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::exponential_rand(nan)));
+    EXPECT_TRUE(std::isnan(statcpp::lognormal_rand(nan, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::lognormal_rand(0.0, nan)));
+    EXPECT_TRUE(std::isnan(statcpp::weibull_rand(nan, 1.0)));
+    EXPECT_TRUE(std::isnan(statcpp::weibull_rand(2.0, nan)));
+}

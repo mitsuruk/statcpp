@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include "statcpp/clustering.hpp"
@@ -259,4 +260,44 @@ TEST(SilhouetteTest, EmptyData) {
     std::vector<std::vector<double>> data;
     std::vector<std::size_t> labels;
     EXPECT_THROW(statcpp::silhouette_score(data, labels), std::invalid_argument);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+
+const double kNaN = std::numeric_limits<double>::quiet_NaN();
+
+}  // namespace
+
+/**
+ * @brief Tests that the vector distances skip NaN coordinates and rescale, as R's dist() does
+ * @test Expected values: dist(rbind(c(1,2,NA,4,6), c(2,NA,1,1,3)), method) in R 4.4.2
+ */
+TEST(ClusteringNanTest, DistancesRescaleLikeRDist) {
+    std::vector<double> a = {1.0, 2.0, kNaN, 4.0, 6.0};
+    std::vector<double> b = {2.0, kNaN, 1.0, 1.0, 3.0};
+    EXPECT_NEAR(statcpp::euclidean_distance(a, b), 5.6273143387113773, 1e-12);
+    EXPECT_NEAR(statcpp::manhattan_distance(a, b), 11.666666666666668, 1e-12);
+    std::vector<double> c = {kNaN, 1.0};
+    std::vector<double> d = {2.0, kNaN};
+    EXPECT_TRUE(std::isnan(statcpp::euclidean_distance(c, d)));
+    EXPECT_TRUE(std::isnan(statcpp::manhattan_distance(c, d)));
+}
+
+/**
+ * @brief Tests that the clustering functions reject NaN
+ * @test Verifies policy #12 (a NaN point was always chosen as a centroid or merged at a bogus distance)
+ */
+TEST(ClusteringNanTest, ClusteringThrows) {
+    std::vector<std::vector<double>> data = {{1, 1}, {1.2, 0.9}, {kNaN, 5}, {5, 5}, {5.1, 4.8}, {4.9, 5.2}};
+    std::vector<std::size_t> labels = {0, 0, 1, 1, 1, 1};
+    EXPECT_THROW(statcpp::kmeans_plusplus_init(data, 2), std::invalid_argument);
+    EXPECT_THROW(statcpp::kmeans(data, 2), std::invalid_argument);
+    EXPECT_THROW(statcpp::hierarchical_clustering(data), std::invalid_argument);
+    EXPECT_THROW(statcpp::silhouette_score(data, labels), std::invalid_argument);
+    std::vector<std::vector<double>> clean = {{1, 1}, {1.2, 0.9}, {5, 5}, {5.1, 4.8}};
+    EXPECT_THROW(statcpp::kmeans(clean, 2, 100, kNaN), std::invalid_argument);
 }

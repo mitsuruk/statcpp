@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "statcpp/anova.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 // ============================================================================
@@ -645,4 +646,86 @@ TEST(PostHocTest, ZeroSEIdenticalGroups) {
         EXPECT_DOUBLE_EQ(c.p_value, 1.0);
         EXPECT_FALSE(c.significant);
     }
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+const double kAnovaNaN = std::numeric_limits<double>::quiet_NaN();
+}  // namespace
+
+/**
+ * @brief Tests that one-way ANOVA drops NaN, and that its effect sizes and post-hoc tests follow
+ * @test Verifies R's aov() (na.omit) behaviour: the results equal those of the data without NaN
+ */
+TEST(AnovaNanTest, OneWayDropsNaN) {
+    std::vector<std::vector<double>> groups = {{4.1, kAnovaNaN, 5.0, 4.6},
+                                               {6.2, 5.9, 6.8, kAnovaNaN, 6.1},
+                                               {5.0, 5.3, 4.8, 5.6}};
+    std::vector<std::vector<double>> clean = {{4.1, 5.0, 4.6}, {6.2, 5.9, 6.8, 6.1}, {5.0, 5.3, 4.8, 5.6}};
+    auto r = statcpp::one_way_anova(groups);
+    auto e = statcpp::one_way_anova(clean);
+    EXPECT_DOUBLE_EQ(r.between.f_statistic, e.between.f_statistic);
+    EXPECT_DOUBLE_EQ(r.between.p_value, e.between.p_value);
+    EXPECT_DOUBLE_EQ(statcpp::eta_squared(r), statcpp::eta_squared(e));
+    EXPECT_DOUBLE_EQ(statcpp::omega_squared(r), statcpp::omega_squared(e));
+    EXPECT_DOUBLE_EQ(statcpp::cohens_f(r), statcpp::cohens_f(e));
+    auto tr = statcpp::tukey_hsd(r, groups);
+    auto te = statcpp::tukey_hsd(e, clean);
+    ASSERT_EQ(tr.comparisons.size(), te.comparisons.size());
+    for (std::size_t i = 0; i < tr.comparisons.size(); ++i) {
+        EXPECT_DOUBLE_EQ(tr.comparisons[i].p_value, te.comparisons[i].p_value);
+    }
+}
+
+/**
+ * @brief Tests that the post-hoc tests reject a NaN alpha
+ * @test Verifies policy section 5 (a range-checked parameter that is NaN throws)
+ */
+TEST(AnovaNanTest, PosthocNaNAlphaThrows) {
+    std::vector<std::vector<double>> groups = {{4.1, 5.0, 4.6}, {6.2, 5.9, 6.8, 6.1}, {5.0, 5.3, 4.8, 5.6}};
+    auto r = statcpp::one_way_anova(groups);
+    EXPECT_THROW(statcpp::tukey_hsd(r, groups, kAnovaNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::bonferroni_posthoc(r, kAnovaNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::dunnett_posthoc(r, 0, kAnovaNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::scheffe_posthoc(r, kAnovaNaN), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that two-way ANOVA drops NaN and then applies the balanced-design check
+ * @test Verifies one NaN in every cell gives the result of the clean data, and a single NaN makes the design
+ *       unbalanced, which throws (policy section 5)
+ */
+TEST(AnovaNanTest, TwoWayDropsNaNThenRequiresBalance) {
+    std::vector<std::vector<std::vector<double>>> every_cell = {
+        {{5.1, 4.9, kAnovaNaN}, {6.0, kAnovaNaN, 6.3}}, {{kAnovaNaN, 5.5, 5.8}, {7.1, 6.9, kAnovaNaN}}};
+    std::vector<std::vector<std::vector<double>>> clean = {{{5.1, 4.9}, {6.0, 6.3}}, {{5.5, 5.8}, {7.1, 6.9}}};
+    auto r = statcpp::two_way_anova(every_cell);
+    auto e = statcpp::two_way_anova(clean);
+    EXPECT_DOUBLE_EQ(r.factor_a.f_statistic, e.factor_a.f_statistic);
+    EXPECT_DOUBLE_EQ(r.interaction.p_value, e.interaction.p_value);
+    EXPECT_DOUBLE_EQ(statcpp::partial_eta_squared_a(r), statcpp::partial_eta_squared_a(e));
+
+    std::vector<std::vector<std::vector<double>>> one_nan = {
+        {{5.1, 4.9, 5.0}, {6.0, kAnovaNaN, 6.3}}, {{5.2, 5.5, 5.8}, {7.1, 6.9, 7.0}}};
+    EXPECT_THROW(statcpp::two_way_anova(one_nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that one-way ANCOVA drops observations with NaN in the response or the covariate
+ * @test Verifies R's lm() (na.omit) behaviour row by row
+ */
+TEST(AnovaNanTest, AncovaDropsRows) {
+    using P = std::pair<double, double>;
+    std::vector<std::vector<P>> groups = {{{1.0, 2.1}, {2.0, kAnovaNaN}, {3.0, 4.2}, {4.0, 4.9}, {5.0, 6.1}},
+                                          {{kAnovaNaN, 3.0}, {1.5, 3.4}, {2.5, 4.4}, {3.5, 5.6}, {4.5, 6.3}}};
+    std::vector<std::vector<P>> clean = {{{1.0, 2.1}, {3.0, 4.2}, {4.0, 4.9}, {5.0, 6.1}},
+                                         {{1.5, 3.4}, {2.5, 4.4}, {3.5, 5.6}, {4.5, 6.3}}};
+    auto r = statcpp::one_way_ancova(groups);
+    auto e = statcpp::one_way_ancova(clean);
+    EXPECT_DOUBLE_EQ(r.f_treatment, e.f_treatment);
+    EXPECT_DOUBLE_EQ(r.p_treatment, e.p_treatment);
+    EXPECT_DOUBLE_EQ(r.f_covariate, e.f_covariate);
 }

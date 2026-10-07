@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+#include "statcpp/nan_utils.hpp"
+
 namespace statcpp {
 
 // ============================================================================
@@ -74,6 +76,11 @@ double interpolate_at(Iterator first, std::size_t n, double p)
             typename std::iterator_traits<Iterator>::iterator_category>,
         "statcpp::interpolate_at requires random access iterators");
 
+    // NaN の位置は下の size_t へのキャストに届き、未定義動作になる
+    detail::require_param_not_nan(p, "interpolate_at", "p");
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, first + static_cast<std::ptrdiff_t>(n), "interpolate_at");
+
     double index = p * static_cast<double>(n - 1);
     auto lo = static_cast<std::size_t>(std::floor(index));
     double frac = index - static_cast<double>(lo);
@@ -104,6 +111,13 @@ double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
             typename std::iterator_traits<Iterator>::iterator_category>,
         "statcpp::interpolate_at requires random access iterators");
 
+    // NaN の位置は下の size_t へのキャストに届き、未定義動作になる
+    detail::require_param_not_nan(p, "interpolate_at", "p");
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, first + static_cast<std::ptrdiff_t>(n), proj)) {
+        throw std::invalid_argument("statcpp::interpolate_at: data contains NaN");
+    }
+
     double index = p * static_cast<double>(n - 1);
     auto lo = static_cast<std::size_t>(std::floor(index));
     double frac = index - static_cast<double>(lo);
@@ -130,6 +144,12 @@ double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
 template <typename Iterator>
 auto minimum(Iterator first, Iterator last)
 {
+    // R の min() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    for (auto it = first; it != last; ++it) {
+        if (detail::is_nan_value(*it)) {
+            return *it;
+        }
+    }
     if (first == last) {
         throw std::invalid_argument("statcpp::minimum: empty range");
     }
@@ -150,6 +170,13 @@ auto minimum(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 auto minimum(Iterator first, Iterator last, Projection proj)
 {
+    // R の min() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    for (auto it = first; it != last; ++it) {
+        auto value = std::invoke(proj, *it);
+        if (detail::is_nan_value(value)) {
+            return value;
+        }
+    }
     if (first == last) {
         throw std::invalid_argument("statcpp::minimum: empty range");
     }
@@ -179,6 +206,12 @@ auto minimum(Iterator first, Iterator last, Projection proj)
 template <typename Iterator>
 auto maximum(Iterator first, Iterator last)
 {
+    // R の max() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    for (auto it = first; it != last; ++it) {
+        if (detail::is_nan_value(*it)) {
+            return *it;
+        }
+    }
     if (first == last) {
         throw std::invalid_argument("statcpp::maximum: empty range");
     }
@@ -199,6 +232,13 @@ auto maximum(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 auto maximum(Iterator first, Iterator last, Projection proj)
 {
+    // R の max() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    for (auto it = first; it != last; ++it) {
+        auto value = std::invoke(proj, *it);
+        if (detail::is_nan_value(value)) {
+            return value;
+        }
+    }
     if (first == last) {
         throw std::invalid_argument("statcpp::maximum: empty range");
     }
@@ -234,6 +274,8 @@ auto maximum(Iterator first, Iterator last, Projection proj)
 template <typename Iterator>
 quartile_result quartiles(Iterator first, Iterator last)
 {
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "quartiles");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::quartiles: empty range");
@@ -259,6 +301,10 @@ quartile_result quartiles(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 quartile_result quartiles(Iterator first, Iterator last, Projection proj)
 {
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::quartiles: data contains NaN");
+    }
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::quartiles: empty range");
@@ -296,9 +342,12 @@ double percentile(Iterator first, Iterator last, double p)
     if (n == 0) {
         throw std::invalid_argument("statcpp::percentile: empty range");
     }
+    detail::require_param_not_nan(p, "percentile", "p");
     if (p < 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::percentile: p must be in [0, 1]");
     }
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "percentile");
     return interpolate_at(first, n, p);
 }
 
@@ -322,8 +371,13 @@ double percentile(Iterator first, Iterator last, double p, Projection proj)
     if (n == 0) {
         throw std::invalid_argument("statcpp::percentile: empty range");
     }
+    detail::require_param_not_nan(p, "percentile", "p");
     if (p < 0.0 || p > 1.0) {
         throw std::invalid_argument("statcpp::percentile: p must be in [0, 1]");
+    }
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::percentile: data contains NaN");
     }
     return interpolate_at(first, n, p, proj);
 }
@@ -350,6 +404,8 @@ double percentile(Iterator first, Iterator last, double p, Projection proj)
 template <typename Iterator>
 five_number_summary_result five_number_summary(Iterator first, Iterator last)
 {
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "five_number_summary");
     static_assert(
         std::is_base_of_v<
             std::random_access_iterator_tag,
@@ -383,6 +439,10 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 five_number_summary_result five_number_summary(Iterator first, Iterator last, Projection proj)
 {
+    // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::five_number_summary: data contains NaN");
+    }
     static_assert(
         std::is_base_of_v<
             std::random_access_iterator_tag,
@@ -441,6 +501,10 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(*it);
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_median: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_median: negative weight");
         }
@@ -518,6 +582,10 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(*it);
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_median: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_median: negative weight");
         }
@@ -601,6 +669,10 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(std::invoke(proj, *it));
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_median: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_median: negative weight");
         }
@@ -677,6 +749,10 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(std::invoke(proj, *it));
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_median: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_median: negative weight");
         }
@@ -767,6 +843,10 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(*it);
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_percentile: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_percentile: negative weight");
         }
@@ -846,6 +926,10 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(*it);
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_percentile: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_percentile: negative weight");
         }
@@ -932,6 +1016,10 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(std::invoke(proj, *it));
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_percentile: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_percentile: negative weight");
         }
@@ -1010,6 +1098,10 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
     for (auto it = first; it != last; ++it, ++weight_it) {
         double value = static_cast<double>(std::invoke(proj, *it));
         double weight = static_cast<double>(*weight_it);
+        // R の quantile() と同じく、NA を含むデータの分位点はエラーとする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(value) || std::isnan(weight)) {
+            throw std::invalid_argument("statcpp::weighted_percentile: data contains NaN");
+        }
         if (weight < 0.0) {
             throw std::invalid_argument("statcpp::weighted_percentile: negative weight");
         }

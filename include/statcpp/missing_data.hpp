@@ -696,7 +696,20 @@ inline multiple_imputation_result multiple_imputation_bootstrap(
                     non_na.push_back(row[j]);
                 }
             }
-            if (!non_na.empty()) {
+            if (non_na.empty()) {
+                // No observed value in this bootstrap sample: use the observed values of the original
+                // data instead, and NaN when the column is entirely missing, rather than imputing 0
+                // (docs/NAN_POLICY.md)
+                for (const auto& row : data) {
+                    if (!is_na(row[j])) {
+                        non_na.push_back(row[j]);
+                    }
+                }
+            }
+            if (non_na.empty()) {
+                col_means[j] = NA;
+                col_stds[j] = NA;
+            } else {
                 col_means[j] = mean(non_na.begin(), non_na.end());
                 col_stds[j] = non_na.size() > 1 ?
                     std::sqrt(var(non_na.begin(), non_na.end(), 1)) : 0.0;

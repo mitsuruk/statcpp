@@ -2,6 +2,7 @@
 #include "statcpp/model_selection.hpp"
 #include "statcpp/random_engine.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 // ============================================================================
@@ -528,4 +529,92 @@ TEST(PRESSTest, PerfectFitPRESSIsZero) {
 
     // PRESS should be very small for perfect fit
     EXPECT_NEAR(press, 0.0, 1e-8);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+
+const double kNaN = std::numeric_limits<double>::quiet_NaN();
+
+const std::vector<std::vector<double>> kNanX = {{1, 2}, {2, 1}, {3, kNaN}, {4, 3}, {5, 6}, {6, 5},
+                                                {7, 8}, {8, 9}, {9, 7}, {10, 11}};
+const std::vector<double> kNanY = {3.1, 3.9, 8.2, 7.8, 12.1, kNaN, 16.3, 17.6, 17.1, 22.4};
+const std::vector<std::vector<double>> kCleanX = {{1, 2}, {2, 1}, {4, 3}, {5, 6}, {7, 8}, {8, 9}, {9, 7}, {10, 11}};
+const std::vector<double> kCleanY = {3.1, 3.9, 7.8, 12.1, 16.3, 17.6, 17.1, 22.4};
+
+}  // namespace
+
+/**
+ * @brief Tests that press_statistic drops incomplete pairs
+ * @test Verifies the result equals the result on the complete pairs
+ */
+TEST(ModelSelectionNanTest, PressDropsIncompletePairs) {
+    std::vector<double> x = {1, 2, kNaN, 4, 5, 6, 7, 8};
+    std::vector<double> y = {2.1, 3.9, 6.2, 8.1, 9.8, 12.2, kNaN, 16.1};
+    std::vector<double> xc = {1, 2, 4, 5, 6, 8};
+    std::vector<double> yc = {2.1, 3.9, 8.1, 9.8, 12.2, 16.1};
+    auto m = statcpp::simple_linear_regression(xc.begin(), xc.end(), yc.begin(), yc.end());
+    const double press = statcpp::press_statistic(x.begin(), x.end(), y.begin(), y.end(), m);
+    EXPECT_FALSE(std::isnan(press));
+    EXPECT_DOUBLE_EQ(press, statcpp::press_statistic(xc.begin(), xc.end(), yc.begin(), yc.end(), m));
+}
+
+/**
+ * @brief Tests that the linear cross-validation functions drop incomplete observations
+ * @test Verifies the result equals the result on the complete observations (deterministic folds)
+ */
+TEST(ModelSelectionNanTest, CrossValidationDropsIncompleteRows) {
+    auto a = statcpp::cross_validate_linear(kNanX, kNanY, 4, false);
+    auto b = statcpp::cross_validate_linear(kCleanX, kCleanY, 4, false);
+    EXPECT_FALSE(std::isnan(a.mean_error));
+    EXPECT_DOUBLE_EQ(a.mean_error, b.mean_error);
+    auto c = statcpp::loocv_linear(kNanX, kNanY);
+    auto d = statcpp::loocv_linear(kCleanX, kCleanY);
+    EXPECT_EQ(c.n_folds, 8u);
+    // loocv_linear shuffles the folds, so the fold errors are summed in a different order
+    EXPECT_NEAR(c.mean_error, d.mean_error, 1e-12);
+}
+
+/**
+ * @brief Tests that the regularized regressions reject NaN data and NaN parameters
+ * @test Verifies they throw, as glmnet does for missing values
+ */
+TEST(ModelSelectionNanTest, RegularizedRegressionThrows) {
+    EXPECT_THROW(statcpp::ridge_regression(kNanX, kCleanY, 0.1), std::invalid_argument);
+    EXPECT_THROW(statcpp::lasso_regression(kNanX, kCleanY, 0.1), std::invalid_argument);
+    EXPECT_THROW(statcpp::elastic_net_regression(kNanX, kCleanY, 0.1), std::invalid_argument);
+    std::vector<double> y_nan = kCleanY;
+    y_nan[0] = kNaN;
+    EXPECT_THROW(statcpp::ridge_regression(kCleanX, y_nan, 0.1), std::invalid_argument);
+    EXPECT_THROW(statcpp::lasso_regression(kCleanX, y_nan, 0.1), std::invalid_argument);
+    EXPECT_THROW(statcpp::elastic_net_regression(kCleanX, y_nan, 0.1), std::invalid_argument);
+
+    EXPECT_THROW(statcpp::ridge_regression(kCleanX, kCleanY, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::lasso_regression(kCleanX, kCleanY, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::elastic_net_regression(kCleanX, kCleanY, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::elastic_net_regression(kCleanX, kCleanY, 0.1, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::ridge_regression(kCleanX, kCleanY, 0.1, true, 1000, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::lasso_regression(kCleanX, kCleanY, 0.1, true, 1000, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::elastic_net_regression(kCleanX, kCleanY, 0.1, 0.5, true, 1000, kNaN),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the lambda selection functions reject NaN data and NaN grid entries
+ * @test Verifies they throw (a NaN grid used to report grid[0] as the best lambda)
+ */
+TEST(ModelSelectionNanTest, LambdaSelectionThrows) {
+    const std::vector<double> grid = {0.01, 0.1, 1.0};
+    const std::vector<double> grid_nan = {0.01, kNaN, 1.0};
+    EXPECT_THROW(statcpp::cv_ridge(kNanX, kCleanY, grid, 4, false), std::invalid_argument);
+    EXPECT_THROW(statcpp::cv_lasso(kNanX, kCleanY, grid, 4, false), std::invalid_argument);
+    EXPECT_THROW(statcpp::cv_ridge(kCleanX, kCleanY, grid_nan, 4, false), std::invalid_argument);
+    EXPECT_THROW(statcpp::cv_lasso(kCleanX, kCleanY, grid_nan, 4, false), std::invalid_argument);
+    EXPECT_THROW(statcpp::generate_lambda_grid(kNanX, kCleanY), std::invalid_argument);
+    std::vector<double> y_nan = kCleanY;
+    y_nan[3] = kNaN;
+    EXPECT_THROW(statcpp::generate_lambda_grid(kCleanX, y_nan), std::invalid_argument);
 }

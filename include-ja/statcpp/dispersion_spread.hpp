@@ -21,11 +21,13 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
 
 #include "statcpp/basic_statistics.hpp"
+#include "statcpp/nan_utils.hpp"
 #include "statcpp/order_statistics.hpp"
 
 namespace statcpp {
@@ -48,6 +50,10 @@ namespace statcpp {
 template <typename Iterator>
 double range(Iterator first, Iterator last)
 {
+    // R の range() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (first == last) {
         throw std::invalid_argument("statcpp::range: empty range");
     }
@@ -71,6 +77,10 @@ double range(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 double range(Iterator first, Iterator last, Projection proj)
 {
+    // R の range() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (first == last) {
         throw std::invalid_argument("statcpp::range: empty range");
     }
@@ -954,6 +964,8 @@ double coefficient_of_variation(Iterator first, Iterator last, Projection proj, 
 template <typename Iterator>
 double iqr(Iterator first, Iterator last)
 {
+    // R の IQR() と同じく、NA を含むデータはエラーとする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "iqr");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::iqr: empty range");
@@ -980,6 +992,10 @@ double iqr(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 double iqr(Iterator first, Iterator last, Projection proj)
 {
+    // R の IQR() と同じく、NA を含むデータはエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::iqr: data contains NaN");
+    }
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::iqr: empty range");
@@ -1127,6 +1143,10 @@ double mean_absolute_deviation(Iterator first, Iterator last, Projection proj, d
 template <typename Iterator, typename WeightIterator>
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last) || detail::has_nan(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_variance: data contains NaN");
+    }
     if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
         throw std::invalid_argument("statcpp::weighted_variance: data and weight ranges differ in length");
     }
@@ -1204,6 +1224,11 @@ template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_variance(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last) ||
+        detail::has_nan(weight_first, std::next(weight_first, std::distance(first, last)))) {
+        throw std::invalid_argument("statcpp::weighted_variance: data contains NaN");
+    }
     auto n = statcpp::count(first, last);
     if (n == 0) {
         throw std::invalid_argument("statcpp::weighted_variance: empty range");
@@ -1277,6 +1302,10 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj) || detail::has_nan(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_variance: data contains NaN");
+    }
     if (std::distance(first, last) != std::distance(weight_first, weight_last)) {
         throw std::invalid_argument("statcpp::weighted_variance: data and weight ranges differ in length");
     }
@@ -1354,6 +1383,11 @@ template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_variance(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj) ||
+        detail::has_nan(weight_first, std::next(weight_first, std::distance(first, last)))) {
+        throw std::invalid_argument("statcpp::weighted_variance: data contains NaN");
+    }
     auto n = statcpp::count(first, last);
     if (n == 0) {
         throw std::invalid_argument("statcpp::weighted_variance: empty range");
@@ -1422,6 +1456,10 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
 template <typename Iterator, typename WeightIterator>
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last) || detail::has_nan(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_stddev: data contains NaN");
+    }
     return std::sqrt(weighted_variance(first, last, weight_first, weight_last));
 }
 
@@ -1444,6 +1482,11 @@ template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_stddev(first, last, weight_first, weight_last) overload for range safety")]]
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last) ||
+        detail::has_nan(weight_first, std::next(weight_first, std::distance(first, last)))) {
+        throw std::invalid_argument("statcpp::weighted_stddev: data contains NaN");
+    }
     return std::sqrt(weighted_variance(first, last, weight_first));
 }
 
@@ -1466,6 +1509,10 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj) || detail::has_nan(weight_first, weight_last)) {
+        throw std::invalid_argument("statcpp::weighted_stddev: data contains NaN");
+    }
     return std::sqrt(weighted_variance(first, last, weight_first, weight_last, proj));
 }
 
@@ -1490,6 +1537,11 @@ template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_stddev(first, last, weight_first, weight_last, proj) overload for range safety")]]
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, Projection proj)
 {
+    // R の cov.wt() と同じく、データか重みに NA があればエラーとする(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj) ||
+        detail::has_nan(weight_first, std::next(weight_first, std::distance(first, last)))) {
+        throw std::invalid_argument("statcpp::weighted_stddev: data contains NaN");
+    }
     return std::sqrt(weighted_variance(first, last, weight_first, proj));
 }
 

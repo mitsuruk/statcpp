@@ -11,6 +11,7 @@
 #include "statcpp/dispersion_spread.hpp"
 #include "statcpp/linear_regression.hpp"
 #include "statcpp/random_engine.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -188,6 +189,11 @@ double press_statistic(IteratorX x_first, IteratorX x_last,
     if (n != n_y) {
         throw std::invalid_argument("statcpp::press_statistic: x and y must have same length");
     }
+    if (detail::has_nan(x_first, x_last) || detail::has_nan(y_first, y_last)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [x, y] = detail::drop_nan_pairs(x_first, x_last, y_first);
+        return press_statistic(x.begin(), x.end(), y.begin(), y.end(), model);
+    }
 
     double n_d = static_cast<double>(n);
     double mean_x = statcpp::mean(x_first, x_last);
@@ -303,6 +309,11 @@ inline cv_result cross_validate_linear(
     if (n != y.size()) {
         throw std::invalid_argument("statcpp::cross_validate_linear: X and y must have same size");
     }
+    if (detail::has_nan_rows(X, y)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [X_clean, y_clean] = detail::drop_nan_rows(X, y);
+        return cross_validate_linear(X_clean, y_clean, k, shuffle);
+    }
 
     auto folds = create_cv_folds(n, k, shuffle);
     std::vector<double> fold_errors(k);
@@ -370,6 +381,12 @@ inline cv_result loocv_linear(
     const std::vector<std::vector<double>>& X,
     const std::vector<double>& y)
 {
+    if (X.size() == y.size() && detail::has_nan_rows(X, y)) {
+        // 欠損のない観測ごとに 1 つの fold を作るため、先に欠損を含む観測を除去する
+        // (docs-ja/NAN_POLICY.md)
+        const auto [X_clean, y_clean] = detail::drop_nan_rows(X, y);
+        return loocv_linear(X_clean, y_clean);
+    }
     return cross_validate_linear(X, y, X.size());
 }
 
@@ -473,6 +490,11 @@ inline regularized_regression_result ridge_regression(
 {
     // X に切片列が含まれていないことを確認（linear_regression.hppから）
     statcpp::detail::validate_no_intercept_column(X, "ridge_regression");
+    detail::require_param_not_nan(lambda, "ridge_regression", "lambda");
+    detail::require_param_not_nan(tol, "ridge_regression", "tol");
+    // glmnet と同じく NaN はエラーにする。正則化回帰では除去しない(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(X, "ridge_regression");
+    detail::require_no_nan(y.begin(), y.end(), "ridge_regression");
 
     if (lambda < 0.0) {
         throw std::invalid_argument("statcpp::ridge_regression: lambda must be non-negative");
@@ -592,6 +614,11 @@ inline regularized_regression_result lasso_regression(
 {
     // X に切片列が含まれていないことを確認
     statcpp::detail::validate_no_intercept_column(X, "lasso_regression");
+    detail::require_param_not_nan(lambda, "lasso_regression", "lambda");
+    detail::require_param_not_nan(tol, "lasso_regression", "tol");
+    // glmnet と同じく NaN はエラーにする。正則化回帰では除去しない(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(X, "lasso_regression");
+    detail::require_no_nan(y.begin(), y.end(), "lasso_regression");
 
     if (lambda < 0.0) {
         throw std::invalid_argument("statcpp::lasso_regression: lambda must be non-negative");
@@ -719,6 +746,12 @@ inline regularized_regression_result elastic_net_regression(
 {
     // X に切片列が含まれていないことを確認
     statcpp::detail::validate_no_intercept_column(X, "elastic_net_regression");
+    detail::require_param_not_nan(lambda, "elastic_net_regression", "lambda");
+    detail::require_param_not_nan(alpha, "elastic_net_regression", "alpha");
+    detail::require_param_not_nan(tol, "elastic_net_regression", "tol");
+    // glmnet と同じく NaN はエラーにする。正則化回帰では除去しない(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(X, "elastic_net_regression");
+    detail::require_no_nan(y.begin(), y.end(), "elastic_net_regression");
 
     if (lambda < 0.0) {
         throw std::invalid_argument("statcpp::elastic_net_regression: lambda must be non-negative");
@@ -844,6 +877,12 @@ inline std::pair<double, std::vector<double>> cv_ridge(
     std::size_t k = 5,
     bool shuffle = true)
 {
+    // glmnet と同じく NaN はエラーにする。正則化回帰では除去しない(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(X, "cv_ridge");
+    detail::require_no_nan(y.begin(), y.end(), "cv_ridge");
+    if (detail::has_nan(lambda_grid.begin(), lambda_grid.end())) {
+        throw std::invalid_argument("statcpp::cv_ridge: lambda_grid contains NaN");
+    }
     std::vector<double> cv_errors(lambda_grid.size());
 
     for (std::size_t l = 0; l < lambda_grid.size(); ++l) {
@@ -913,6 +952,12 @@ inline std::pair<double, std::vector<double>> cv_lasso(
     std::size_t k = 5,
     bool shuffle = true)
 {
+    // glmnet と同じく NaN はエラーにする。正則化回帰では除去しない(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(X, "cv_lasso");
+    detail::require_no_nan(y.begin(), y.end(), "cv_lasso");
+    if (detail::has_nan(lambda_grid.begin(), lambda_grid.end())) {
+        throw std::invalid_argument("statcpp::cv_lasso: lambda_grid contains NaN");
+    }
     std::vector<double> cv_errors(lambda_grid.size());
 
     for (std::size_t l = 0; l < lambda_grid.size(); ++l) {
@@ -980,6 +1025,9 @@ inline std::vector<double> generate_lambda_grid(
     std::size_t n_lambda = 100,
     double lambda_min_ratio = 0.0001)
 {
+    // glmnet と同じく NaN はエラーにする。正則化回帰では除去しない(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(X, "generate_lambda_grid");
+    detail::require_no_nan(y.begin(), y.end(), "generate_lambda_grid");
     std::size_t n = X.size();
     std::size_t p = X[0].size();
 

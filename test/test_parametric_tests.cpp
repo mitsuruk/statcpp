@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "statcpp/parametric_tests.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 // ============================================================================
@@ -566,3 +567,110 @@ TEST(HolmTest, LessThanBonferroni) {
         EXPECT_LE(holm[i], bonf[i] + 1e-10);
     }
 }
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+const double kNaN = std::numeric_limits<double>::quiet_NaN();
+
+/// @brief Expect two test results to be identical in statistic, p-value and degrees of freedom
+void expect_same_result(const statcpp::test_result& a, const statcpp::test_result& b) {
+    EXPECT_DOUBLE_EQ(a.statistic, b.statistic);
+    EXPECT_DOUBLE_EQ(a.p_value, b.p_value);
+    EXPECT_DOUBLE_EQ(a.df, b.df);
+}
+}  // namespace
+
+/**
+ * @brief Tests that the one-sample tests drop NaN and reject NaN parameters
+ * @test Verifies R's t.test() behaviour: NaN is removed (df counts only the non-NaN values) and mu = NA is an error
+ */
+TEST(ParametricNanTest, OneSampleTests) {
+    std::vector<double> with_nan = {5.1, kNaN, 4.8, 5.6, 5.3, 4.9};
+    std::vector<double> clean = {5.1, 4.8, 5.6, 5.3, 4.9};
+    expect_same_result(statcpp::t_test(with_nan.begin(), with_nan.end(), 5.0),
+                       statcpp::t_test(clean.begin(), clean.end(), 5.0));
+    expect_same_result(statcpp::z_test(with_nan.begin(), with_nan.end(), 5.0, 0.4),
+                       statcpp::z_test(clean.begin(), clean.end(), 5.0, 0.4));
+    EXPECT_THROW(statcpp::t_test(clean.begin(), clean.end(), kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::z_test(clean.begin(), clean.end(), kNaN, 0.4), std::invalid_argument);
+    EXPECT_THROW(statcpp::z_test(clean.begin(), clean.end(), 5.0, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::z_test_proportion(30, 100, kNaN), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the two-sample tests drop NaN from either sample
+ * @test Verifies R's t.test() / var.test() behaviour for the pooled, Welch and F tests
+ */
+TEST(ParametricNanTest, TwoSampleTestsDropNaN) {
+    std::vector<double> x = {5.1, kNaN, 4.8, 5.6, 5.3};
+    std::vector<double> y = {6.0, 6.4, kNaN, 5.7, 6.2, 6.6};
+    std::vector<double> xc = {5.1, 4.8, 5.6, 5.3};
+    std::vector<double> yc = {6.0, 6.4, 5.7, 6.2, 6.6};
+    expect_same_result(statcpp::t_test_two_sample(x.begin(), x.end(), y.begin(), y.end()),
+                       statcpp::t_test_two_sample(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    expect_same_result(statcpp::t_test_welch(x.begin(), x.end(), y.begin(), y.end()),
+                       statcpp::t_test_welch(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    expect_same_result(statcpp::f_test(x.begin(), x.end(), y.begin(), y.end()),
+                       statcpp::f_test(xc.begin(), xc.end(), yc.begin(), yc.end()));
+}
+
+/**
+ * @brief Tests that the paired t-test drops incomplete pairs
+ * @test Verifies R's t.test(paired = TRUE) behaviour: a pair is removed when either value is NaN
+ */
+TEST(ParametricNanTest, PairedTestDropsPairs) {
+    std::vector<double> before = {5.1, kNaN, 4.8, 5.6, 5.3, 4.9};
+    std::vector<double> after = {5.4, 5.0, 5.1, kNaN, 5.9, 5.0};
+    std::vector<double> bc = {5.1, 4.8, 5.3, 4.9};
+    std::vector<double> ac = {5.4, 5.1, 5.9, 5.0};
+    expect_same_result(statcpp::t_test_paired(before.begin(), before.end(), after.begin(), after.end()),
+                       statcpp::t_test_paired(bc.begin(), bc.end(), ac.begin(), ac.end()));
+}
+
+/**
+ * @brief Tests that the chi-square tests reject NaN
+ * @test Verifies R's chisq.test() behaviour (an error for NA); the independence test used to return chi2 = 0, p = 1
+ */
+TEST(ParametricNanTest, ChiSquareThrows) {
+    std::vector<double> observed = {10.0, kNaN, 15.0};
+    std::vector<double> observed_clean = {10.0, 12.0, 15.0};
+    std::vector<double> expected = {12.0, 12.0, 13.0};
+    std::vector<double> expected_nan = {12.0, kNaN, 13.0};
+    EXPECT_THROW(statcpp::chisq_test_gof(observed.begin(), observed.end(), expected.begin(), expected.end()),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::chisq_test_gof(observed_clean.begin(), observed_clean.end(), expected_nan.begin(),
+                                         expected_nan.end()),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::chisq_test_gof_uniform(observed.begin(), observed.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::chisq_test_independence({{10.0, kNaN}, {5.0, 12.0}}), std::invalid_argument);
+}
+
+/**
+ * @brief Tests the multiple-testing corrections with NaN p-values
+ * @test Verifies R's p.adjust(): NaN stays NaN and is not counted in the number of tests
+ *       (reference: p.adjust(c(0.01, NA, 0.04, 0.03, NA, 0.2), method) in R 4.4.2)
+ */
+TEST(ParametricNanTest, CorrectionsMatchPAdjust) {
+    std::vector<double> p = {0.01, kNaN, 0.04, 0.03, kNaN, 0.2};
+    auto bonf = statcpp::bonferroni_correction(p);
+    auto holm = statcpp::holm_correction(p);
+    auto bh = statcpp::benjamini_hochberg_correction(p);
+    const std::vector<double> r_bonf = {0.04, kNaN, 0.16, 0.12, kNaN, 0.8};
+    const std::vector<double> r_holm = {0.04, kNaN, 0.09, 0.09, kNaN, 0.2};
+    const std::vector<double> r_bh = {0.04, kNaN, 0.05333333333333333, 0.05333333333333333, kNaN, 0.2};
+    for (std::size_t i = 0; i < p.size(); ++i) {
+        if (std::isnan(r_bonf[i])) {
+            EXPECT_TRUE(std::isnan(bonf[i]));
+            EXPECT_TRUE(std::isnan(holm[i]));
+            EXPECT_TRUE(std::isnan(bh[i]));
+        } else {
+            EXPECT_NEAR(bonf[i], r_bonf[i], 1e-15);
+            EXPECT_NEAR(holm[i], r_holm[i], 1e-15);
+            EXPECT_NEAR(bh[i], r_bh[i], 1e-15);
+        }
+    }
+}
+

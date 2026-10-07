@@ -21,6 +21,7 @@
 #include "statcpp/continuous_distributions.hpp"
 #include "statcpp/discrete_distributions.hpp"
 #include "statcpp/parametric_tests.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -56,24 +57,30 @@ std::vector<double> compute_ranks_with_ties(Iterator first, Iterator last)
     auto n = statcpp::count(first, last);
     if (n == 0) return {};
 
-    // Create index-value pairs
-    std::vector<std::pair<double, std::size_t>> indexed(n);
+    // インデックスと値の組を作成する。NaN は除外して順位を NaN のままにし、
+    // 残りの値の中で順位を付ける(R の rank(na.last = "keep") と同じ)。
+    std::vector<std::pair<double, std::size_t>> indexed;
+    indexed.reserve(n);
     std::size_t i = 0;
     for (auto it = first; it != last; ++it, ++i) {
-        indexed[i] = {static_cast<double>(*it), i};
+        const double value = static_cast<double>(*it);
+        if (!std::isnan(value)) {
+            indexed.push_back({value, i});
+        }
     }
+    const std::size_t n_valid = indexed.size();
 
-    // Sort by value
+    // 値でソート
     std::sort(indexed.begin(), indexed.end(),
               [](const auto& a, const auto& b) { return a.first < b.first; });
 
-    // Assign ranks with tie handling (average rank)
-    std::vector<double> ranks(n);
+    // 同順位を考慮して順位を割り当て(平均順位)
+    std::vector<double> ranks(n, std::numeric_limits<double>::quiet_NaN());
     std::size_t j = 0;
-    while (j < n) {
-        std::size_t k = j;
-        // Find all elements with same value
-        while (k < n && indexed[k].first == indexed[j].first) {
+    while (j < n_valid) {
+        // 同じ値を持つ要素を探す。j + 1 から始めることで必ず前進する。
+        std::size_t k = j + 1;
+        while (k < n_valid && indexed[k].first == indexed[j].first) {
             ++k;
         }
         // Average rank for tied elements
@@ -98,11 +105,14 @@ std::vector<double> compute_ranks_with_ties(Iterator first, Iterator last)
  */
 inline std::vector<std::size_t> compute_tie_groups(const std::vector<double>& sorted_values)
 {
+    // 同順位グループのサイズでは欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(sorted_values.begin(), sorted_values.end(), "compute_tie_groups");
+
     std::vector<std::size_t> tie_groups;
     std::size_t n = sorted_values.size();
     std::size_t i = 0;
     while (i < n) {
-        std::size_t j = i;
+        std::size_t j = i + 1;  // i + 1 から始めることで必ず前進する
         while (j < n && sorted_values[j] == sorted_values[i]) {
             ++j;
         }
@@ -141,6 +151,11 @@ inline std::vector<std::size_t> compute_tie_groups(const std::vector<double>& so
 template <typename Iterator>
 test_result shapiro_wilk_test(Iterator first, Iterator last)
 {
+    // R の shapiro.test() と同じく、NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return shapiro_wilk_test(values.begin(), values.end());
+    }
     auto n = statcpp::count(first, last);
     if (n < 3) {
         throw std::invalid_argument("statcpp::shapiro_wilk_test: need at least 3 elements");
@@ -310,6 +325,11 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
 template <typename Iterator>
 test_result lilliefors_test(Iterator first, Iterator last)
 {
+    // R の nortest::lillie.test() と同じく、NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return lilliefors_test(values.begin(), values.end());
+    }
     auto n = statcpp::count(first, last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::lilliefors_test: need at least 2 elements");
@@ -406,6 +426,17 @@ test_result ks_test_normal(Iterator first, Iterator last)
  */
 inline test_result levene_test(const std::vector<std::vector<double>>& groups)
 {
+    // R の car::leveneTest() と同じく、各群から NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+    for (const auto& group : groups) {
+        if (detail::has_nan(group.begin(), group.end())) {
+            std::vector<std::vector<double>> clean;
+            clean.reserve(groups.size());
+            for (const auto& g : groups) {
+                clean.push_back(detail::drop_nan(g.begin(), g.end()));
+            }
+            return levene_test(clean);
+        }
+    }
     std::size_t k = groups.size();
     if (k < 2) {
         throw std::invalid_argument("statcpp::levene_test: need at least 2 groups");
@@ -491,6 +522,17 @@ inline test_result levene_test(const std::vector<std::vector<double>>& groups)
  */
 inline test_result bartlett_test(const std::vector<std::vector<double>>& groups)
 {
+    // R の bartlett.test() と同じく、各群から NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+    for (const auto& group : groups) {
+        if (detail::has_nan(group.begin(), group.end())) {
+            std::vector<std::vector<double>> clean;
+            clean.reserve(groups.size());
+            for (const auto& g : groups) {
+                clean.push_back(detail::drop_nan(g.begin(), g.end()));
+            }
+            return bartlett_test(clean);
+        }
+    }
     std::size_t k = groups.size();
     if (k < 2) {
         throw std::invalid_argument("statcpp::bartlett_test: need at least 2 groups");
@@ -569,6 +611,13 @@ template <typename Iterator>
 test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 = 0.0,
                                        alternative_hypothesis alt = alternative_hypothesis::two_sided)
 {
+    detail::require_param_not_nan(mu0, "wilcoxon_signed_rank_test", "mu0");
+    if (detail::has_nan(first, last)) {
+        // R の wilcox.test と同じく、NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+        const auto values = detail::drop_nan(first, last);
+        return wilcoxon_signed_rank_test(values.begin(), values.end(), mu0, alt);
+    }
+
     auto n = statcpp::count(first, last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::wilcoxon_signed_rank_test: need at least 2 elements");
@@ -683,6 +732,13 @@ test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
                                  alternative_hypothesis alt = alternative_hypothesis::two_sided,
                                  bool correct = true)
 {
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        // R の wilcox.test と同じく、NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return mann_whitney_u_test(x.begin(), x.end(), y.begin(), y.end(), alt, correct);
+    }
+
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -710,7 +766,7 @@ test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
     std::vector<double> ranks(total_n);
     std::size_t i = 0;
     while (i < total_n) {
-        std::size_t j = i;
+        std::size_t j = i + 1;  // i + 1 から始めることで必ず前進する
         while (j < total_n && combined[j].first == combined[i].first) {
             ++j;
         }
@@ -816,6 +872,17 @@ inline test_result kruskal_wallis_test(const std::vector<std::vector<double>>& g
     if (k < 2) {
         throw std::invalid_argument("statcpp::kruskal_wallis_test: need at least 2 groups");
     }
+    for (const auto& group : groups) {
+        if (detail::has_nan(group.begin(), group.end())) {
+            // R の kruskal.test と同じく、NaN を除去してから検定する(docs-ja/NAN_POLICY.md)
+            std::vector<std::vector<double>> clean;
+            clean.reserve(k);
+            for (const auto& g : groups) {
+                clean.push_back(detail::drop_nan(g.begin(), g.end()));
+            }
+            return kruskal_wallis_test(clean);
+        }
+    }
 
     // Combine all observations with group labels
     std::vector<std::pair<double, std::size_t>> combined;
@@ -841,7 +908,7 @@ inline test_result kruskal_wallis_test(const std::vector<std::vector<double>>& g
     std::vector<double> ranks(total_n);
     std::size_t i = 0;
     while (i < total_n) {
-        std::size_t j = i;
+        std::size_t j = i + 1;  // i + 1 から始めることで必ず前進する
         while (j < total_n && combined[j].first == combined[i].first) {
             ++j;
         }

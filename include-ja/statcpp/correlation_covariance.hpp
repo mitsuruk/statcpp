@@ -14,11 +14,13 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include "statcpp/basic_statistics.hpp"
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -564,7 +566,7 @@ std::vector<double> compute_ranks(Iterator first, Iterator last)
     std::vector<double> ranks(n);
     std::size_t i = 0;
     while (i < n) {
-        std::size_t j = i;
+        std::size_t j = i + 1;  // i + 1 から始めることで必ず前進する
         // 同じ値を持つ要素の範囲を見つける
         while (j < n && indexed_values[j].second == indexed_values[i].second) {
             ++j;
@@ -611,7 +613,7 @@ std::vector<double> compute_ranks(Iterator first, Iterator last, Projection proj
     std::vector<double> ranks(n);
     std::size_t i = 0;
     while (i < n) {
-        std::size_t j = i;
+        std::size_t j = i + 1;  // i + 1 から始めることで必ず前進する
         while (j < n && indexed_values[j].second == indexed_values[i].second) {
             ++j;
         }
@@ -661,6 +663,11 @@ double spearman_correlation(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::spearman_correlation: need at least 2 elements");
     }
 
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        // R の cor(method = "spearman") と同じく、どちらかに NaN があれば NaN を返す(docs-ja/NAN_POLICY.md)
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
     auto ranks_x = detail::compute_ranks(first1, last1);
     auto ranks_y = detail::compute_ranks(first2, last2);
 
@@ -700,6 +707,11 @@ double spearman_correlation(Iterator1 first1, Iterator1 last1,
     }
     if (n1 < 2) {
         throw std::invalid_argument("statcpp::spearman_correlation: need at least 2 elements");
+    }
+
+    if (detail::has_nan(first1, last1, proj1) || detail::has_nan(first2, last2, proj2)) {
+        // R の cor(method = "spearman") と同じく、どちらかに NaN があれば NaN を返す(docs-ja/NAN_POLICY.md)
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     auto ranks_x = detail::compute_ranks(first1, last1, proj1);
@@ -755,6 +767,13 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
     auto it2 = first2;
     for (std::size_t i = 0; i < n; ++i, ++it1, ++it2) {
         pairs.push_back({static_cast<double>(*it1), static_cast<double>(*it2)});
+    }
+
+    // R の cor(method = "kendall") と同じく、どちらかが NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)
+    for (const auto& pr : pairs) {
+        if (std::isnan(pr.first) || std::isnan(pr.second)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
     }
 
     // 一致・不一致・同順位のペア数をカウント。
@@ -850,6 +869,13 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
                          static_cast<double>(std::invoke(proj2, *it2))});
     }
 
+    // R の cor(method = "kendall") と同じく、どちらかが NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)
+    for (const auto& pr : pairs) {
+        if (std::isnan(pr.first) || std::isnan(pr.second)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+    }
+
     // 一致・不一致・同順位のペア数をカウント。
     //
     // 同順位（タイ）の検出には厳密な等値比較（diff == 0.0）を使用する。
@@ -943,6 +969,13 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
         double y = static_cast<double>(*it2);
         double w = static_cast<double>(*weight_it);
 
+        // R の cov.wt と同じく、NaN のデータと重みはエラーにする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(x) || std::isnan(y)) {
+            throw std::invalid_argument("statcpp::weighted_covariance: data contains NaN");
+        }
+        if (std::isnan(w)) {
+            throw std::invalid_argument("statcpp::weighted_covariance: weight is NaN");
+        }
         if (w < 0.0) {
             throw std::invalid_argument("statcpp::weighted_covariance: negative weight");
         }
@@ -1037,6 +1070,13 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
         double y = static_cast<double>(std::invoke(proj2, *it2));
         double w = static_cast<double>(*weight_it);
 
+        // R の cov.wt と同じく、NaN のデータと重みはエラーにする(docs-ja/NAN_POLICY.md)
+        if (std::isnan(x) || std::isnan(y)) {
+            throw std::invalid_argument("statcpp::weighted_covariance: data contains NaN");
+        }
+        if (std::isnan(w)) {
+            throw std::invalid_argument("statcpp::weighted_covariance: weight is NaN");
+        }
         if (w < 0.0) {
             throw std::invalid_argument("statcpp::weighted_covariance: negative weight");
         }

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "statcpp/resampling.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 #include <numeric>
 
@@ -510,4 +511,90 @@ TEST(PermutationTestCorrelationTest, TooFewPairs) {
     EXPECT_THROW(statcpp::permutation_test_correlation(x.begin(), x.end(),
                                                         y.begin(), y.end(), 1000),
                  std::invalid_argument);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that the bootstrap convenience functions drop NaN
+ * @test Verifies the estimate equals the estimate on the data without NaN
+ */
+TEST(ResamplingNanTest, ConvenienceFunctionsDropNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {2.1, nan, 3.5, 2.9, 4.4, 3.0};
+    std::vector<double> clean = {2.1, 3.5, 2.9, 4.4, 3.0};
+    EXPECT_DOUBLE_EQ(statcpp::bootstrap_mean(with_nan.begin(), with_nan.end(), 200).estimate,
+                     statcpp::bootstrap_mean(clean.begin(), clean.end(), 200).estimate);
+    EXPECT_DOUBLE_EQ(statcpp::bootstrap_median(with_nan.begin(), with_nan.end(), 200).estimate,
+                     statcpp::bootstrap_median(clean.begin(), clean.end(), 200).estimate);
+    EXPECT_DOUBLE_EQ(statcpp::bootstrap_stddev(with_nan.begin(), with_nan.end(), 200).estimate,
+                     statcpp::bootstrap_stddev(clean.begin(), clean.end(), 200).estimate);
+}
+
+/**
+ * @brief Tests that the bootstrap functions reject a NaN confidence level
+ * @test Verifies policy section 5 for the confidence parameter (it was undefined behaviour)
+ */
+TEST(ResamplingNanTest, NaNConfidenceThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> data = {2.1, 3.5, 2.9, 4.4, 3.0};
+    auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
+    EXPECT_THROW(statcpp::bootstrap(data.begin(), data.end(), mean_func, 100, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::bootstrap_mean(data.begin(), data.end(), 100, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::bootstrap_bca(data.begin(), data.end(), mean_func, 100, nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests the generic bootstrap functions on NaN data
+ * @test Verifies the data reach the user statistic unchanged, as R's boot does, without undefined behaviour:
+ *       a statistic that propagates NaN gives a NaN estimate and NaN interval bounds
+ */
+TEST(ResamplingNanTest, GenericBootstrapPassesDataThrough) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {2.1, nan, 3.5, 2.9, 4.4, 3.0};
+    auto mean_func = [](auto f, auto l) { return statcpp::mean(f, l); };
+    auto r = statcpp::bootstrap(with_nan.begin(), with_nan.end(), mean_func, 100);
+    EXPECT_TRUE(std::isnan(r.estimate));
+    auto b = statcpp::bootstrap_bca(with_nan.begin(), with_nan.end(), mean_func, 100);
+    EXPECT_TRUE(std::isnan(b.estimate));
+    EXPECT_TRUE(std::isnan(b.ci_lower));
+    EXPECT_TRUE(std::isnan(b.ci_upper));
+}
+
+/**
+ * @brief Tests that the permutation tests drop NaN
+ * @test Verifies the result equals the result on the data without NaN under the same seed
+ *       (before the fix the observed statistic was NaN and p = 1 / (B + 1) was falsely significant)
+ */
+TEST(ResamplingNanTest, PermutationTestsDropNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {2.1, nan, 3.5, 2.9, 4.4, 3.0};
+    std::vector<double> y = {1.9, 2.2, 3.6, nan, 4.1, 3.3};
+    std::vector<double> x1 = {2.1, 3.5, 2.9, 4.4, 3.0};      // x without NaN
+    std::vector<double> y1 = {1.9, 2.2, 3.6, 4.1, 3.3};      // y without NaN
+    std::vector<double> xp = {2.1, 3.5, 4.4, 3.0};           // complete pairs, x side
+    std::vector<double> yp = {1.9, 3.6, 4.1, 3.3};           // complete pairs, y side
+
+    auto check = [](const statcpp::permutation_result& a, const statcpp::permutation_result& b) {
+        EXPECT_FALSE(std::isnan(a.observed_statistic));
+        EXPECT_DOUBLE_EQ(a.observed_statistic, b.observed_statistic);
+        EXPECT_DOUBLE_EQ(a.p_value, b.p_value);
+    };
+    {
+        statcpp::default_random_engine e1(42), e2(42);
+        check(statcpp::permutation_test_two_sample(x.begin(), x.end(), y.begin(), y.end(), 500, e1),
+              statcpp::permutation_test_two_sample(x1.begin(), x1.end(), y1.begin(), y1.end(), 500, e2));
+    }
+    {
+        statcpp::default_random_engine e1(42), e2(42);
+        check(statcpp::permutation_test_paired(x.begin(), x.end(), y.begin(), y.end(), 500, e1),
+              statcpp::permutation_test_paired(xp.begin(), xp.end(), yp.begin(), yp.end(), 500, e2));
+    }
+    {
+        statcpp::default_random_engine e1(42), e2(42);
+        check(statcpp::permutation_test_correlation(x.begin(), x.end(), y.begin(), y.end(), 500, e1),
+              statcpp::permutation_test_correlation(xp.begin(), xp.end(), yp.begin(), yp.end(), 500, e2));
+    }
 }

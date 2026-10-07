@@ -4,6 +4,8 @@
  */
 
 #include <gtest/gtest.h>
+#include <vector>
+#include <stdexcept>
 #include "statcpp/power_analysis.hpp"
 #include <cmath>
 #include <limits>
@@ -781,4 +783,41 @@ TEST_F(PowerAnalysisTest, Practical_PsychologyStudy) {
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests the power functions with NaN parameters
+ * @test Verifies a NaN effect size or proportion gives NaN (as R's power.t.test() does) and a NaN alpha throws
+ */
+TEST(PowerAnalysisNanTest, PowerFunctions) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_TRUE(std::isnan(statcpp::power_t_test_one_sample(nan, 20)));
+    EXPECT_TRUE(std::isnan(statcpp::power_t_test_two_sample(nan, 20, 20)));
+    EXPECT_TRUE(std::isnan(statcpp::power_prop_test(nan, 0.5, 100)));
+    EXPECT_TRUE(std::isnan(statcpp::power_prop_test(0.3, nan, 100)));
+    EXPECT_TRUE(std::isnan(statcpp::power_analysis_t_one_sample(nan, 20).power));
+    EXPECT_THROW(statcpp::power_t_test_one_sample(0.5, 20, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::power_t_test_two_sample(0.5, 20, 20, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::power_prop_test(0.3, 0.5, 100, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::power_analysis_t_one_sample(0.5, 20, nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the sample size functions reject every NaN parameter
+ * @test Verifies they throw, since a std::size_t sample size cannot represent NA (they used to return 102)
+ */
+TEST(PowerAnalysisNanTest, SampleSizeThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_THROW(statcpp::sample_size_t_test_one_sample(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_t_test_one_sample(0.5, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_t_test_one_sample(0.5, 0.8, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_t_test_two_sample(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_t_test_two_sample(0.5, 0.8, 0.05, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_prop_test(nan, 0.5), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_prop_test(0.3, 0.5, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::power_analysis_t_one_sample_n(nan), std::invalid_argument);
 }

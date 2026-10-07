@@ -11,6 +11,7 @@
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/continuous_distributions.hpp"
 #include "statcpp/linear_regression.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -406,6 +407,7 @@ inline glm_result glm_fit(
     std::size_t max_iter = 100,
     double tol = 1e-8)
 {
+    detail::require_param_not_nan(tol, "glm_fit", "tol");
     std::size_t n = X.size();
     if (n == 0) {
         throw std::invalid_argument("statcpp::glm_fit: empty data");
@@ -419,6 +421,11 @@ inline glm_result glm_fit(
         if (row.size() != p) {
             throw std::invalid_argument("statcpp::glm_fit: inconsistent number of predictors");
         }
+    }
+    if (detail::has_nan_rows(X, y)) {
+        // R の glm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [X_clean, y_clean] = detail::drop_nan_rows(X, y);
+        return glm_fit(X_clean, y_clean, family, link, max_iter, tol);
     }
 
     std::size_t p_full = p + 1;  // 切片を含む
@@ -679,6 +686,7 @@ inline glm_result logistic_regression(
 {
     // X に切片列が含まれていないことを確認（linear_regression.hppから）
     statcpp::detail::validate_no_intercept_column(X, "logistic_regression");
+    detail::require_param_not_nan(tol, "logistic_regression", "tol");
 
     // y が 0 または 1 の範囲にあることを確認
     for (double yi : y) {
@@ -799,6 +807,7 @@ inline glm_result poisson_regression(
 {
     // X に切片列が含まれていないことを確認
     statcpp::detail::validate_no_intercept_column(X, "poisson_regression");
+    detail::require_param_not_nan(tol, "poisson_regression", "tol");
 
     // y が非負であることを確認
     for (double yi : y) {
@@ -895,6 +904,11 @@ inline glm_residuals compute_glm_residuals(
     std::size_t n = X.size();
     if (n != y.size()) {
         throw std::invalid_argument("statcpp::compute_glm_residuals: X and y must have same length");
+    }
+    if (detail::has_nan_rows(X, y)) {
+        // R の glm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [X_clean, y_clean] = detail::drop_nan_rows(X, y);
+        return compute_glm_residuals(model, X_clean, y_clean);
     }
 
     std::vector<double> response(n);
@@ -998,6 +1012,16 @@ inline double pseudo_r_squared_nagelkerke(const glm_result& model,
                                            const std::vector<double>& y,
                                            std::size_t n)
 {
+    if (detail::has_nan(y.begin(), y.end())) {
+        // na.omit で推定したモデルに合わせて、NaN の応答を除き、その数だけ n を減らす
+        // (docs-ja/NAN_POLICY.md)
+        const auto y_clean = detail::drop_nan(y.begin(), y.end());
+        const std::size_t removed = y.size() - y_clean.size();
+        if (removed > n) {
+            throw std::invalid_argument("statcpp::pseudo_r_squared_nagelkerke: n is smaller than the number of NaN");
+        }
+        return pseudo_r_squared_nagelkerke(model, y_clean, n - removed);
+    }
     double n_d = static_cast<double>(n);
     double ll_model = model.log_likelihood;
 

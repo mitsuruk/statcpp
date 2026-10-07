@@ -9,9 +9,13 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <iterator>
 #include <vector>
+
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -44,15 +48,27 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::euclidean_distance: empty sequences");
     }
 
+    // R の dist() と同じく、差が NaN の座標は除き、和を n / n_used 倍に補正する。
+    // 使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)
     double sum_sq = 0.0;
+    std::size_t n_used = 0;
     auto it1 = first1;
     auto it2 = first2;
 
     while (it1 != last1) {
         double diff = static_cast<double>(*it1) - static_cast<double>(*it2);
-        sum_sq += diff * diff;
+        if (!std::isnan(diff)) {
+            sum_sq += diff * diff;
+            ++n_used;
+        }
         ++it1;
         ++it2;
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < static_cast<std::size_t>(n1)) {
+        sum_sq *= static_cast<double>(n1) / static_cast<double>(n_used);
     }
 
     return std::sqrt(sum_sq);
@@ -76,7 +92,10 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::euclidean_distance: empty sequences");
     }
 
+    // R の dist() と同じく、差が NaN の座標は除き、和を n / n_used 倍に補正する。
+    // 使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)
     double sum_sq = 0.0;
+    std::size_t n_used = 0;
     auto it1 = first1;
     auto it2 = first2;
 
@@ -84,9 +103,18 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
         double v1 = static_cast<double>(proj1(*it1));
         double v2 = static_cast<double>(proj2(*it2));
         double diff = v1 - v2;
-        sum_sq += diff * diff;
+        if (!std::isnan(diff)) {
+            sum_sq += diff * diff;
+            ++n_used;
+        }
         ++it1;
         ++it2;
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < static_cast<std::size_t>(n1)) {
+        sum_sq *= static_cast<double>(n1) / static_cast<double>(n_used);
     }
 
     return std::sqrt(sum_sq);
@@ -121,15 +149,27 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::manhattan_distance: empty sequences");
     }
 
+    // R の dist() と同じく、差が NaN の座標は除き、和を n / n_used 倍に補正する。
+    // 使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)
     double sum_abs = 0.0;
+    std::size_t n_used = 0;
     auto it1 = first1;
     auto it2 = first2;
 
     while (it1 != last1) {
         double diff = static_cast<double>(*it1) - static_cast<double>(*it2);
-        sum_abs += std::abs(diff);
+        if (!std::isnan(diff)) {
+            sum_abs += std::abs(diff);
+            ++n_used;
+        }
         ++it1;
         ++it2;
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < static_cast<std::size_t>(n1)) {
+        sum_abs *= static_cast<double>(n1) / static_cast<double>(n_used);
     }
 
     return sum_abs;
@@ -153,7 +193,10 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::manhattan_distance: empty sequences");
     }
 
+    // R の dist() と同じく、差が NaN の座標は除き、和を n / n_used 倍に補正する。
+    // 使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)
     double sum_abs = 0.0;
+    std::size_t n_used = 0;
     auto it1 = first1;
     auto it2 = first2;
 
@@ -161,9 +204,18 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
         double v1 = static_cast<double>(proj1(*it1));
         double v2 = static_cast<double>(proj2(*it2));
         double diff = v1 - v2;
-        sum_abs += std::abs(diff);
+        if (!std::isnan(diff)) {
+            sum_abs += std::abs(diff);
+            ++n_used;
+        }
         ++it1;
         ++it2;
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < static_cast<std::size_t>(n1)) {
+        sum_abs *= static_cast<double>(n1) / static_cast<double>(n_used);
     }
 
     return sum_abs;
@@ -206,6 +258,7 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
     double dot_product = 0.0;
     double norm1_sq = 0.0;
     double norm2_sq = 0.0;
+    std::size_t n_used = 0;  // NaN を含まない組の数
 
     auto it1 = first1;
     auto it2 = first2;
@@ -214,14 +267,21 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
         double v1 = static_cast<double>(*it1);
         double v2 = static_cast<double>(*it2);
 
-        dot_product += v1 * v2;
-        norm1_sq += v1 * v1;
-        norm2_sq += v2 * v2;
+        // NaN を含む組は除く(proxy::simil と同じペアワイズ除去、docs-ja/NAN_POLICY.md)
+        if (!std::isnan(v1) && !std::isnan(v2)) {
+            dot_product += v1 * v2;
+            norm1_sq += v1 * v1;
+            norm2_sq += v2 * v2;
+            ++n_used;
+        }
 
         ++it1;
         ++it2;
     }
 
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (norm1_sq == 0.0 || norm2_sq == 0.0) {
         throw std::invalid_argument("statcpp::cosine_similarity: zero vector encountered");
     }
@@ -250,6 +310,7 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
     double dot_product = 0.0;
     double norm1_sq = 0.0;
     double norm2_sq = 0.0;
+    std::size_t n_used = 0;  // NaN を含まない組の数
 
     auto it1 = first1;
     auto it2 = first2;
@@ -258,14 +319,21 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
         double v1 = static_cast<double>(proj1(*it1));
         double v2 = static_cast<double>(proj2(*it2));
 
-        dot_product += v1 * v2;
-        norm1_sq += v1 * v1;
-        norm2_sq += v2 * v2;
+        // NaN を含む組は除く(proxy::simil と同じペアワイズ除去、docs-ja/NAN_POLICY.md)
+        if (!std::isnan(v1) && !std::isnan(v2)) {
+            dot_product += v1 * v2;
+            norm1_sq += v1 * v1;
+            norm2_sq += v2 * v2;
+            ++n_used;
+        }
 
         ++it1;
         ++it2;
     }
 
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (norm1_sq == 0.0 || norm2_sq == 0.0) {
         throw std::invalid_argument("statcpp::cosine_similarity: zero vector encountered");
     }
@@ -405,6 +473,7 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
                           Iterator2 first2, Iterator2 last2,
                           double p)
 {
+    detail::require_param_not_nan(p, "minkowski_distance", "p");
     if (p < 1.0) {
         throw std::invalid_argument("statcpp::minkowski_distance: p must be >= 1");
     }
@@ -419,15 +488,27 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::minkowski_distance: empty sequences");
     }
 
+    // R の dist() と同じく、差が NaN の座標は除き、和を n / n_used 倍に補正する。
+    // 使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)
     double sum = 0.0;
+    std::size_t n_used = 0;
     auto it1 = first1;
     auto it2 = first2;
 
     while (it1 != last1) {
         double diff = std::abs(static_cast<double>(*it1) - static_cast<double>(*it2));
-        sum += std::pow(diff, p);
+        if (!std::isnan(diff)) {
+            sum += std::pow(diff, p);
+            ++n_used;
+        }
         ++it1;
         ++it2;
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < static_cast<std::size_t>(n1)) {
+        sum *= static_cast<double>(n1) / static_cast<double>(n_used);
     }
 
     return std::pow(sum, 1.0 / p);
@@ -441,6 +522,7 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
                           Iterator2 first2, Iterator2 last2,
                           double p, Proj1 proj1, Proj2 proj2)
 {
+    detail::require_param_not_nan(p, "minkowski_distance", "p");
     if (p < 1.0) {
         throw std::invalid_argument("statcpp::minkowski_distance: p must be >= 1");
     }
@@ -455,7 +537,10 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
         throw std::invalid_argument("statcpp::minkowski_distance: empty sequences");
     }
 
+    // R の dist() と同じく、差が NaN の座標は除き、和を n / n_used 倍に補正する。
+    // 使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)
     double sum = 0.0;
+    std::size_t n_used = 0;
     auto it1 = first1;
     auto it2 = first2;
 
@@ -463,9 +548,18 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
         double v1 = static_cast<double>(proj1(*it1));
         double v2 = static_cast<double>(proj2(*it2));
         double diff = std::abs(v1 - v2);
-        sum += std::pow(diff, p);
+        if (!std::isnan(diff)) {
+            sum += std::pow(diff, p);
+            ++n_used;
+        }
         ++it1;
         ++it2;
+    }
+    if (n_used == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (n_used < static_cast<std::size_t>(n1)) {
+        sum *= static_cast<double>(n1) / static_cast<double>(n_used);
     }
 
     return std::pow(sum, 1.0 / p);

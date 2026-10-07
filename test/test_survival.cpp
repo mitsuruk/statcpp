@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include "statcpp/survival.hpp"
@@ -157,4 +158,41 @@ TEST(NelsonAalenTest, Basic) {
     for (std::size_t i = 1; i < result.cumulative_hazard.size(); ++i) {
         EXPECT_GE(result.cumulative_hazard[i], result.cumulative_hazard[i-1]);
     }
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that Kaplan-Meier drops observations with a NaN time
+ * @test Verifies that the curve equals the curve of the data without NaN, as R's survfit (na.omit) does
+ */
+TEST(SurvivalNanTest, KaplanMeierDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> times = {5.0, nan, 8.0, 3.0, 8.0, 12.0};
+    std::vector<bool> events = {true, true, false, true, true, false};
+    std::vector<double> times_clean = {5.0, 8.0, 3.0, 8.0, 12.0};
+    std::vector<bool> events_clean = {true, false, true, true, false};
+    auto r = statcpp::kaplan_meier(times, events);
+    auto e = statcpp::kaplan_meier(times_clean, events_clean);
+    EXPECT_EQ(r.times, e.times);
+    EXPECT_EQ(r.survival, e.survival);
+    EXPECT_EQ(r.n_at_risk, e.n_at_risk);
+}
+
+/**
+ * @brief Tests that Nelson-Aalen drops observations with a NaN time
+ * @test Verifies that the cumulative hazard equals that of the data without NaN
+ */
+TEST(SurvivalNanTest, NelsonAalenDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> times = {5.0, nan, 8.0, 3.0, 8.0, 12.0};
+    std::vector<bool> events = {true, true, false, true, true, false};
+    std::vector<double> times_clean = {5.0, 8.0, 3.0, 8.0, 12.0};
+    std::vector<bool> events_clean = {true, false, true, true, false};
+    auto r = statcpp::nelson_aalen(times, events);
+    auto e = statcpp::nelson_aalen(times_clean, events_clean);
+    EXPECT_EQ(r.times, e.times);
+    EXPECT_EQ(r.cumulative_hazard, e.cumulative_hazard);
 }

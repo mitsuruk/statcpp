@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "statcpp/basic_statistics.hpp"
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -44,6 +45,8 @@ namespace statcpp {
 template <typename Iterator>
 double autocorrelation(Iterator first, Iterator last, std::size_t lag)
 {
+    // NaN is an error, as in R's acf (na.action = na.fail; docs/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "autocorrelation");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::autocorrelation: empty range");
@@ -96,6 +99,8 @@ double autocorrelation(Iterator first, Iterator last, std::size_t lag)
 template <typename Iterator>
 std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
 {
+    // NaN is an error, as in R's acf (na.action = na.fail; docs/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "acf");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::acf: empty range");
@@ -133,6 +138,8 @@ std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
 template <typename Iterator>
 std::vector<double> pacf(Iterator first, Iterator last, std::size_t max_lag)
 {
+    // NaN is an error, as in R's acf (na.action = na.fail; docs/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "pacf");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::pacf: empty range");
@@ -339,6 +346,29 @@ std::vector<double> moving_average(Iterator first, Iterator last, std::size_t wi
     data.reserve(n);
     for (auto it = first; it != last; ++it) {
         data.push_back(static_cast<double>(*it));
+    }
+
+    // Only the windows that contain NaN give NaN and a window with Inf gives Inf, as R's
+    // stats::filter does (docs/NAN_POLICY.md). Each window is summed directly so that NaN, or
+    // the NaN from Inf - Inf, does not spread through the running sum.
+    bool all_finite = true;
+    for (double value : data) {
+        if (!std::isfinite(value)) {
+            all_finite = false;
+            break;
+        }
+    }
+    if (!all_finite) {
+        std::vector<double> result;
+        result.reserve(n - window + 1);
+        for (std::size_t start = 0; start + window <= n; ++start) {
+            double window_sum = 0.0;
+            for (std::size_t i = start; i < start + window; ++i) {
+                window_sum += data[i];
+            }
+            result.push_back(window_sum / static_cast<double>(window));
+        }
+        return result;
     }
 
     std::vector<double> result;

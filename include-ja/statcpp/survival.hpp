@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "statcpp/continuous_distributions.hpp"
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -61,6 +62,11 @@ inline kaplan_meier_result kaplan_meier(
     if (times.empty()) {
         throw std::invalid_argument("statcpp::kaplan_meier: empty data");
     }
+    if (detail::has_nan(times.begin(), times.end())) {
+        // R の survfit(na.omit)と同じく、時刻が NaN の観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [clean_times, clean_events] = detail::drop_nan_pairs(times.begin(), times.end(), events.begin());
+        return kaplan_meier(clean_times, clean_events);
+    }
 
     std::size_t n = times.size();
 
@@ -92,14 +98,14 @@ inline kaplan_meier_result kaplan_meier(
         std::size_t d = 0;  // イベント数
         std::size_t c = 0;  // 打ち切り数
 
-        while (i < n && times[indices[i]] == t) {
+        do {  // i の観測は必ず時刻 t に属するので、必ず前進する
             if (events[indices[i]]) {
                 d++;
             } else {
                 c++;
             }
             i++;
-        }
+        } while (i < n && times[indices[i]] == t);
 
         // イベントがあった場合のみ生存確率を更新
         if (d > 0) {
@@ -344,6 +350,11 @@ inline hazard_rate_result nelson_aalen(
     if (times.empty()) {
         throw std::invalid_argument("statcpp::nelson_aalen: empty data");
     }
+    if (detail::has_nan(times.begin(), times.end())) {
+        // R の survfit(na.omit)と同じく、時刻が NaN の観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [clean_times, clean_events] = detail::drop_nan_pairs(times.begin(), times.end(), events.begin());
+        return nelson_aalen(clean_times, clean_events);
+    }
 
     std::size_t n = times.size();
 
@@ -369,14 +380,14 @@ inline hazard_rate_result nelson_aalen(
         std::size_t d = 0;
         std::size_t c = 0;
 
-        while (i < n && times[indices[i]] == t) {
+        do {  // i の観測は必ず時刻 t に属するので、必ず前進する
             if (events[indices[i]]) {
                 d++;
             } else {
                 c++;
             }
             i++;
-        }
+        } while (i < n && times[indices[i]] == t);
 
         if (d > 0 && n_risk > 0) {
             double h = static_cast<double>(d) / static_cast<double>(n_risk);

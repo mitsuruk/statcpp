@@ -2,6 +2,7 @@
 #include "statcpp/glm.hpp"
 #include "statcpp/linear_regression.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 // ============================================================================
@@ -488,4 +489,88 @@ TEST(GLMFitTest, GaussianCoefficientSeMatchesOLS) {
     for (std::size_t j = 0; j < glm.coefficient_se.size(); ++j) {
         EXPECT_NEAR(glm.coefficient_se[j], ols.coefficient_se[j], 1e-6);
     }
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+
+const double kNaN = std::numeric_limits<double>::quiet_NaN();
+
+}  // namespace
+
+/**
+ * @brief Tests that logistic_regression and poisson_regression drop incomplete observations
+ * @test Expected values: glm(family = binomial / poisson) in R 4.4.2 with the default na.omit
+ */
+TEST(GlmNanTest, RegressionsMatchR) {
+    std::vector<std::vector<double>> X1 = {{0.5}, {1.2}, {kNaN}, {2.8}, {3.1}, {4.0}, {4.4}, {5.6}, {6.1}, {7.3}};
+    std::vector<double> yb = {0, 0, 1, 0, 1, 0, 1, 1, kNaN, 1};
+    auto g = statcpp::logistic_regression(X1, yb);
+    EXPECT_TRUE(g.converged);
+    EXPECT_NEAR(g.coefficients[0], -5.2381807357127519, 1e-6);
+    EXPECT_NEAR(g.coefficients[1], 1.470074972983737, 1e-6);
+    EXPECT_NEAR(g.residual_deviance, 5.5763158528398318, 1e-6);
+    EXPECT_DOUBLE_EQ(g.df_residual, 6.0);
+
+    std::vector<std::vector<double>> X2 = {{0.5}, {1.0}, {1.5}, {kNaN}, {2.5}, {3.0}, {3.5}, {4.0}, {4.5}, {5.0}};
+    std::vector<double> yp = {1, 0, 2, 3, kNaN, 5, 4, 7, 9, 8};
+    auto p = statcpp::poisson_regression(X2, yp);
+    EXPECT_TRUE(p.converged);
+    EXPECT_NEAR(p.coefficients[0], -0.30024671840961908, 1e-6);
+    EXPECT_NEAR(p.coefficients[1], 0.52352659582539873, 1e-6);
+}
+
+/**
+ * @brief Tests that glm_fit drops incomplete observations and the residual functions follow
+ * @test Verifies glm_fit, compute_glm_residuals and overdispersion_test equal their results on the complete rows
+ */
+TEST(GlmNanTest, FitAndResidualsDropIncompleteRows) {
+    std::vector<std::vector<double>> X = {{1}, {2}, {kNaN}, {4}, {5}, {6}, {7}, {8}};
+    std::vector<double> y = {1, 3, 2, 4, kNaN, 7, 6, 9};
+    std::vector<std::vector<double>> Xc = {{1}, {2}, {4}, {6}, {7}, {8}};
+    std::vector<double> yc = {1, 3, 4, 7, 6, 9};
+
+    auto a = statcpp::glm_fit(X, y);
+    auto b = statcpp::glm_fit(Xc, yc);
+    EXPECT_DOUBLE_EQ(a.coefficients[0], b.coefficients[0]);
+    EXPECT_DOUBLE_EQ(a.coefficients[1], b.coefficients[1]);
+    EXPECT_DOUBLE_EQ(a.residual_deviance, b.residual_deviance);
+
+    auto p = statcpp::poisson_regression(Xc, yc);
+    auto ra = statcpp::compute_glm_residuals(p, X, y);
+    auto rb = statcpp::compute_glm_residuals(p, Xc, yc);
+    ASSERT_EQ(ra.deviance.size(), 6u);
+    EXPECT_EQ(ra.deviance, rb.deviance);
+    EXPECT_EQ(ra.pearson, rb.pearson);
+    EXPECT_DOUBLE_EQ(statcpp::overdispersion_test(p, X, y), statcpp::overdispersion_test(p, Xc, yc));
+}
+
+/**
+ * @brief Tests that pseudo_r_squared_nagelkerke drops NaN responses and reduces n
+ * @test Verifies the result equals the result for the response without NaN
+ */
+TEST(GlmNanTest, NagelkerkeDropsNaN) {
+    std::vector<std::vector<double>> X = {{0.5}, {1.0}, {1.5}, {2.0}, {2.5}, {3.0}, {3.5}, {4.0}};
+    std::vector<double> y = {1, 0, 2, 3, 4, 5, 7, 9};
+    auto model = statcpp::poisson_regression(X, y);
+    std::vector<double> y_nan = {1, 0, 2, kNaN, 3, 4, 5, 7, 9};
+    EXPECT_DOUBLE_EQ(statcpp::pseudo_r_squared_nagelkerke(model, y_nan, 9),
+                     statcpp::pseudo_r_squared_nagelkerke(model, y, 8));
+}
+
+/**
+ * @brief Tests that the GLM fitting functions reject a NaN tolerance
+ * @test Verifies policy section 5 for range-checked parameters
+ */
+TEST(GlmNanTest, NaNToleranceThrows) {
+    std::vector<std::vector<double>> X = {{1}, {2}, {3}, {4}, {5}};
+    std::vector<double> y = {0, 0, 1, 0, 1};
+    EXPECT_THROW(statcpp::glm_fit(X, y, statcpp::distribution_family::gaussian,
+                                  statcpp::link_function::identity, 100, kNaN),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::logistic_regression(X, y, 100, kNaN), std::invalid_argument);
+    EXPECT_THROW(statcpp::poisson_regression(X, y, 100, kNaN), std::invalid_argument);
 }

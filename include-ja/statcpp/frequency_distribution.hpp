@@ -12,10 +12,13 @@
 #include <functional>
 #include <iterator>
 #include <map>
+#include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -71,6 +74,8 @@ template <typename Iterator>
 auto frequency_table(Iterator first, Iterator last)
     -> frequency_table_result<typename std::iterator_traits<Iterator>::value_type>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(first, last, "frequency_table");
     using value_type = typename std::iterator_traits<Iterator>::value_type;
 
     if (first == last) {
@@ -123,6 +128,10 @@ auto frequency_table(Iterator first, Iterator last, Projection proj)
     -> frequency_table_result<std::invoke_result_t<Projection,
            typename std::iterator_traits<Iterator>::value_type>>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::frequency_table: data contains NaN");
+    }
     using result_type = std::invoke_result_t<Projection,
         typename std::iterator_traits<Iterator>::value_type>;
 
@@ -175,6 +184,8 @@ template <typename Iterator>
 auto frequency_count(Iterator first, Iterator last)
     -> std::unordered_map<typename std::iterator_traits<Iterator>::value_type, std::size_t>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(first, last, "frequency_count");
     using value_type = typename std::iterator_traits<Iterator>::value_type;
 
     std::unordered_map<value_type, std::size_t> freq;
@@ -201,6 +212,10 @@ auto frequency_count(Iterator first, Iterator last, Projection proj)
     -> std::unordered_map<std::invoke_result_t<Projection,
            typename std::iterator_traits<Iterator>::value_type>, std::size_t>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::frequency_count: data contains NaN");
+    }
     using result_type = std::invoke_result_t<Projection,
         typename std::iterator_traits<Iterator>::value_type>;
 
@@ -229,6 +244,8 @@ template <typename Iterator>
 auto relative_frequency(Iterator first, Iterator last)
     -> std::unordered_map<typename std::iterator_traits<Iterator>::value_type, double>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(first, last, "relative_frequency");
     using value_type = typename std::iterator_traits<Iterator>::value_type;
 
     auto n = static_cast<std::size_t>(std::distance(first, last));
@@ -264,6 +281,10 @@ auto relative_frequency(Iterator first, Iterator last, Projection proj)
     -> std::unordered_map<std::invoke_result_t<Projection,
            typename std::iterator_traits<Iterator>::value_type>, double>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::relative_frequency: data contains NaN");
+    }
     using result_type = std::invoke_result_t<Projection,
         typename std::iterator_traits<Iterator>::value_type>;
 
@@ -302,6 +323,8 @@ template <typename Iterator>
 auto cumulative_frequency(Iterator first, Iterator last)
     -> std::vector<std::pair<typename std::iterator_traits<Iterator>::value_type, std::size_t>>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(first, last, "cumulative_frequency");
     using value_type = typename std::iterator_traits<Iterator>::value_type;
 
     if (first == last) {
@@ -344,6 +367,10 @@ auto cumulative_frequency(Iterator first, Iterator last, Projection proj)
     -> std::vector<std::pair<std::invoke_result_t<Projection,
            typename std::iterator_traits<Iterator>::value_type>, std::size_t>>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::cumulative_frequency: data contains NaN");
+    }
     using result_type = std::invoke_result_t<Projection,
         typename std::iterator_traits<Iterator>::value_type>;
 
@@ -387,6 +414,8 @@ template <typename Iterator>
 auto cumulative_relative_frequency(Iterator first, Iterator last)
     -> std::vector<std::pair<typename std::iterator_traits<Iterator>::value_type, double>>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(first, last, "cumulative_relative_frequency");
     using value_type = typename std::iterator_traits<Iterator>::value_type;
 
     auto n = static_cast<std::size_t>(std::distance(first, last));
@@ -425,6 +454,10 @@ auto cumulative_relative_frequency(Iterator first, Iterator last, Projection pro
     -> std::vector<std::pair<std::invoke_result_t<Projection,
            typename std::iterator_traits<Iterator>::value_type>, double>>
 {
+    // 度数では欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    if (detail::has_nan(first, last, proj)) {
+        throw std::invalid_argument("statcpp::cumulative_relative_frequency: data contains NaN");
+    }
     using result_type = std::invoke_result_t<Projection,
         typename std::iterator_traits<Iterator>::value_type>;
 

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include "statcpp/missing_data.hpp"
@@ -666,4 +667,21 @@ TEST(ConditionalMeanTest, NoPredictors) {
     // Impute with mean when there are no predictor variables
     double expected_mean = (1.0 + 2.0 + 4.0) / 3.0;
     EXPECT_NEAR(imputed[2], expected_mean, 0.01);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests multiple_imputation_bootstrap with an entirely missing column
+ * @test Verifies the column stays NaN instead of being silently imputed with 0
+ */
+TEST(MissingDataNanTest, BootstrapAllMissingColumnStaysNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<std::vector<double>> data = {{1.0, nan}, {2.0, nan}, {nan, nan}, {4.0, nan}, {5.0, nan}};
+    auto r = statcpp::multiple_imputation_bootstrap(data, 5, 42);
+    EXPECT_TRUE(std::isnan(r.pooled_means[1]));
+    EXPECT_FALSE(std::isnan(r.pooled_means[0]));
+    EXPECT_TRUE(std::isnan(r.imputed_datasets[0][0][1]));
 }

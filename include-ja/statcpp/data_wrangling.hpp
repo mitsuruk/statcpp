@@ -25,6 +25,7 @@
 
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/random_engine.hpp"
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -164,6 +165,8 @@ inline std::vector<double> fillna_median(const std::vector<double>& data)
         return data;
     }
 
+    // median() はソート済みのデータを前提とする(docs-ja/NAN_POLICY.md: 未ソートで誤った値で埋めていた)
+    std::sort(non_na.begin(), non_na.end());
     double med = median(non_na.begin(), non_na.end());
     return fillna(data, med);
 }
@@ -309,6 +312,10 @@ std::vector<std::vector<T>> filter_rows(const std::vector<std::vector<T>>& data,
 template <typename T>
 std::vector<T> filter_range(const std::vector<T>& data, T min_val, T max_val)
 {
+    // NaN の境界はエラーにする(docs-ja/NAN_POLICY.md #9)。NaN のデータは比較により除かれる
+    if (detail::is_nan_value(min_val) || detail::is_nan_value(max_val)) {
+        throw std::invalid_argument("statcpp::filter_range: min_val or max_val is NaN");
+    }
     return filter(data, [min_val, max_val](const T& val) {
         return val >= min_val && val <= max_val;
     });
@@ -499,6 +506,11 @@ group_result<K, V> group_by(const std::vector<K>& keys, const std::vector<V>& va
 
     group_result<K, V> result;
     for (std::size_t i = 0; i < keys.size(); ++i) {
+        // R の split や tapply と同じく、キーが NaN の行は除く。NaN のキーは std::map の
+        // 順序も壊す(docs-ja/NAN_POLICY.md)
+        if (detail::is_nan_value(keys[i])) {
+            continue;
+        }
         result.groups[keys[i]].push_back(values[i]);
     }
     return result;
@@ -578,7 +590,8 @@ aggregation_result<K> group_count(const std::vector<K>& keys, const std::vector<
 template <typename T>
 std::vector<T> sort_values(const std::vector<T>& data, bool ascending = true)
 {
-    std::vector<T> result = data;
+    // R の sort と同じく NaN は除く。NaN は std::sort も壊す(docs-ja/NAN_POLICY.md)
+    std::vector<T> result = detail::drop_nan(data.begin(), data.end());
     if (ascending) {
         std::sort(result.begin(), result.end());
     } else {
@@ -600,13 +613,17 @@ std::vector<std::size_t> argsort(const std::vector<T>& data, bool ascending = tr
     std::vector<std::size_t> indices(data.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    if (ascending) {
-        std::sort(indices.begin(), indices.end(),
-                  [&data](std::size_t i, std::size_t j) { return data[i] < data[j]; });
-    } else {
-        std::sort(indices.begin(), indices.end(),
-                  [&data](std::size_t i, std::size_t j) { return data[i] > data[j]; });
-    }
+    // R の order(na.last = TRUE) と同じく、NaN は元の順序のまま末尾に置く。NaN を添字で
+    // 順序付けることで、比較が strict weak ordering を保つ(docs-ja/NAN_POLICY.md)
+    auto before = [&data, ascending](std::size_t i, std::size_t j) {
+        const bool i_nan = detail::is_nan_value(data[i]);
+        const bool j_nan = detail::is_nan_value(data[j]);
+        if (i_nan || j_nan) {
+            return (i_nan && j_nan) ? i < j : !i_nan;
+        }
+        return ascending ? data[i] < data[j] : data[i] > data[j];
+    };
+    std::sort(indices.begin(), indices.end(), before);
     return indices;
 }
 
@@ -686,6 +703,11 @@ std::vector<V> stratified_sample(const std::vector<K>& strata,
     if (strata.size() != data.size()) {
         throw std::invalid_argument("statcpp::stratified_sample: strata and data must have same size");
     }
+    detail::require_param_not_nan(sample_ratio, "stratified_sample", "sample_ratio");
+    if (detail::has_nan(strata.begin(), strata.end())) {
+        // NaN のキーでは層を作れない。NaN のデータ値は他の値と同様に抽出する(docs-ja/NAN_POLICY.md)
+        throw std::invalid_argument("statcpp::stratified_sample: strata contains NaN");
+    }
     if (sample_ratio <= 0.0 || sample_ratio > 1.0) {
         throw std::invalid_argument("statcpp::stratified_sample: sample_ratio must be in (0, 1]");
     }
@@ -724,8 +746,17 @@ std::vector<T> drop_duplicates(const std::vector<T>& data)
 {
     std::vector<T> result;
     std::unordered_set<T> seen;
+    bool seen_nan = false;  // NaN != NaN のため、集合は既に入れた NaN を見つけられない
 
     for (const auto& val : data) {
+        // R の unique と同じく、NaN 同士は等しいとみなす(docs-ja/NAN_POLICY.md)
+        if (detail::is_nan_value(val)) {
+            if (!seen_nan) {
+                result.push_back(val);
+                seen_nan = true;
+            }
+            continue;
+        }
         if (seen.find(val) == seen.end()) {
             result.push_back(val);
             seen.insert(val);
@@ -743,6 +774,8 @@ std::vector<T> drop_duplicates(const std::vector<T>& data)
 template <typename T>
 std::map<T, std::size_t> value_counts(const std::vector<T>& data)
 {
+    // 度数表は NaN をキーにできない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(data.begin(), data.end(), "value_counts");
     std::map<T, std::size_t> counts;
     for (const auto& val : data) {
         ++counts[val];
@@ -760,7 +793,12 @@ template <typename T>
 std::vector<T> get_duplicates(const std::vector<T>& data)
 {
     std::unordered_map<T, std::size_t> counts;
+    std::size_t nan_count = 0;  // R の duplicated と同じく、NaN 同士は等しいとみなす
     for (const auto& val : data) {
+        if (detail::is_nan_value(val)) {
+            ++nan_count;
+            continue;
+        }
         ++counts[val];
     }
 
@@ -770,6 +808,11 @@ std::vector<T> get_duplicates(const std::vector<T>& data)
         if (pair.second > 1 && added.find(pair.first) == added.end()) {
             result.push_back(pair.first);
             added.insert(pair.first);
+        }
+    }
+    if constexpr (std::is_floating_point_v<T>) {
+        if (nan_count > 1) {
+            result.push_back(std::numeric_limits<T>::quiet_NaN());
         }
     }
     return result;
@@ -870,7 +913,8 @@ inline std::vector<double> rolling_min(const std::vector<double>& data, std::siz
     for (std::size_t i = 0; i <= data.size() - window; ++i) {
         auto start = data.begin() + static_cast<std::ptrdiff_t>(i);
         auto end = start + static_cast<std::ptrdiff_t>(window);
-        result.push_back(*std::min_element(start, end));
+        // 窓が NaN を含めば、位置によらず NaN にする(docs-ja/NAN_POLICY.md)
+        result.push_back(detail::has_nan(start, end) ? NA : *std::min_element(start, end));
     }
     return result;
 }
@@ -893,7 +937,8 @@ inline std::vector<double> rolling_max(const std::vector<double>& data, std::siz
     for (std::size_t i = 0; i <= data.size() - window; ++i) {
         auto start = data.begin() + static_cast<std::ptrdiff_t>(i);
         auto end = start + static_cast<std::ptrdiff_t>(window);
-        result.push_back(*std::max_element(start, end));
+        // 窓が NaN を含めば、位置によらず NaN にする(docs-ja/NAN_POLICY.md)
+        result.push_back(detail::has_nan(start, end) ? NA : *std::max_element(start, end));
     }
     return result;
 }
@@ -966,6 +1011,8 @@ struct label_encoding_result {
 template <typename T>
 label_encoding_result<T> label_encode(const std::vector<T>& data)
 {
+    // クラスの符号では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(data.begin(), data.end(), "label_encode");
     label_encoding_result<T> result;
     std::map<T, std::size_t> mapping;
     std::vector<T> classes;
@@ -998,6 +1045,8 @@ label_encoding_result<T> label_encode(const std::vector<T>& data)
 template <typename T>
 std::vector<std::vector<double>> one_hot_encode(const std::vector<T>& data)
 {
+    // クラスの指示変数では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(data.begin(), data.end(), "one_hot_encode");
     auto label_result = label_encode(data);
     std::size_t n_classes = label_result.classes.size();
     std::size_t n = data.size();
@@ -1024,6 +1073,9 @@ inline std::vector<std::size_t> bin_equal_width(const std::vector<double>& data,
     if (data.empty()) {
         return {};
     }
+
+    // ビン番号では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(data.begin(), data.end(), "bin_equal_width");
 
     double min_val = *std::min_element(data.begin(), data.end());
     double max_val = *std::max_element(data.begin(), data.end());
@@ -1063,6 +1115,8 @@ inline std::vector<std::size_t> bin_equal_freq(const std::vector<double>& data, 
     }
 
     // ソートされたインデックスを取得
+    // ビン番号では NA を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_no_nan(data.begin(), data.end(), "bin_equal_freq");
     auto sorted_idx = argsort(data);
     std::size_t n = data.size();
     std::size_t bin_size = (n + n_bins - 1) / n_bins;  // 切り上げ
@@ -1148,6 +1202,9 @@ inline bool validate_range(const std::vector<double>& data,
                           double min_val = -std::numeric_limits<double>::infinity(),
                           double max_val = std::numeric_limits<double>::infinity())
 {
+    // NaN の境界はエラーにする(docs-ja/NAN_POLICY.md #9)
+    detail::require_param_not_nan(min_val, "validate_range", "min_val");
+    detail::require_param_not_nan(max_val, "validate_range", "max_val");
     for (double val : data) {
         if (std::isnan(val)) {
             continue;  // NAは範囲外とみなさない

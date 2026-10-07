@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include "statcpp/frequency_distribution.hpp"
+#include <limits>
+#include <cmath>
+#include <stdexcept>
 #include <vector>
 #include <string>
 
@@ -331,4 +334,31 @@ TEST(FrequencyProjectionTest, CumulativeRelativeWithProjection) {
     EXPECT_NEAR(result[0].second, 1.0 / 6.0, 1e-10);
     EXPECT_NEAR(result[1].second, 3.0 / 6.0, 1e-10);
     EXPECT_NEAR(result[2].second, 1.0, 1e-10);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that the frequency functions reject NaN
+ * @test Verifies they throw, since counts cannot represent a missing value (NaN used to merge into another key)
+ */
+TEST(FrequencyNanTest, AllThrow) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> middle = {1.0, 2.0, nan, 2.0, 5.0};
+    std::vector<double> first = {nan, 1.0, 2.0, 2.0, 5.0};
+    auto id = [](double v) { return v; };
+    for (const auto* v : {&middle, &first}) {
+        EXPECT_THROW(statcpp::frequency_table(v->begin(), v->end()), std::invalid_argument);
+        EXPECT_THROW(statcpp::frequency_count(v->begin(), v->end()), std::invalid_argument);
+        EXPECT_THROW(statcpp::relative_frequency(v->begin(), v->end()), std::invalid_argument);
+        EXPECT_THROW(statcpp::cumulative_frequency(v->begin(), v->end()), std::invalid_argument);
+        EXPECT_THROW(statcpp::cumulative_relative_frequency(v->begin(), v->end()), std::invalid_argument);
+        EXPECT_THROW(statcpp::frequency_table(v->begin(), v->end(), id), std::invalid_argument);
+        EXPECT_THROW(statcpp::frequency_count(v->begin(), v->end(), id), std::invalid_argument);
+        EXPECT_THROW(statcpp::relative_frequency(v->begin(), v->end(), id), std::invalid_argument);
+        EXPECT_THROW(statcpp::cumulative_frequency(v->begin(), v->end(), id), std::invalid_argument);
+        EXPECT_THROW(statcpp::cumulative_relative_frequency(v->begin(), v->end(), id), std::invalid_argument);
+    }
 }

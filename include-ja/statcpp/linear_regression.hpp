@@ -11,6 +11,7 @@
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/continuous_distributions.hpp"
 #include "statcpp/correlation_covariance.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -132,6 +133,11 @@ simple_regression_result simple_linear_regression(IteratorX x_first, IteratorX x
 
     if (n_x != n_y) {
         throw std::invalid_argument("statcpp::simple_linear_regression: x and y must have same length");
+    }
+    if (detail::has_nan(x_first, x_last) || detail::has_nan(y_first, y_last)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [x, y] = detail::drop_nan_pairs(x_first, x_last, y_first);
+        return simple_linear_regression(x.begin(), x.end(), y.begin(), y.end());
     }
     if (n_x < 3) {
         throw std::invalid_argument("statcpp::simple_linear_regression: need at least 3 observations");
@@ -540,6 +546,11 @@ inline multiple_regression_result multiple_linear_regression(
             throw std::invalid_argument("statcpp::multiple_linear_regression: inconsistent number of predictors");
         }
     }
+    if (detail::has_nan_rows(X, y)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [X_clean, y_clean] = detail::drop_nan_rows(X, y);
+        return multiple_linear_regression(X_clean, y_clean);
+    }
 
     std::size_t p_full = p + 1;  // 切片を含む係数の数
     if (n <= p_full) {
@@ -697,8 +708,14 @@ prediction_interval prediction_interval_simple(
     double x_new,
     double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "prediction_interval_simple", "confidence");
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::prediction_interval_simple: confidence must be in (0, 1)");
+    }
+    if (detail::has_nan(x_first, x_last)) {
+        // モデルは NaN を除いて推定されているので、学習用の x からも NaN を除去する(docs-ja/NAN_POLICY.md)
+        const auto x = detail::drop_nan(x_first, x_last);
+        return prediction_interval_simple(model, x.begin(), x.end(), x_new, confidence);
     }
 
     auto n = statcpp::count(x_first, x_last);
@@ -746,8 +763,14 @@ prediction_interval confidence_interval_mean(
     double x_new,
     double confidence = 0.95)
 {
+    detail::require_param_not_nan(confidence, "confidence_interval_mean", "confidence");
     if (confidence <= 0.0 || confidence >= 1.0) {
         throw std::invalid_argument("statcpp::confidence_interval_mean: confidence must be in (0, 1)");
+    }
+    if (detail::has_nan(x_first, x_last)) {
+        // モデルは NaN を除いて推定されているので、学習用の x からも NaN を除去する(docs-ja/NAN_POLICY.md)
+        const auto x = detail::drop_nan(x_first, x_last);
+        return confidence_interval_mean(model, x.begin(), x.end(), x_new, confidence);
     }
 
     auto n = statcpp::count(x_first, x_last);
@@ -802,6 +825,11 @@ residual_diagnostics compute_residual_diagnostics(
     auto n = statcpp::count(x_first, x_last);
     if (n != statcpp::count(y_first, y_last)) {
         throw std::invalid_argument("statcpp::compute_residual_diagnostics: x and y must have same length");
+    }
+    if (detail::has_nan(x_first, x_last) || detail::has_nan(y_first, y_last)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [x, y] = detail::drop_nan_pairs(x_first, x_last, y_first);
+        return compute_residual_diagnostics(model, x.begin(), x.end(), y.begin(), y.end());
     }
 
     double n_d = static_cast<double>(n);
@@ -883,6 +911,11 @@ inline residual_diagnostics compute_residual_diagnostics(
     std::size_t n = X.size();
     if (n != y.size()) {
         throw std::invalid_argument("statcpp::compute_residual_diagnostics: X and y must have same length");
+    }
+    if (detail::has_nan_rows(X, y)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        const auto [X_clean, y_clean] = detail::drop_nan_rows(X, y);
+        return compute_residual_diagnostics(model, X_clean, y_clean);
     }
 
     std::size_t p = X[0].size();
@@ -974,6 +1007,10 @@ inline residual_diagnostics compute_residual_diagnostics(
  */
 inline std::vector<double> compute_vif(const std::vector<std::vector<double>>& X)
 {
+    if (detail::has_nan_matrix(X)) {
+        // R の lm (na.action = na.omit) と同じく、欠損を含む観測を除去する(docs-ja/NAN_POLICY.md)
+        return compute_vif(detail::drop_nan_rows(X));
+    }
     std::size_t n = X.size();
     if (n < 3) {
         throw std::invalid_argument("statcpp::compute_vif: need at least 3 observations");
@@ -1132,6 +1169,10 @@ double r_squared(IteratorY y_first, IteratorY y_last,
     }
     if (n_y < 2) {
         throw std::invalid_argument("statcpp::r_squared: need at least 2 observations");
+    }
+    if (detail::has_nan(y_first, y_last) || detail::has_nan(pred_first, pred_last)) {
+        // y または予測値が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md #10)
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     double mean_y = statcpp::mean(y_first, y_last);

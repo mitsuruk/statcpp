@@ -9,6 +9,7 @@
 #pragma once
 
 #include "statcpp/continuous_distributions.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -123,6 +124,17 @@ struct posthoc_result {
  */
 inline one_way_anova_result one_way_anova(const std::vector<std::vector<double>>& groups)
 {
+    // R の aov()(na.omit)と同じく、各群から NaN を除去する(docs-ja/NAN_POLICY.md)
+    for (const auto& group : groups) {
+        if (detail::has_nan(group.begin(), group.end())) {
+            std::vector<std::vector<double>> clean;
+            clean.reserve(groups.size());
+            for (const auto& g : groups) {
+                clean.push_back(detail::drop_nan(g.begin(), g.end()));
+            }
+            return one_way_anova(clean);
+        }
+    }
     std::size_t k = groups.size();  // 群数
     if (k < 2) {
         throw std::invalid_argument("statcpp::one_way_anova: need at least 2 groups");
@@ -214,6 +226,22 @@ inline one_way_anova_result one_way_anova(const std::vector<std::vector<double>>
 inline two_way_anova_result two_way_anova(
     const std::vector<std::vector<std::vector<double>>>& data)
 {
+    // 各セルから NaN を除去し、その後で下の平衡データの検査を適用する(docs-ja/NAN_POLICY.md)
+    bool any_nan = false;
+    for (const auto& level : data) {
+        for (const auto& cell : level) {
+            any_nan = any_nan || detail::has_nan(cell.begin(), cell.end());
+        }
+    }
+    if (any_nan) {
+        std::vector<std::vector<std::vector<double>>> clean(data.size());
+        for (std::size_t i = 0; i < data.size(); ++i) {
+            for (const auto& cell : data[i]) {
+                clean[i].push_back(detail::drop_nan(cell.begin(), cell.end()));
+            }
+        }
+        return two_way_anova(clean);
+    }
     std::size_t a = data.size();  // 要因Aの水準数
     if (a < 2) {
         throw std::invalid_argument("statcpp::two_way_anova: need at least 2 levels for factor A");
@@ -369,6 +397,7 @@ inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
                                  const std::vector<std::vector<double>>& groups,
                                  double alpha = 0.05)
 {
+    detail::require_param_not_nan(alpha, "tukey_hsd", "alpha");
     (void)groups;  // 現在未使用。全ての統計量は anova_result から導出
 
     if (alpha <= 0.0 || alpha >= 1.0) {
@@ -442,6 +471,7 @@ inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
 inline posthoc_result bonferroni_posthoc(const one_way_anova_result& anova_result,
                                           double alpha = 0.05)
 {
+    detail::require_param_not_nan(alpha, "bonferroni_posthoc", "alpha");
     if (alpha <= 0.0 || alpha >= 1.0) {
         throw std::invalid_argument("statcpp::bonferroni_posthoc: alpha must be in (0, 1)");
     }
@@ -513,6 +543,7 @@ inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
                                        std::size_t control_group = 0,
                                        double alpha = 0.05)
 {
+    detail::require_param_not_nan(alpha, "dunnett_posthoc", "alpha");
     if (alpha <= 0.0 || alpha >= 1.0) {
         throw std::invalid_argument("statcpp::dunnett_posthoc: alpha must be in (0, 1)");
     }
@@ -589,6 +620,7 @@ inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
 inline posthoc_result scheffe_posthoc(const one_way_anova_result& anova_result,
                                        double alpha = 0.05)
 {
+    detail::require_param_not_nan(alpha, "scheffe_posthoc", "alpha");
     if (alpha <= 0.0 || alpha >= 1.0) {
         throw std::invalid_argument("statcpp::scheffe_posthoc: alpha must be in (0, 1)");
     }
@@ -686,6 +718,24 @@ struct ancova_result {
 inline ancova_result one_way_ancova(
     const std::vector<std::vector<std::pair<double, double>>>& groups)
 {
+    // R の lm() と同じく、共変量か応答が NaN の観測を除去する(docs-ja/NAN_POLICY.md)
+    bool any_nan = false;
+    for (const auto& group : groups) {
+        for (const auto& obs : group) {
+            any_nan = any_nan || std::isnan(obs.first) || std::isnan(obs.second);
+        }
+    }
+    if (any_nan) {
+        std::vector<std::vector<std::pair<double, double>>> clean(groups.size());
+        for (std::size_t i = 0; i < groups.size(); ++i) {
+            for (const auto& obs : groups[i]) {
+                if (!std::isnan(obs.first) && !std::isnan(obs.second)) {
+                    clean[i].push_back(obs);
+                }
+            }
+        }
+        return one_way_ancova(clean);
+    }
     std::size_t k = groups.size();
     if (k < 2) {
         throw std::invalid_argument("statcpp::one_way_ancova: need at least 2 groups");

@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 #include "statcpp/order_statistics.hpp"
+#include <limits>
+#include <cmath>
+#include <string>
+#include <stdexcept>
 #include <vector>
 
 // ============================================================================
@@ -472,3 +476,101 @@ TEST(WeightedPercentileTest, WithProjection) {
 }
 
 #pragma GCC diagnostic pop
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that percentile rejects NaN data and a NaN p
+ * @test Verifies R's quantile() behaviour (an error when the data contain NA) and policy section 5 for p
+ */
+TEST(OrderStatisticsNanTest, PercentileThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, nan, 4.0};
+    std::vector<double> clean = {1.0, 2.0, 3.0, 4.0};
+    EXPECT_THROW(statcpp::percentile(with_nan.begin(), with_nan.end(), 0.5), std::invalid_argument);
+    EXPECT_THROW(statcpp::percentile(clean.begin(), clean.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::percentile(clean.begin(), clean.end(), nan, [](double v) { return v; }),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Tests that interpolate_at rejects NaN data and a NaN position
+ * @test Verifies the quantile-family rule for the helper used by percentile and quartiles
+ */
+TEST(OrderStatisticsNanTest, InterpolateAtThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, nan, 3.0};
+    std::vector<double> clean = {1.0, 2.0, 3.0};
+    EXPECT_THROW(statcpp::interpolate_at(with_nan.begin(), with_nan.size(), 0.5), std::invalid_argument);
+    EXPECT_THROW(statcpp::interpolate_at(clean.begin(), clean.size(), nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that quartiles and five_number_summary reject NaN data
+ * @test Verifies they follow the quantile family through interpolate_at
+ */
+TEST(OrderStatisticsNanTest, QuartilesThrow) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, 3.0, nan};
+    EXPECT_THROW(statcpp::quartiles(with_nan.begin(), with_nan.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::five_number_summary(with_nan.begin(), with_nan.end()), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that weighted_median and weighted_percentile reject NaN values and weights
+ * @test Verifies the quantile-family rule for data and weights, and policy section 5 for p
+ */
+TEST(OrderStatisticsNanTest, WeightedQuantilesThrow) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0};
+    std::vector<double> x_nan = {1.0, nan, 3.0, 4.0};
+    std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
+    std::vector<double> w_nan = {1.0, 1.0, nan, 1.0};
+    EXPECT_THROW(statcpp::weighted_median(x_nan.begin(), x_nan.end(), w.begin(), w.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_median(x.begin(), x.end(), w_nan.begin(), w_nan.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_percentile(x_nan.begin(), x_nan.end(), w.begin(), w.end(), 0.5),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_percentile(x.begin(), x.end(), w_nan.begin(), w_nan.end(), 0.5),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_percentile(x.begin(), x.end(), w.begin(), w.end(), nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that minimum / maximum return NaN for NaN data
+ * @test Verifies R's min() / max() default wherever the NaN is (the result used to depend on its position)
+ */
+TEST(OrderStatisticsNanTest, MinimumMaximumReturnNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> middle = {3.0, nan, 1.0, 5.0};
+    std::vector<double> first = {nan, 3.0, 1.0, 5.0};
+    auto id = [](double v) { return v; };
+    for (const auto* v : {&middle, &first}) {
+        EXPECT_TRUE(std::isnan(statcpp::minimum(v->begin(), v->end())));
+        EXPECT_TRUE(std::isnan(statcpp::maximum(v->begin(), v->end())));
+        EXPECT_TRUE(std::isnan(statcpp::minimum(v->begin(), v->end(), id)));
+        EXPECT_TRUE(std::isnan(statcpp::maximum(v->begin(), v->end(), id)));
+    }
+}
+
+/**
+ * @brief Tests that quartiles and five_number_summary report their own name for NaN data
+ * @test Verifies the error message names the function that was called
+ */
+TEST(OrderStatisticsNanTest, QuartileFamilyErrorNamesFunction) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, 3.0, nan};
+    try {
+        statcpp::quartiles(with_nan.begin(), with_nan.end());
+        ADD_FAILURE() << "expected std::invalid_argument";
+    } catch (const std::invalid_argument& e) {
+        EXPECT_NE(std::string(e.what()).find("statcpp::quartiles:"), std::string::npos) << e.what();
+    }
+    try {
+        statcpp::five_number_summary(with_nan.begin(), with_nan.end());
+        ADD_FAILURE() << "expected std::invalid_argument";
+    } catch (const std::invalid_argument& e) {
+        EXPECT_NE(std::string(e.what()).find("statcpp::five_number_summary:"), std::string::npos) << e.what();
+    }
+}

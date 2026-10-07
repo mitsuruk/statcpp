@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "statcpp/basic_statistics.hpp"
+#include "statcpp/nan_utils.hpp"
 
 namespace statcpp {
 
@@ -44,6 +45,8 @@ namespace statcpp {
 template <typename Iterator>
 double autocorrelation(Iterator first, Iterator last, std::size_t lag)
 {
+    // R の acf (na.action = na.fail) と同じく、NaN はエラーにする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "autocorrelation");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::autocorrelation: empty range");
@@ -96,6 +99,8 @@ double autocorrelation(Iterator first, Iterator last, std::size_t lag)
 template <typename Iterator>
 std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
 {
+    // R の acf (na.action = na.fail) と同じく、NaN はエラーにする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "acf");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::acf: empty range");
@@ -133,6 +138,8 @@ std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
 template <typename Iterator>
 std::vector<double> pacf(Iterator first, Iterator last, std::size_t max_lag)
 {
+    // R の acf (na.action = na.fail) と同じく、NaN はエラーにする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan(first, last, "pacf");
     auto n = static_cast<std::size_t>(std::distance(first, last));
     if (n == 0) {
         throw std::invalid_argument("statcpp::pacf: empty range");
@@ -339,6 +346,29 @@ std::vector<double> moving_average(Iterator first, Iterator last, std::size_t wi
     data.reserve(n);
     for (auto it = first; it != last; ++it) {
         data.push_back(static_cast<double>(*it));
+    }
+
+    // R の stats::filter と同じく、NaN を含む窓だけを NaN にし、Inf を含む窓は Inf にする
+    // (docs-ja/NAN_POLICY.md)。NaN や Inf - Inf による NaN が累積和を通じて後続の窓に
+    // 波及しないよう、窓ごとに直接合計する。
+    bool all_finite = true;
+    for (double value : data) {
+        if (!std::isfinite(value)) {
+            all_finite = false;
+            break;
+        }
+    }
+    if (!all_finite) {
+        std::vector<double> result;
+        result.reserve(n - window + 1);
+        for (std::size_t start = 0; start + window <= n; ++start) {
+            double window_sum = 0.0;
+            for (std::size_t i = start; i < start + window; ++i) {
+                window_sum += data[i];
+            }
+            result.push_back(window_sum / static_cast<double>(window));
+        }
+        return result;
     }
 
     std::vector<double> result;

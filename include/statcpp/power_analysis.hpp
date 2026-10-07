@@ -21,10 +21,12 @@
 #include "statcpp/special_functions.hpp"
 #include "statcpp/continuous_distributions.hpp"
 #include "statcpp/parametric_tests.hpp"  // for alternative_hypothesis enum
+#include "statcpp/nan_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -157,6 +159,11 @@ inline double power_t_test_one_sample(double effect_size, std::size_t n,
                                       double alpha = 0.05,
                                       const std::string& alternative = "two.sided")
 {
+    // A NaN alpha is rejected (docs/NAN_POLICY.md section 5); a NaN effect gives NaN, as R's power.*.test() does
+    detail::require_param_not_nan(alpha, "power_t_test_one_sample", "alpha");
+    if (std::isnan(effect_size)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (n == 0) {
         throw std::invalid_argument("statcpp::power_t_test_one_sample: sample size must be positive");
     }
@@ -196,6 +203,10 @@ inline std::size_t sample_size_t_test_one_sample(double effect_size, double powe
                                                   double alpha = 0.05,
                                                   const std::string& alternative = "two.sided")
 {
+    // A std::size_t sample size cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(effect_size, "sample_size_t_test_one_sample", "effect_size");
+    detail::require_param_not_nan(power, "sample_size_t_test_one_sample", "power");
+    detail::require_param_not_nan(alpha, "sample_size_t_test_one_sample", "alpha");
     if (effect_size == 0.0) {
         throw std::invalid_argument("statcpp::sample_size_t_test_one_sample: effect size must be non-zero");
     }
@@ -256,6 +267,11 @@ inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::s
                                       double alpha = 0.05,
                                       const std::string& alternative = "two.sided")
 {
+    // A NaN alpha is rejected (docs/NAN_POLICY.md section 5); a NaN effect gives NaN, as R's power.*.test() does
+    detail::require_param_not_nan(alpha, "power_t_test_two_sample", "alpha");
+    if (std::isnan(effect_size)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (n1 == 0 || n2 == 0) {
         throw std::invalid_argument("statcpp::power_t_test_two_sample: sample sizes must be positive");
     }
@@ -296,6 +312,11 @@ inline std::size_t sample_size_t_test_two_sample(double effect_size, double powe
                                                   double alpha = 0.05, double ratio = 1.0,
                                                   const std::string& alternative = "two.sided")
 {
+    // A std::size_t sample size cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(effect_size, "sample_size_t_test_two_sample", "effect_size");
+    detail::require_param_not_nan(power, "sample_size_t_test_two_sample", "power");
+    detail::require_param_not_nan(alpha, "sample_size_t_test_two_sample", "alpha");
+    detail::require_param_not_nan(ratio, "sample_size_t_test_two_sample", "ratio");
     if (effect_size == 0.0) {
         throw std::invalid_argument("statcpp::sample_size_t_test_two_sample: effect size must be non-zero");
     }
@@ -356,6 +377,11 @@ inline double power_prop_test(double p1, double p2, std::size_t n,
                               double alpha = 0.05,
                               const std::string& alternative = "two.sided")
 {
+    // A NaN alpha is rejected (docs/NAN_POLICY.md section 5); a NaN effect gives NaN, as R's power.*.test() does
+    detail::require_param_not_nan(alpha, "power_prop_test", "alpha");
+    if (std::isnan(p1) || std::isnan(p2)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     if (p1 < 0.0 || p1 > 1.0 || p2 < 0.0 || p2 > 1.0) {
         throw std::invalid_argument("statcpp::power_prop_test: proportions must be in [0, 1]");
     }
@@ -410,6 +436,11 @@ inline std::size_t sample_size_prop_test(double p1, double p2, double power = 0.
                                          double alpha = 0.05,
                                          const std::string& alternative = "two.sided")
 {
+    // A std::size_t sample size cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(p1, "sample_size_prop_test", "p1");
+    detail::require_param_not_nan(p2, "sample_size_prop_test", "p2");
+    detail::require_param_not_nan(power, "sample_size_prop_test", "power");
+    detail::require_param_not_nan(alpha, "sample_size_prop_test", "alpha");
     if (p1 < 0.0 || p1 > 1.0 || p2 < 0.0 || p2 > 1.0) {
         throw std::invalid_argument("statcpp::sample_size_prop_test: proportions must be in [0, 1]");
     }
@@ -470,6 +501,7 @@ inline power_result power_analysis_t_one_sample(double effect_size, std::size_t 
                                                  double alpha = 0.05,
                                                  const std::string& alternative = "two.sided")
 {
+    detail::require_param_not_nan(alpha, "power_analysis_t_one_sample", "alpha");
     power_result result;
     result.effect_size = effect_size;
     result.sample_size = static_cast<double>(n);
@@ -491,6 +523,10 @@ inline power_result power_analysis_t_one_sample_n(double effect_size, double pow
                                                    double alpha = 0.05,
                                                    const std::string& alternative = "two.sided")
 {
+    // A std::size_t sample size cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(effect_size, "power_analysis_t_one_sample_n", "effect_size");
+    detail::require_param_not_nan(power, "power_analysis_t_one_sample_n", "power");
+    detail::require_param_not_nan(alpha, "power_analysis_t_one_sample_n", "alpha");
     power_result result;
     result.effect_size = effect_size;
     result.power = power;

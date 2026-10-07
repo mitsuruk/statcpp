@@ -25,6 +25,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "statcpp/nan_utils.hpp"
+
 namespace statcpp {
 
 // ============================================================================
@@ -167,6 +169,10 @@ double mean(Iterator first, Iterator last, Projection proj)
 template <typename Iterator>
 double median(Iterator first, Iterator last)
 {
+    // R の median() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     static_assert(
         std::is_base_of_v<
             std::random_access_iterator_tag,
@@ -202,6 +208,10 @@ double median(Iterator first, Iterator last)
 template <typename Iterator, typename Projection>
 double median(Iterator first, Iterator last, Projection proj)
 {
+    // R の median() と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     static_assert(
         std::is_base_of_v<
             std::random_access_iterator_tag,
@@ -593,6 +603,8 @@ double trimmed_mean(Iterator first, Iterator last, double proportion)
             typename std::iterator_traits<Iterator>::iterator_category>,
         "statcpp::trimmed_mean requires random access iterators");
 
+    // NaN の proportion は下の size_t へのキャストに届き、未定義動作になる
+    detail::require_param_not_nan(proportion, "trimmed_mean", "proportion");
     if (proportion < 0.0 || proportion >= 0.5) {
         throw std::invalid_argument("statcpp::trimmed_mean: proportion must be in [0.0, 0.5)");
     }
@@ -604,6 +616,11 @@ double trimmed_mean(Iterator first, Iterator last, double proportion)
     auto trim_count = static_cast<std::size_t>(static_cast<double>(n) * proportion);
     if (n - 2 * trim_count == 0) {
         throw std::invalid_argument("statcpp::trimmed_mean: all elements trimmed");
+    }
+
+    // R の mean(x, trim = ...) と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last)) {
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     double total = 0.0;
@@ -637,6 +654,8 @@ double trimmed_mean(Iterator first, Iterator last, double proportion, Projection
             typename std::iterator_traits<Iterator>::iterator_category>,
         "statcpp::trimmed_mean requires random access iterators");
 
+    // NaN の proportion は下の size_t へのキャストに届き、未定義動作になる
+    detail::require_param_not_nan(proportion, "trimmed_mean", "proportion");
     if (proportion < 0.0 || proportion >= 0.5) {
         throw std::invalid_argument("statcpp::trimmed_mean: proportion must be in [0.0, 0.5)");
     }
@@ -648,6 +667,11 @@ double trimmed_mean(Iterator first, Iterator last, double proportion, Projection
     auto trim_count = static_cast<std::size_t>(static_cast<double>(n) * proportion);
     if (n - 2 * trim_count == 0) {
         throw std::invalid_argument("statcpp::trimmed_mean: all elements trimmed");
+    }
+
+    // R の mean(x, trim = ...) と同じく、NaN を含むデータでは NaN を返す(docs-ja/NAN_POLICY.md)
+    if (detail::has_nan(first, last, proj)) {
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     double total = 0.0;
@@ -1099,7 +1123,11 @@ std::size_t argmin(Iterator first, Iterator last)
         throw std::invalid_argument("statcpp::argmin: empty range");
     }
 
-    auto min_it = std::min_element(first, last);
+    // R の which.min() と同じく NaN は飛ばす。NaN はどの値よりも後ろに並ぶ(docs-ja/NAN_POLICY.md)
+    auto min_it = std::min_element(first, last, detail::nan_last_less{});
+    if (detail::is_nan_value(*min_it)) {
+        throw std::invalid_argument("statcpp::argmin: all values are NaN");
+    }
     return static_cast<std::size_t>(std::distance(first, min_it));
 }
 
@@ -1124,10 +1152,14 @@ std::size_t argmin(Iterator first, Iterator last, Projection proj)
         throw std::invalid_argument("statcpp::argmin: empty range");
     }
 
+    // R の which.min() と同じく NaN は飛ばす。NaN はどの値よりも後ろに並ぶ(docs-ja/NAN_POLICY.md)
     auto min_it = std::min_element(first, last,
         [&proj](const auto& a, const auto& b) {
-            return std::invoke(proj, a) < std::invoke(proj, b);
+            return detail::nan_last_less{}(std::invoke(proj, a), std::invoke(proj, b));
         });
+    if (detail::is_nan_value(std::invoke(proj, *min_it))) {
+        throw std::invalid_argument("statcpp::argmin: all values are NaN");
+    }
 
     return static_cast<std::size_t>(std::distance(first, min_it));
 }
@@ -1151,7 +1183,11 @@ std::size_t argmax(Iterator first, Iterator last)
         throw std::invalid_argument("statcpp::argmax: empty range");
     }
 
-    auto max_it = std::max_element(first, last);
+    // R の which.max() と同じく NaN は飛ばす。NaN はどの値よりも後ろに並ぶ(docs-ja/NAN_POLICY.md)
+    auto max_it = std::min_element(first, last, detail::nan_last_greater{});
+    if (detail::is_nan_value(*max_it)) {
+        throw std::invalid_argument("statcpp::argmax: all values are NaN");
+    }
     return static_cast<std::size_t>(std::distance(first, max_it));
 }
 
@@ -1176,10 +1212,14 @@ std::size_t argmax(Iterator first, Iterator last, Projection proj)
         throw std::invalid_argument("statcpp::argmax: empty range");
     }
 
-    auto max_it = std::max_element(first, last,
+    // R の which.max() と同じく NaN は飛ばす。NaN はどの値よりも後ろに並ぶ(docs-ja/NAN_POLICY.md)
+    auto max_it = std::min_element(first, last,
         [&proj](const auto& a, const auto& b) {
-            return std::invoke(proj, a) < std::invoke(proj, b);
+            return detail::nan_last_greater{}(std::invoke(proj, a), std::invoke(proj, b));
         });
+    if (detail::is_nan_value(std::invoke(proj, *max_it))) {
+        throw std::invalid_argument("statcpp::argmax: all values are NaN");
+    }
 
     return static_cast<std::size_t>(std::distance(first, max_it));
 }

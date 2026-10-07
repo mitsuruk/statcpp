@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "statcpp/nonparametric_tests.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 #include <algorithm>
 
@@ -637,4 +638,123 @@ TEST(ShapiroWilkTest, EquispacedNotRejected) {
     auto result = statcpp::shapiro_wilk_test(data.begin(), data.end());
 
     EXPECT_GT(result.p_value, 0.5);  // must NOT strongly reject normality
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that compute_ranks_with_ties keeps NaN as NaN
+ * @test Verifies that NaN gets a NaN rank and the other values are ranked among themselves (R rank(na.last = "keep"))
+ */
+TEST(NonparametricNanTest, ComputeRanksWithTiesKeepsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> data = {3.0, nan, 1.0, 1.0};
+    auto ranks = statcpp::compute_ranks_with_ties(data.begin(), data.end());
+    ASSERT_EQ(ranks.size(), 4u);
+    EXPECT_DOUBLE_EQ(ranks[0], 3.0);
+    EXPECT_TRUE(std::isnan(ranks[1]));
+    EXPECT_DOUBLE_EQ(ranks[2], 1.5);
+    EXPECT_DOUBLE_EQ(ranks[3], 1.5);
+}
+
+/**
+ * @brief Tests that compute_tie_groups rejects NaN
+ * @test Verifies that a NaN in the sorted input throws, since tie group sizes cannot represent a missing value
+ */
+TEST(NonparametricNanTest, ComputeTieGroupsThrowsOnNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> sorted = {1.0, 1.0, 2.0, nan};
+    EXPECT_THROW(statcpp::compute_tie_groups(sorted), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the Wilcoxon signed-rank test drops NaN
+ * @test Verifies that the result equals the result on the data without NaN, as R's wilcox.test does
+ */
+TEST(NonparametricNanTest, WilcoxonDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.2, nan, 2.5, 0.3, -0.4, 1.8, 2.2};
+    std::vector<double> clean = {1.2, 2.5, 0.3, -0.4, 1.8, 2.2};
+    auto r = statcpp::wilcoxon_signed_rank_test(with_nan.begin(), with_nan.end(), 0.5);
+    auto e = statcpp::wilcoxon_signed_rank_test(clean.begin(), clean.end(), 0.5);
+    EXPECT_DOUBLE_EQ(r.statistic, e.statistic);
+    EXPECT_DOUBLE_EQ(r.p_value, e.p_value);
+}
+
+/**
+ * @brief Tests that the Wilcoxon signed-rank test rejects a NaN mu0
+ * @test Verifies that a NaN hypothesised location throws, as R's wilcox.test(mu = NA) is an error
+ */
+TEST(NonparametricNanTest, WilcoxonNaNMu0Throws) {
+    std::vector<double> data = {1.2, 2.5, 0.3, -0.4, 1.8, 2.2};
+    EXPECT_THROW(statcpp::wilcoxon_signed_rank_test(data.begin(), data.end(),
+                                                    std::numeric_limits<double>::quiet_NaN()),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the Mann-Whitney U test drops NaN
+ * @test Verifies that NaN in either sample is removed before testing, as R's wilcox.test does
+ */
+TEST(NonparametricNanTest, MannWhitneyDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {3.1, nan, 4.2, 2.8, 5.0, 3.9};
+    std::vector<double> y = {1.9, 2.4, nan, 3.0, 2.2};
+    std::vector<double> x_clean = {3.1, 4.2, 2.8, 5.0, 3.9};
+    std::vector<double> y_clean = {1.9, 2.4, 3.0, 2.2};
+    auto r = statcpp::mann_whitney_u_test(x.begin(), x.end(), y.begin(), y.end());
+    auto e = statcpp::mann_whitney_u_test(x_clean.begin(), x_clean.end(), y_clean.begin(), y_clean.end());
+    EXPECT_DOUBLE_EQ(r.statistic, e.statistic);
+    EXPECT_DOUBLE_EQ(r.p_value, e.p_value);
+}
+
+/**
+ * @brief Tests that the Kruskal-Wallis test drops NaN
+ * @test Verifies that NaN in any group is removed before testing, as R's kruskal.test does
+ */
+TEST(NonparametricNanTest, KruskalWallisDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<std::vector<double>> groups = {{2.9, 3.0, nan, 2.5}, {3.8, 2.7, 4.0, 2.4}, {nan, 1.6, 2.4, 2.8}};
+    std::vector<std::vector<double>> clean = {{2.9, 3.0, 2.5}, {3.8, 2.7, 4.0, 2.4}, {1.6, 2.4, 2.8}};
+    auto r = statcpp::kruskal_wallis_test(groups);
+    auto e = statcpp::kruskal_wallis_test(clean);
+    EXPECT_DOUBLE_EQ(r.statistic, e.statistic);
+    EXPECT_DOUBLE_EQ(r.p_value, e.p_value);
+}
+
+/**
+ * @brief Tests that the normality tests drop NaN
+ * @test Verifies R's shapiro.test() / nortest::lillie.test() behaviour; they used to report W = 1 / D = 0 with p = 1.
+ *       The deprecated ks_test_normal() delegates to lilliefors_test() and is covered through it.
+ */
+TEST(NonparametricNanTest, NormalityTestsDropNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {2.3, 3.1, nan, 2.8, 4.0, 3.3, 2.5, 3.7, 2.9};
+    std::vector<double> clean = {2.3, 3.1, 2.8, 4.0, 3.3, 2.5, 3.7, 2.9};
+    auto check = [](const statcpp::test_result& a, const statcpp::test_result& b) {
+        EXPECT_DOUBLE_EQ(a.statistic, b.statistic);
+        EXPECT_DOUBLE_EQ(a.p_value, b.p_value);
+    };
+    check(statcpp::shapiro_wilk_test(with_nan.begin(), with_nan.end()),
+          statcpp::shapiro_wilk_test(clean.begin(), clean.end()));
+    check(statcpp::lilliefors_test(with_nan.begin(), with_nan.end()),
+          statcpp::lilliefors_test(clean.begin(), clean.end()));
+}
+
+/**
+ * @brief Tests that the homogeneity-of-variance tests drop NaN
+ * @test Verifies R's car::leveneTest() / bartlett.test() behaviour (NA removed from every group)
+ */
+TEST(NonparametricNanTest, VarianceHomogeneityDropsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<std::vector<double>> groups = {{2.9, 3.0, nan, 2.5, 3.3},
+                                               {3.8, 2.7, 4.0, 2.4},
+                                               {nan, 1.6, 2.4, 2.8, 3.1}};
+    std::vector<std::vector<double>> clean = {{2.9, 3.0, 2.5, 3.3}, {3.8, 2.7, 4.0, 2.4}, {1.6, 2.4, 2.8, 3.1}};
+    EXPECT_DOUBLE_EQ(statcpp::levene_test(groups).statistic, statcpp::levene_test(clean).statistic);
+    EXPECT_DOUBLE_EQ(statcpp::levene_test(groups).p_value, statcpp::levene_test(clean).p_value);
+    EXPECT_DOUBLE_EQ(statcpp::bartlett_test(groups).statistic, statcpp::bartlett_test(clean).statistic);
+    EXPECT_DOUBLE_EQ(statcpp::bartlett_test(groups).p_value, statcpp::bartlett_test(clean).p_value);
 }

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "statcpp/estimation.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 // ============================================================================
@@ -434,4 +435,74 @@ TEST(SampleSizeForMOEMeanTest, InvalidConfidence) {
                  std::invalid_argument);
     EXPECT_THROW(statcpp::sample_size_for_moe_mean(2.0, 10.0, 1.0),
                  std::invalid_argument);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that the sample size functions reject NaN parameters
+ * @test Verifies they throw, since a std::size_t sample size cannot represent NA (it was undefined behaviour)
+ */
+TEST(EstimationNanTest, SampleSizeThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_THROW(statcpp::sample_size_for_moe_proportion(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_for_moe_proportion(0.05, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_for_moe_proportion(0.05, 0.95, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_for_moe_mean(nan, 10.0), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_for_moe_mean(1.0, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::sample_size_for_moe_mean(1.0, 10.0, nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the mean and variance intervals drop NaN, as R's t.test does
+ * @test Verifies each interval equals the interval on the data without NaN
+ */
+TEST(EstimationNanTest, IntervalsDropNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {2.1, nan, 3.5, 2.9, 4.4, 3.0};
+    std::vector<double> xc = {2.1, 3.5, 2.9, 4.4, 3.0};
+    std::vector<double> y = {1.2, 2.2, nan, 1.9, 2.5};
+    std::vector<double> yc = {1.2, 2.2, 1.9, 2.5};
+    auto id = [](double v) { return v; };
+    auto expect_same = [](const statcpp::confidence_interval& a, const statcpp::confidence_interval& b) {
+        EXPECT_DOUBLE_EQ(a.lower, b.lower);
+        EXPECT_DOUBLE_EQ(a.upper, b.upper);
+        EXPECT_DOUBLE_EQ(a.point_estimate, b.point_estimate);
+    };
+    expect_same(statcpp::ci_mean(x.begin(), x.end()), statcpp::ci_mean(xc.begin(), xc.end()));
+    expect_same(statcpp::ci_mean(x.begin(), x.end(), 0.9, id), statcpp::ci_mean(xc.begin(), xc.end(), 0.9));
+    expect_same(statcpp::ci_mean_z(x.begin(), x.end(), 1.0), statcpp::ci_mean_z(xc.begin(), xc.end(), 1.0));
+    expect_same(statcpp::ci_variance(x.begin(), x.end()), statcpp::ci_variance(xc.begin(), xc.end()));
+    expect_same(statcpp::ci_mean_diff(x.begin(), x.end(), y.begin(), y.end()),
+                statcpp::ci_mean_diff(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    expect_same(statcpp::ci_mean_diff_pooled(x.begin(), x.end(), y.begin(), y.end()),
+                statcpp::ci_mean_diff_pooled(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    expect_same(statcpp::ci_mean_diff_welch(x.begin(), x.end(), y.begin(), y.end()),
+                statcpp::ci_mean_diff_welch(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    EXPECT_DOUBLE_EQ(statcpp::margin_of_error_mean(x.begin(), x.end()),
+                     statcpp::margin_of_error_mean(xc.begin(), xc.end()));
+    EXPECT_DOUBLE_EQ(statcpp::margin_of_error_mean(x.begin(), x.end(), 0.9, id),
+                     statcpp::margin_of_error_mean(xc.begin(), xc.end(), 0.9));
+}
+
+/**
+ * @brief Tests that the interval functions reject a NaN confidence level
+ * @test Verifies policy section 5 (NaN passed the (0, 1) check; ci_proportion silently returned [0, 1])
+ */
+TEST(EstimationNanTest, NaNConfidenceThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {2.1, 3.5, 2.9, 4.4, 3.0};
+    auto id = [](double v) { return v; };
+    EXPECT_THROW(statcpp::ci_mean(x.begin(), x.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_mean(x.begin(), x.end(), nan, id), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_mean_z(x.begin(), x.end(), 1.0, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_variance(x.begin(), x.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_mean_diff(x.begin(), x.end(), x.begin(), x.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_mean_diff_welch(x.begin(), x.end(), x.begin(), x.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::margin_of_error_mean(x.begin(), x.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::margin_of_error_mean(x.begin(), x.end(), nan, id), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_proportion(30, 100, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::ci_proportion_wilson(30, 100, nan), std::invalid_argument);
 }

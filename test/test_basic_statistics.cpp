@@ -3,6 +3,8 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <string>
+#include <stdexcept>
 #include <vector>
 
 // ============================================================================
@@ -536,4 +538,62 @@ TEST(ArraySupportTest, PointerRange) {
     int* last = data + 5;
     EXPECT_EQ(statcpp::sum(first, last), 15);
     EXPECT_DOUBLE_EQ(statcpp::mean(first, last), 3.0);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests trimmed_mean with NaN
+ * @test Verifies NaN data gives NaN (R mean(x, trim = 0.1) is NA) and a NaN proportion throws
+ */
+TEST(TrimmedMeanNanTest, DataNaNAndParameterNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> sorted_with_nan = {1.0, 2.0, 3.0, 4.0, nan};
+    std::vector<double> clean = {1.0, 2.0, 3.0, 4.0, 5.0};
+    EXPECT_TRUE(std::isnan(statcpp::trimmed_mean(sorted_with_nan.begin(), sorted_with_nan.end(), 0.2)));
+    EXPECT_THROW(statcpp::trimmed_mean(clean.begin(), clean.end(), nan), std::invalid_argument);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that median returns NaN for NaN data
+ * @test Verifies R's median() default for NaN in the middle and at the end of the sorted range
+ */
+TEST(BasicStatisticsNanTest, MedianReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> middle = {1.0, nan, 3.0, 4.0};
+    std::vector<double> last_nan = {1.0, 2.0, 3.0, nan};
+    EXPECT_TRUE(std::isnan(statcpp::median(middle.begin(), middle.end())));
+    EXPECT_TRUE(std::isnan(statcpp::median(last_nan.begin(), last_nan.end())));
+    EXPECT_TRUE(std::isnan(statcpp::median(middle.begin(), middle.end(), [](double v) { return v; })));
+}
+
+/**
+ * @brief Tests that argmin / argmax skip NaN
+ * @test Verifies R's which.min() / which.max(): the index among the non-NaN values, wherever the NaN is
+ */
+TEST(BasicStatisticsNanTest, ArgminArgmaxSkipNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> first_nan = {nan, 3.0, 1.0, 5.0, 1.0, 5.0};
+    auto id = [](double v) { return v; };
+    EXPECT_EQ(statcpp::argmin(first_nan.begin(), first_nan.end()), 2u);
+    EXPECT_EQ(statcpp::argmax(first_nan.begin(), first_nan.end()), 3u);
+    EXPECT_EQ(statcpp::argmin(first_nan.begin(), first_nan.end(), id), 2u);
+    EXPECT_EQ(statcpp::argmax(first_nan.begin(), first_nan.end(), id), 3u);
+}
+
+/**
+ * @brief Tests argmin / argmax when every value is NaN
+ * @test Verifies they throw, since there is no index to return (R's which.min() gives an empty result)
+ */
+TEST(BasicStatisticsNanTest, ArgminArgmaxAllNaNThrow) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> all_nan = {nan, nan};
+    EXPECT_THROW(statcpp::argmin(all_nan.begin(), all_nan.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::argmax(all_nan.begin(), all_nan.end()), std::invalid_argument);
 }

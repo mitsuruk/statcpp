@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include "statcpp/multivariate.hpp"
@@ -166,4 +167,57 @@ TEST(PCATest, Transform) {
 
     EXPECT_EQ(transformed.size(), 3);
     EXPECT_EQ(transformed[0].size(), 1);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+
+const double kNaN = std::numeric_limits<double>::quiet_NaN();
+
+// Columns a = c(1, 2, NA, 4, 5) and b = c(2, 1, 4, 3, 5)
+const std::vector<std::vector<double>> kNanData = {{1, 2}, {2, 1}, {kNaN, 4}, {4, 3}, {5, 5}};
+
+}  // namespace
+
+/**
+ * @brief Tests correlation_matrix with a NaN variable
+ * @test Verifies R's cor(): NaN off the diagonal, exactly 1 on the diagonal
+ */
+TEST(MultivariateNanTest, CorrelationMatrixDiagonalIsOne) {
+    auto r = statcpp::correlation_matrix(kNanData);
+    EXPECT_DOUBLE_EQ(r[0][0], 1.0);
+    EXPECT_DOUBLE_EQ(r[1][1], 1.0);
+    EXPECT_TRUE(std::isnan(r[0][1]));
+    EXPECT_TRUE(std::isnan(r[1][0]));
+}
+
+/**
+ * @brief Tests that standardize follows R's scale()
+ * @test Expected values: scale(d) in R 4.4.2; column statistics come from the non-NaN values
+ */
+TEST(MultivariateNanTest, StandardizeLikeRScale) {
+    auto z = statcpp::standardize(kNanData);
+    EXPECT_NEAR(z[0][0], -1.0954451150103321, 1e-12);
+    EXPECT_NEAR(z[1][0], -0.54772255750516607, 1e-12);
+    EXPECT_TRUE(std::isnan(z[2][0]));
+    EXPECT_NEAR(z[3][0], 0.54772255750516607, 1e-12);
+    EXPECT_NEAR(z[4][0], 1.0954451150103321, 1e-12);
+    EXPECT_NEAR(z[2][1], 0.63245553203367588, 1e-12);
+    EXPECT_NEAR(z[3][1], 0.0, 1e-12);
+}
+
+/**
+ * @brief Tests that the eigen and PCA functions reject NaN
+ * @test Verifies power_iteration, pca and pca_transform throw (they returned all-NaN results)
+ */
+TEST(MultivariateNanTest, PcaThrows) {
+    std::vector<std::vector<double>> m = {{2.0, kNaN}, {kNaN, 1.0}};
+    EXPECT_THROW(statcpp::power_iteration(m), std::invalid_argument);
+    EXPECT_THROW(statcpp::pca(kNanData, 1), std::invalid_argument);
+    std::vector<std::vector<double>> clean = {{1, 2}, {2, 1}, {3, 4}, {4, 3}, {5, 5}};
+    auto model = statcpp::pca(clean, 1);
+    EXPECT_THROW(statcpp::pca_transform(kNanData, model), std::invalid_argument);
 }

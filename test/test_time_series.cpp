@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include "statcpp/time_series.hpp"
@@ -209,4 +210,68 @@ TEST(LagTest, Basic) {
     EXPECT_DOUBLE_EQ(result[0], 1.0);
     EXPECT_DOUBLE_EQ(result[1], 2.0);
     EXPECT_DOUBLE_EQ(result[2], 3.0);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that the autocorrelation functions reject NaN
+ * @test Verifies R's acf behaviour (na.action = na.fail raises an error), including lag 0
+ */
+TEST(TimeSeriesNanTest, AutocorrelationThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> data = {1.0, 2.0, nan, 4.0, 5.0};
+    EXPECT_THROW(statcpp::autocorrelation(data.begin(), data.end(), 0), std::invalid_argument);
+    EXPECT_THROW(statcpp::autocorrelation(data.begin(), data.end(), 1), std::invalid_argument);
+    EXPECT_THROW(statcpp::acf(data.begin(), data.end(), 2), std::invalid_argument);
+    EXPECT_THROW(statcpp::pacf(data.begin(), data.end(), 2), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that moving_average gives NaN only for the windows that contain NaN
+ * @test Expected values: stats::filter(x, rep(1 / w, w), sides = 1) in R 4.4.2, without the w - 1 leading NA
+ */
+TEST(TimeSeriesNanTest, MovingAverageNaNOnlyInAffectedWindows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> data = {1.0, 2.0, nan, 4.0, 5.0, 6.0, 7.0};
+    auto result = statcpp::moving_average(data.begin(), data.end(), 3);
+    ASSERT_EQ(result.size(), 5u);
+    EXPECT_TRUE(std::isnan(result[0]));
+    EXPECT_TRUE(std::isnan(result[1]));
+    EXPECT_TRUE(std::isnan(result[2]));
+    EXPECT_DOUBLE_EQ(result[3], 5.0);
+    EXPECT_DOUBLE_EQ(result[4], 6.0);
+
+    std::vector<double> first_nan = {nan, 2.0, 3.0, 4.0, 5.0};
+    auto r2 = statcpp::moving_average(first_nan.begin(), first_nan.end(), 2);
+    ASSERT_EQ(r2.size(), 4u);
+    EXPECT_TRUE(std::isnan(r2[0]));
+    EXPECT_DOUBLE_EQ(r2[1], 2.5);
+    EXPECT_DOUBLE_EQ(r2[2], 3.5);
+    EXPECT_DOUBLE_EQ(r2[3], 4.5);
+}
+
+/**
+ * @brief Tests that moving_average handles Inf per window
+ * @test Expected values: stats::filter(x, rep(1 / 2, 2), sides = 1) in R 4.4.2, without the leading NA
+ *       (Inf - Inf in the running sum used to make every later window NaN)
+ */
+TEST(TimeSeriesNanTest, MovingAverageInfPerWindow) {
+    const double inf = std::numeric_limits<double>::infinity();
+    std::vector<double> a = {1.0, inf, 2.0, 3.0, 4.0};
+    auto ra = statcpp::moving_average(a.begin(), a.end(), 2);
+    ASSERT_EQ(ra.size(), 4u);
+    EXPECT_EQ(ra[0], inf);
+    EXPECT_EQ(ra[1], inf);
+    EXPECT_DOUBLE_EQ(ra[2], 2.5);
+    EXPECT_DOUBLE_EQ(ra[3], 3.5);
+
+    std::vector<double> b = {inf, 1.0, -inf, 3.0};
+    auto rb = statcpp::moving_average(b.begin(), b.end(), 2);
+    ASSERT_EQ(rb.size(), 3u);
+    EXPECT_EQ(rb[0], inf);
+    EXPECT_EQ(rb[1], -inf);
+    EXPECT_EQ(rb[2], -inf);
 }

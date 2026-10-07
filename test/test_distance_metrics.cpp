@@ -2,6 +2,7 @@
 #include "statcpp/distance_metrics.hpp"
 #include <vector>
 #include <cmath>
+#include <limits>
 
 // ============================================================================
 // Euclidean Distance Tests
@@ -498,4 +499,78 @@ TEST(DistanceIdentityTest, LpNormOrdering) {
     double manhattan = statcpp::manhattan_distance(a.begin(), a.end(), b.begin(), b.end());
     EXPECT_LE(chebyshev, euclidean);
     EXPECT_LE(euclidean, manhattan);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that the Lp distances skip NaN coordinates and rescale, as R's dist() does
+ * @test Expected values: dist(rbind(c(1,2,NA,4,6), c(2,NA,1,1,3)), method) in R 4.4.2
+ */
+TEST(DistanceNanTest, RescalesLikeRDist) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0, nan, 4.0, 6.0};
+    std::vector<double> y = {2.0, nan, 1.0, 1.0, 3.0};
+    auto id = [](double v) { return v; };
+    EXPECT_NEAR(statcpp::euclidean_distance(x.begin(), x.end(), y.begin(), y.end()), 5.6273143387113773, 1e-12);
+    EXPECT_NEAR(statcpp::manhattan_distance(x.begin(), x.end(), y.begin(), y.end()), 11.666666666666668, 1e-12);
+    EXPECT_NEAR(statcpp::minkowski_distance(x.begin(), x.end(), y.begin(), y.end(), 3.0), 4.5088987149920667,
+                1e-12);
+    EXPECT_NEAR(statcpp::euclidean_distance(x.begin(), x.end(), y.begin(), y.end(), id, id), 5.6273143387113773,
+                1e-12);
+    EXPECT_NEAR(statcpp::manhattan_distance(x.begin(), x.end(), y.begin(), y.end(), id, id), 11.666666666666668,
+                1e-12);
+    EXPECT_NEAR(statcpp::minkowski_distance(x.begin(), x.end(), y.begin(), y.end(), 3.0, id, id),
+                4.5088987149920667, 1e-12);
+}
+
+/**
+ * @brief Tests the Lp distances when no coordinate is complete
+ * @test Verifies NaN is returned, as R's dist() returns NA
+ */
+TEST(DistanceNanTest, NoCompleteCoordinateGivesNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {nan, 1.0};
+    std::vector<double> y = {2.0, nan};
+    EXPECT_TRUE(std::isnan(statcpp::euclidean_distance(x.begin(), x.end(), y.begin(), y.end())));
+    EXPECT_TRUE(std::isnan(statcpp::manhattan_distance(x.begin(), x.end(), y.begin(), y.end())));
+    EXPECT_TRUE(std::isnan(statcpp::minkowski_distance(x.begin(), x.end(), y.begin(), y.end(), 2.0)));
+}
+
+/**
+ * @brief Tests that minkowski_distance rejects a NaN order p
+ * @test Verifies policy section 5 for range-checked parameters (NaN passed the p < 1 check)
+ */
+TEST(DistanceNanTest, MinkowskiNaNOrderThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0};
+    std::vector<double> y = {2.0, 4.0};
+    auto id = [](double v) { return v; };
+    EXPECT_THROW(statcpp::minkowski_distance(x.begin(), x.end(), y.begin(), y.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::minkowski_distance(x.begin(), x.end(), y.begin(), y.end(), nan, id, id),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the cosine measures drop pairs containing NaN
+ * @test Verifies the result equals the result on the complete pairs, and NaN when no pair is complete
+ */
+TEST(DistanceNanTest, CosineDropsIncompletePairs) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0, nan, 4.0, 6.0};
+    std::vector<double> y = {2.0, nan, 1.0, 1.0, 3.0};
+    std::vector<double> xc = {1.0, 4.0, 6.0};
+    std::vector<double> yc = {2.0, 1.0, 3.0};
+    auto id = [](double v) { return v; };
+    const double expected = statcpp::cosine_similarity(xc.begin(), xc.end(), yc.begin(), yc.end());
+    EXPECT_DOUBLE_EQ(statcpp::cosine_similarity(x.begin(), x.end(), y.begin(), y.end()), expected);
+    EXPECT_DOUBLE_EQ(statcpp::cosine_similarity(x.begin(), x.end(), y.begin(), y.end(), id, id), expected);
+    EXPECT_DOUBLE_EQ(statcpp::cosine_distance(x.begin(), x.end(), y.begin(), y.end()), 1.0 - expected);
+    EXPECT_DOUBLE_EQ(statcpp::cosine_distance(x.begin(), x.end(), y.begin(), y.end(), id, id), 1.0 - expected);
+
+    std::vector<double> a = {nan, 1.0};
+    std::vector<double> b = {2.0, nan};
+    EXPECT_TRUE(std::isnan(statcpp::cosine_similarity(a.begin(), a.end(), b.begin(), b.end())));
 }

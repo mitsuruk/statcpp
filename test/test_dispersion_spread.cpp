@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include "statcpp/dispersion_spread.hpp"
+#include <limits>
+#include <string>
+#include <stdexcept>
 #include <vector>
 #include <cmath>
 
@@ -599,4 +602,62 @@ TEST(WeightedStddevTest, DeprecatedThreeArgOverload) {
     double result_safe = statcpp::weighted_stddev(data.begin(), data.end(),
                                                   weights.begin(), weights.end());
     EXPECT_DOUBLE_EQ(result_deprecated, result_safe);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that range returns NaN for NaN data
+ * @test Verifies R's range() default wherever the NaN is
+ */
+TEST(DispersionNanTest, RangeReturnsNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> middle = {3.0, nan, 1.0, 5.0};
+    std::vector<double> first = {nan, 3.0, 1.0, 5.0};
+    EXPECT_TRUE(std::isnan(statcpp::range(middle.begin(), middle.end())));
+    EXPECT_TRUE(std::isnan(statcpp::range(first.begin(), first.end())));
+    EXPECT_TRUE(std::isnan(statcpp::range(first.begin(), first.end(), [](double v) { return v; })));
+}
+
+/**
+ * @brief Tests that iqr rejects NaN data under its own name
+ * @test Verifies R's IQR() behaviour (an error when the data contain NA)
+ */
+TEST(DispersionNanTest, IqrThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> with_nan = {1.0, 2.0, 3.0, nan};
+    try {
+        statcpp::iqr(with_nan.begin(), with_nan.end());
+        ADD_FAILURE() << "expected std::invalid_argument";
+    } catch (const std::invalid_argument& e) {
+        EXPECT_NE(std::string(e.what()).find("statcpp::iqr:"), std::string::npos) << e.what();
+    }
+}
+
+/**
+ * @brief Tests that the weighted variance and standard deviation reject NaN
+ * @test Verifies R's cov.wt() behaviour (an error when the data or the weights contain NA)
+ */
+TEST(DispersionNanTest, WeightedVarianceThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {1.0, 2.0, 3.0, 4.0};
+    std::vector<double> x_nan = {1.0, nan, 3.0, 4.0};
+    std::vector<double> w = {1.0, 2.0, 1.0, 2.0};
+    std::vector<double> w_nan = {1.0, nan, 1.0, 2.0};
+    EXPECT_THROW(statcpp::weighted_variance(x_nan.begin(), x_nan.end(), w.begin(), w.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::weighted_variance(x.begin(), x.end(), w_nan.begin(), w_nan.end()), std::invalid_argument);
+    try {
+        statcpp::weighted_stddev(x_nan.begin(), x_nan.end(), w.begin(), w.end());
+        ADD_FAILURE() << "expected std::invalid_argument";
+    } catch (const std::invalid_argument& e) {
+        EXPECT_NE(std::string(e.what()).find("statcpp::weighted_stddev:"), std::string::npos) << e.what();
+    }
+    try {
+        statcpp::weighted_stddev(x.begin(), x.end(), w_nan.begin(), w_nan.end());
+        ADD_FAILURE() << "expected std::invalid_argument";
+    } catch (const std::invalid_argument& e) {
+        EXPECT_NE(std::string(e.what()).find("statcpp::weighted_stddev:"), std::string::npos) << e.what();
+    }
 }

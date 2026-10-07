@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "statcpp/linear_regression.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 // ============================================================================
@@ -420,4 +421,120 @@ TEST(ResidualDiagnosticsTest, CooksDistanceUsesSquaredLeverage) {
         double expected = t * t * h / (p * (1.0 - h));  // = e^2 h / (p s^2 (1-h)^2)
         EXPECT_NEAR(diag.cooks_distance[i], expected, 1e-9);
     }
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+namespace {
+
+const double kNaN = std::numeric_limits<double>::quiet_NaN();
+
+// x and y with NaN in different rows; the complete rows are 0, 1, 3, 4, 5 and 7
+const std::vector<double> kNanX = {1.0, 2.0, kNaN, 4.0, 5.0, 6.0, 7.0, 8.0};
+const std::vector<double> kNanY = {2.1, 3.9, 6.2, 8.1, 9.8, 12.2, kNaN, 16.1};
+const std::vector<double> kCleanX = {1.0, 2.0, 4.0, 5.0, 6.0, 8.0};
+const std::vector<double> kCleanY = {2.1, 3.9, 8.1, 9.8, 12.2, 16.1};
+
+// Multiple regression data; rows 2 and 5 contain NaN
+const std::vector<std::vector<double>> kNanXm = {{1, 2}, {2, 1}, {3, kNaN}, {4, 3}, {5, 6}, {6, 5}, {7, 8}, {8, 9}};
+const std::vector<double> kNanYm = {3.1, 3.9, 8.2, 7.8, 12.1, kNaN, 16.3, 17.6};
+const std::vector<std::vector<double>> kCleanXm = {{1, 2}, {2, 1}, {4, 3}, {5, 6}, {7, 8}, {8, 9}};
+const std::vector<double> kCleanYm = {3.1, 3.9, 7.8, 12.1, 16.3, 17.6};
+
+}  // namespace
+
+/**
+ * @brief Tests that simple_linear_regression drops incomplete pairs, as R's lm (na.omit) does
+ * @test Expected values: lm(y ~ x) in R 4.4.2
+ */
+TEST(LinearRegressionNanTest, SimpleDropsIncompletePairs) {
+    auto m = statcpp::simple_linear_regression(kNanX.begin(), kNanX.end(), kNanY.begin(), kNanY.end());
+    EXPECT_NEAR(m.intercept, -0.022999999999999868, 1e-12);
+    EXPECT_NEAR(m.slope, 2.0129999999999999, 1e-12);
+    EXPECT_NEAR(m.r_squared, 0.99920328450954288, 1e-12);
+    EXPECT_DOUBLE_EQ(m.df_residual, 4.0);
+}
+
+/**
+ * @brief Tests that multiple_linear_regression drops incomplete observations
+ * @test Verifies the result equals the fit on the complete observations
+ */
+TEST(LinearRegressionNanTest, MultipleDropsIncompleteRows) {
+    auto a = statcpp::multiple_linear_regression(kNanXm, kNanYm);
+    auto b = statcpp::multiple_linear_regression(kCleanXm, kCleanYm);
+    ASSERT_EQ(a.coefficients.size(), b.coefficients.size());
+    for (std::size_t i = 0; i < a.coefficients.size(); ++i) {
+        EXPECT_DOUBLE_EQ(a.coefficients[i], b.coefficients[i]);
+    }
+    EXPECT_DOUBLE_EQ(a.df_residual, b.df_residual);
+    EXPECT_DOUBLE_EQ(a.r_squared, b.r_squared);
+}
+
+/**
+ * @brief Tests the interval functions with NaN in the training x
+ * @test Verifies NaN is dropped from the training x, and a NaN confidence level throws
+ */
+TEST(LinearRegressionNanTest, IntervalsDropTrainingNaN) {
+    auto m = statcpp::simple_linear_regression(kCleanX.begin(), kCleanX.end(), kCleanY.begin(), kCleanY.end());
+    std::vector<double> x_nan = {1.0, kNaN, 2.0, 4.0, 5.0, 6.0, 8.0};
+    auto p1 = statcpp::prediction_interval_simple(m, x_nan.begin(), x_nan.end(), 3.0);
+    auto p2 = statcpp::prediction_interval_simple(m, kCleanX.begin(), kCleanX.end(), 3.0);
+    EXPECT_DOUBLE_EQ(p1.lower, p2.lower);
+    EXPECT_DOUBLE_EQ(p1.upper, p2.upper);
+    auto c1 = statcpp::confidence_interval_mean(m, x_nan.begin(), x_nan.end(), 3.0);
+    auto c2 = statcpp::confidence_interval_mean(m, kCleanX.begin(), kCleanX.end(), 3.0);
+    EXPECT_DOUBLE_EQ(c1.lower, c2.lower);
+    EXPECT_DOUBLE_EQ(c1.upper, c2.upper);
+    EXPECT_THROW(statcpp::prediction_interval_simple(m, kCleanX.begin(), kCleanX.end(), 3.0, kNaN),
+                 std::invalid_argument);
+    EXPECT_THROW(statcpp::confidence_interval_mean(m, kCleanX.begin(), kCleanX.end(), 3.0, kNaN),
+                 std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the residual diagnostics drop incomplete observations
+ * @test Verifies the result equals the diagnostics on the complete observations (length reduced, as with na.omit)
+ */
+TEST(LinearRegressionNanTest, ResidualDiagnosticsDropIncompleteRows) {
+    auto m = statcpp::simple_linear_regression(kCleanX.begin(), kCleanX.end(), kCleanY.begin(), kCleanY.end());
+    auto a = statcpp::compute_residual_diagnostics(m, kNanX.begin(), kNanX.end(), kNanY.begin(), kNanY.end());
+    auto b = statcpp::compute_residual_diagnostics(m, kCleanX.begin(), kCleanX.end(), kCleanY.begin(), kCleanY.end());
+    ASSERT_EQ(a.residuals.size(), 6u);
+    EXPECT_EQ(a.residuals, b.residuals);
+    EXPECT_EQ(a.cooks_distance, b.cooks_distance);
+    EXPECT_DOUBLE_EQ(a.durbin_watson, b.durbin_watson);
+
+    auto mm = statcpp::multiple_linear_regression(kCleanXm, kCleanYm);
+    auto c = statcpp::compute_residual_diagnostics(mm, kNanXm, kNanYm);
+    auto d = statcpp::compute_residual_diagnostics(mm, kCleanXm, kCleanYm);
+    ASSERT_EQ(c.residuals.size(), 6u);
+    EXPECT_EQ(c.residuals, d.residuals);
+    EXPECT_EQ(c.hat_values, d.hat_values);
+    EXPECT_DOUBLE_EQ(c.durbin_watson, d.durbin_watson);
+}
+
+/**
+ * @brief Tests that compute_vif drops rows containing NaN
+ * @test Verifies the result equals the VIF of the complete rows
+ */
+TEST(LinearRegressionNanTest, VifDropsIncompleteRows) {
+    EXPECT_EQ(statcpp::compute_vif(kNanXm), statcpp::compute_vif(statcpp::detail::drop_nan_rows(kNanXm)));
+    EXPECT_FALSE(std::isnan(statcpp::compute_vif(kNanXm)[0]));
+}
+
+/**
+ * @brief Tests that r_squared and adjusted_r_squared return NaN for NaN input
+ * @test Verifies policy #10 (a constant y with a NaN prediction used to return 1)
+ */
+TEST(LinearRegressionNanTest, RSquaredReturnsNaN) {
+    std::vector<double> y_const = {2.0, 2.0, 2.0, 2.0};
+    std::vector<double> pred_nan = {2.0, kNaN, 2.0, 2.0};
+    std::vector<double> y_nan = {1.0, kNaN, 3.0, 4.0};
+    std::vector<double> pred = {1.1, 2.0, 2.9, 4.2};
+    EXPECT_TRUE(std::isnan(statcpp::r_squared(y_const.begin(), y_const.end(), pred_nan.begin(), pred_nan.end())));
+    EXPECT_TRUE(std::isnan(statcpp::r_squared(y_nan.begin(), y_nan.end(), pred.begin(), pred.end())));
+    EXPECT_TRUE(std::isnan(
+        statcpp::adjusted_r_squared(y_const.begin(), y_const.end(), pred_nan.begin(), pred_nan.end(), 1)));
 }

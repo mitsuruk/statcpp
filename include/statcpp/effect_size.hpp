@@ -7,6 +7,7 @@
 
 #include "statcpp/basic_statistics.hpp"
 #include "statcpp/dispersion_spread.hpp"
+#include "statcpp/nan_utils.hpp"
 
 #include <cmath>
 #include <stdexcept>
@@ -34,6 +35,13 @@ namespace statcpp {
 template <typename Iterator>
 double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
 {
+    // NaN is removed from the data (docs/NAN_POLICY.md); a NaN mu0 / sigma is an error, as R's t.test(mu = NA) is
+    detail::require_param_not_nan(mu0, "cohens_d", "mu0");
+    detail::require_param_not_nan(sigma, "cohens_d", "sigma");
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return cohens_d(values.begin(), values.end(), mu0, sigma);
+    }
     if (sigma <= 0.0) {
         throw std::invalid_argument("statcpp::cohens_d: sigma must be positive");
     }
@@ -62,6 +70,12 @@ double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
 template <typename Iterator>
 double cohens_d(Iterator first, Iterator last, double mu0)
 {
+    // NaN is removed from the data (docs/NAN_POLICY.md); a NaN mu0 / sigma is an error, as R's t.test(mu = NA) is
+    detail::require_param_not_nan(mu0, "cohens_d", "mu0");
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return cohens_d(values.begin(), values.end(), mu0);
+    }
     auto n = statcpp::count(first, last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::cohens_d: need at least 2 elements");
@@ -96,6 +110,12 @@ template <typename Iterator1, typename Iterator2>
 double cohens_d_two_sample(Iterator1 first1, Iterator1 last1,
                            Iterator2 first2, Iterator2 last2)
 {
+    // NaN is removed from both samples (docs/NAN_POLICY.md)
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return cohens_d_two_sample(x.begin(), x.end(), y.begin(), y.end());
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -151,6 +171,12 @@ inline double hedges_correction_factor(double df)
 template <typename Iterator>
 double hedges_g(Iterator first, Iterator last, double mu0)
 {
+    // NaN is removed from the data (docs/NAN_POLICY.md); a NaN mu0 / sigma is an error, as R's t.test(mu = NA) is
+    detail::require_param_not_nan(mu0, "hedges_g", "mu0");
+    if (detail::has_nan(first, last)) {
+        const auto values = detail::drop_nan(first, last);
+        return hedges_g(values.begin(), values.end(), mu0);
+    }
     auto n = statcpp::count(first, last);
     if (n < 2) {
         throw std::invalid_argument("statcpp::hedges_g: need at least 2 elements");
@@ -179,6 +205,12 @@ template <typename Iterator1, typename Iterator2>
 double hedges_g_two_sample(Iterator1 first1, Iterator1 last1,
                            Iterator2 first2, Iterator2 last2)
 {
+    // NaN is removed from both samples (docs/NAN_POLICY.md)
+    if (detail::has_nan(first1, last1) || detail::has_nan(first2, last2)) {
+        const auto x = detail::drop_nan(first1, last1);
+        const auto y = detail::drop_nan(first2, last2);
+        return hedges_g_two_sample(x.begin(), x.end(), y.begin(), y.end());
+    }
     auto n1 = statcpp::count(first1, last1);
     auto n2 = statcpp::count(first2, last2);
 
@@ -214,6 +246,12 @@ template <typename Iterator1, typename Iterator2>
 double glass_delta(Iterator1 control_first, Iterator1 control_last,
                    Iterator2 treatment_first, Iterator2 treatment_last)
 {
+    // NaN is removed from both samples (docs/NAN_POLICY.md)
+    if (detail::has_nan(control_first, control_last) || detail::has_nan(treatment_first, treatment_last)) {
+        const auto x = detail::drop_nan(control_first, control_last);
+        const auto y = detail::drop_nan(treatment_first, treatment_last);
+        return glass_delta(x.begin(), x.end(), y.begin(), y.end());
+    }
     auto n1 = statcpp::count(control_first, control_last);
     auto n2 = statcpp::count(treatment_first, treatment_last);
 
@@ -440,6 +478,8 @@ enum class effect_size_magnitude {
  */
 inline effect_size_magnitude interpret_cohens_d(double d)
 {
+    // A magnitude category cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(d, "interpret_cohens_d", "d");
     double abs_d = std::abs(d);
     if (abs_d < 0.2) return effect_size_magnitude::negligible;
     if (abs_d < 0.5) return effect_size_magnitude::small;
@@ -457,6 +497,8 @@ inline effect_size_magnitude interpret_cohens_d(double d)
  */
 inline effect_size_magnitude interpret_correlation(double r)
 {
+    // A magnitude category cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(r, "interpret_correlation", "r");
     double abs_r = std::abs(r);
     if (abs_r < 0.1) return effect_size_magnitude::negligible;
     if (abs_r < 0.3) return effect_size_magnitude::small;
@@ -474,6 +516,8 @@ inline effect_size_magnitude interpret_correlation(double r)
  */
 inline effect_size_magnitude interpret_eta_squared(double eta2)
 {
+    // A magnitude category cannot represent NA (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(eta2, "interpret_eta_squared", "eta2");
     if (eta2 < 0.01) return effect_size_magnitude::negligible;
     if (eta2 < 0.06) return effect_size_magnitude::small;
     if (eta2 < 0.14) return effect_size_magnitude::medium;

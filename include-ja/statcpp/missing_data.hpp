@@ -704,7 +704,19 @@ inline multiple_imputation_result multiple_imputation_bootstrap(
                     non_na.push_back(row[j]);
                 }
             }
-            if (!non_na.empty()) {
+            if (non_na.empty()) {
+                // このブートストラップ標本に観測値がない場合は元データの観測値を使い、列全体が欠損なら
+                // 0 で補完せずに NaN にする(docs-ja/NAN_POLICY.md)
+                for (const auto& row : data) {
+                    if (!is_na(row[j])) {
+                        non_na.push_back(row[j]);
+                    }
+                }
+            }
+            if (non_na.empty()) {
+                col_means[j] = NA;
+                col_stds[j] = NA;
+            } else {
                 col_means[j] = mean(non_na.begin(), non_na.end());
                 col_stds[j] = non_na.size() > 1 ?
                     std::sqrt(var(non_na.begin(), non_na.end(), 1)) : 0.0;

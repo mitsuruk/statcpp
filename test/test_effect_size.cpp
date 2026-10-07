@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "statcpp/effect_size.hpp"
 #include <cmath>
+#include <limits>
+#include <stdexcept>
 #include <vector>
 
 // ============================================================================
@@ -537,4 +539,54 @@ TEST(InterpretEtaSquaredTest, Medium) {
  */
 TEST(InterpretEtaSquaredTest, Large) {
     EXPECT_EQ(statcpp::interpret_eta_squared(0.20), statcpp::effect_size_magnitude::large);
+}
+
+// ============================================================================
+// NaN Handling (v0.5.0, docs/NAN_POLICY.md)
+// ============================================================================
+
+/**
+ * @brief Tests that the standardized mean differences drop NaN from the data
+ * @test Verifies the results equal those of the data without NaN, for one- and two-sample forms
+ */
+TEST(EffectSizeNanTest, MeanDifferencesDropNaN) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {5.1, nan, 4.8, 5.6, 5.3};
+    std::vector<double> y = {6.0, 6.4, nan, 5.7, 6.2, 6.6};
+    std::vector<double> xc = {5.1, 4.8, 5.6, 5.3};
+    std::vector<double> yc = {6.0, 6.4, 5.7, 6.2, 6.6};
+    EXPECT_DOUBLE_EQ(statcpp::cohens_d(x.begin(), x.end(), 5.0), statcpp::cohens_d(xc.begin(), xc.end(), 5.0));
+    EXPECT_DOUBLE_EQ(statcpp::cohens_d(x.begin(), x.end(), 5.0, 0.4),
+                     statcpp::cohens_d(xc.begin(), xc.end(), 5.0, 0.4));
+    EXPECT_DOUBLE_EQ(statcpp::hedges_g(x.begin(), x.end(), 5.0), statcpp::hedges_g(xc.begin(), xc.end(), 5.0));
+    EXPECT_DOUBLE_EQ(statcpp::cohens_d_two_sample(x.begin(), x.end(), y.begin(), y.end()),
+                     statcpp::cohens_d_two_sample(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    EXPECT_DOUBLE_EQ(statcpp::hedges_g_two_sample(x.begin(), x.end(), y.begin(), y.end()),
+                     statcpp::hedges_g_two_sample(xc.begin(), xc.end(), yc.begin(), yc.end()));
+    EXPECT_DOUBLE_EQ(statcpp::glass_delta(x.begin(), x.end(), y.begin(), y.end()),
+                     statcpp::glass_delta(xc.begin(), xc.end(), yc.begin(), yc.end()));
+}
+
+/**
+ * @brief Tests that the effect sizes reject NaN parameters
+ * @test Verifies a NaN mu0 or sigma throws, as R's t.test(mu = NA) is an error
+ */
+TEST(EffectSizeNanTest, NaNParametersThrow) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> x = {5.1, 4.8, 5.6, 5.3};
+    EXPECT_THROW(statcpp::cohens_d(x.begin(), x.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::cohens_d(x.begin(), x.end(), nan, 0.4), std::invalid_argument);
+    EXPECT_THROW(statcpp::cohens_d(x.begin(), x.end(), 5.0, nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::hedges_g(x.begin(), x.end(), nan), std::invalid_argument);
+}
+
+/**
+ * @brief Tests that the interpretation functions reject NaN
+ * @test Verifies they throw, since a magnitude category cannot represent NA (they used to report "large")
+ */
+TEST(EffectSizeNanTest, InterpretThrows) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    EXPECT_THROW(statcpp::interpret_cohens_d(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::interpret_correlation(nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::interpret_eta_squared(nan), std::invalid_argument);
 }

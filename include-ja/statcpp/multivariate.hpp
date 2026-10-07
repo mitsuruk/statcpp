@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "statcpp/nan_utils.hpp"
 #include "statcpp/linear_regression.hpp"  // detail::validate_matrix_structure 用
 
 namespace statcpp {
@@ -119,6 +120,13 @@ inline std::vector<std::vector<double>> correlation_matrix(
         }
     }
 
+    // R の cor() は NA を含む変数でも対角成分を 1 にする(docs-ja/NAN_POLICY.md)
+    for (std::size_t j = 0; j < p; ++j) {
+        if (std::isnan(corr[j][j])) {
+            corr[j][j] = 1.0;
+        }
+    }
+
     return corr;
 }
 
@@ -154,16 +162,30 @@ inline std::vector<std::vector<double>> standardize(
     std::vector<double> stddevs(p, 0.0);
 
     for (std::size_t j = 0; j < p; ++j) {
+        // R の scale() と同じく、列の統計量は NaN 以外の値だけから求め、NaN のセルは
+        // 結果でも NaN のままにする(docs-ja/NAN_POLICY.md #11)
+        std::size_t n_j = 0;
         for (std::size_t i = 0; i < n; ++i) {
-            means[j] += data[i][j];
+            if (!std::isnan(data[i][j])) {
+                means[j] += data[i][j];
+                ++n_j;
+            }
         }
-        means[j] /= static_cast<double>(n);
+        if (n_j < 2) {
+            // 標準偏差には 2 個以上の値が必要。足りなければ列全体を NaN にする
+            means[j] = std::numeric_limits<double>::quiet_NaN();
+            stddevs[j] = std::numeric_limits<double>::quiet_NaN();
+            continue;
+        }
+        means[j] /= static_cast<double>(n_j);
 
         for (std::size_t i = 0; i < n; ++i) {
-            double diff = data[i][j] - means[j];
-            stddevs[j] += diff * diff;
+            if (!std::isnan(data[i][j])) {
+                double diff = data[i][j] - means[j];
+                stddevs[j] += diff * diff;
+            }
         }
-        stddevs[j] = std::sqrt(stddevs[j] / static_cast<double>(n - 1));
+        stddevs[j] = std::sqrt(stddevs[j] / static_cast<double>(n_j - 1));
 
         if (stddevs[j] == 0.0) {
             throw std::invalid_argument("statcpp::standardize: zero variance variable");
@@ -260,6 +282,9 @@ inline std::pair<double, std::vector<double>> power_iteration(
     std::size_t max_iter = 1000,
     double tol = 1e-10)
 {
+    // NaN はエラーにする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(matrix, "power_iteration");
+    detail::require_param_not_nan(tol, "power_iteration", "tol");
     std::size_t n = matrix.size();
     std::vector<double> v(n, 1.0 / std::sqrt(static_cast<double>(n)));
 
@@ -325,6 +350,8 @@ inline pca_result pca(const std::vector<std::vector<double>>& data,
 {
     // 行列構造の検証
     detail::validate_matrix_structure(data, "pca");
+    // NaN はエラーにする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(data, "pca");
 
     std::size_t p = data[0].size();
 
@@ -391,6 +418,8 @@ inline std::vector<std::vector<double>> pca_transform(
 {
     // 行列構造の検証
     detail::validate_matrix_structure(data, "pca_transform");
+    // NaN はエラーにする(docs-ja/NAN_POLICY.md)
+    detail::require_no_nan_matrix(data, "pca_transform");
 
     // PCA components の構造も検証
     if (pca.components.empty() || pca.components[0].empty()) {
