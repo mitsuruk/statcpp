@@ -4,6 +4,110 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-10-07
+
+A library-wide policy for missing values. Every public function now handles NaN the
+way its R counterpart does with default arguments ([docs/NAN_POLICY.md](NAN_POLICY.md)).
+v0.4.0 had no such policy: measured over all 391 functions, 153 returned a value that
+differed from R (mostly silently wrong), 22 invoked undefined behaviour and 16 never
+returned. All 191 are fixed. **No public signature changes**, but results change for any
+input containing NaN; see the upgrade notes below.
+
+### Fixed
+
+- **Infinite loops (16 functions)**: Loops that group tied values never advanced on NaN,
+  because `NaN == NaN` is false. `spearman_correlation()`, `mann_whitney_u_test()`,
+  `wilcoxon_signed_rank_test()`, `kruskal_wallis_test()`, `kaplan_meier()` and
+  `nelson_aalen()` hung on any NaN. `gamma_rand()`, `poisson_rand()` and six other random
+  generators hung on a NaN parameter, which they passed to `std::*_distribution`.
+- **Undefined behaviour (22 functions)**: NaN was cast to an integer (`percentile()`,
+  `trimmed_mean()`, the `bootstrap` family, `bin_equal_width()`, `stratified_sample()`,
+  `sample_size_for_moe_*()`, `discrete_uniform_quantile()`) or sorted with `operator<`,
+  which is not a strict weak ordering with NaN (`minimum()`, `maximum()`, `range()`,
+  `mad()`, `weighted_median()`, `holm_correction()`, `sort_values()`, `argsort()`).
+- **Silently wrong conclusions**: With one NaN, `permutation_test_two_sample()`,
+  `permutation_test_paired()` and `permutation_test_correlation()` returned
+  p = 1/(B+1) (0.002 for B = 500), a false positive. `shapiro_wilk_test()` returned
+  W = 1, p = 1; `lilliefors_test()` returned D = 0, p = 1; `chisq_test_independence()`
+  returned χ² = 0, p = 1; `tukey_hsd()` returned p = 2.4e-14; `detect_outliers_iqr()`
+  flagged every point; the GLM functions reported `converged = true` with NaN
+  coefficients or a meaningless deviance.
+- **Inferential functions now remove NaN, as R does**: the t, F, Wilcoxon,
+  Mann-Whitney, Kruskal-Wallis, Shapiro-Wilk, Levene and Bartlett tests, ANOVA and
+  ANCOVA, effect sizes, confidence intervals, the Kaplan-Meier and Nelson-Aalen
+  estimators, regression, GLM and cross-validation. Paired functions remove incomplete
+  pairs; models remove incomplete rows (`na.omit`).
+- **Descriptive statistics now return NaN, as R does**: `median()`, `minimum()`,
+  `maximum()`, `range()`, `mad()`, `kendall_tau()`, `spearman_correlation()`,
+  `r_squared()` and others. `r_squared()` returned 1 for a constant response with a NaN
+  prediction.
+- **`data_wrangling.hpp` — `fillna_median()`**: Filled with the median of the unsorted
+  observed values, because `median()` expects sorted input. `{9, NaN, 1, 5, 3}` was
+  filled with 3; it is now filled with 4.
+- **`time_series.hpp` — `moving_average()`**: A NaN made every later window NaN, and so
+  did Inf through Inf - Inf in the running sum. Windows are now NaN or Inf only when they
+  contain such a value, as R's `stats::filter` gives.
+- **`data_wrangling.hpp` — `rolling_min()` / `rolling_max()`**: The result for a window
+  containing NaN depended on the position of the NaN; such a window is now NaN.
+- **`missing_data.hpp` — `multiple_imputation_bootstrap()`**: A column with no observed
+  value in a bootstrap sample was silently imputed with 0. It is now imputed from the
+  observed values of the original data, and an entirely missing column stays NaN.
+
+### Changed
+
+Functions follow R's default NA handling. The decisions that are not obvious from R,
+and the deliberate differences from R, are listed in `docs/NAN_POLICY.md` sections 5
+and 9. In summary:
+
+- **Throws `std::invalid_argument` on NaN**: functions returning integers or enums
+  (`value_counts()`, `label_encode()`, `one_hot_encode()`, `bin_equal_*()`,
+  `frequency_*()`, discrete quantiles and random generators, `sample_size_*()`,
+  `interpret_*()`, outlier detection); functions whose R counterpart errors
+  (`quantile`-based functions such as `percentile()`, `iqr()` and `quartiles()`,
+  `weighted_variance()`, `weighted_covariance()`, `acf()`, `pacf()`, `chisq_*()`,
+  regularized regression, `cv_ridge()`, `cv_lasso()`, `pca()`, clustering); and any NaN
+  range-checked parameter (confidence level, `alpha`, `tol`, `lambda`, `mu0` and so on).
+- **Distances follow R's `dist()`**: `euclidean_distance()`, `manhattan_distance()` and
+  `minkowski_distance()` skip NaN coordinates and scale the sum by n / n_used. The cosine
+  measures drop pairs containing NaN.
+- **Sorting and duplicates**: `sort_values()` drops NaN (R `sort`); `argsort()` places NaN
+  last (R `order`); `drop_duplicates()` and `get_duplicates()` treat NaN values as equal
+  (R `unique`); the `group_*()` functions drop rows with a NaN key (R `split`).
+- **Element-wise results**: the multiplicity corrections keep NaN p-values as NaN and do
+  not count them (R `p.adjust`); `standardize()` computes column statistics from the
+  non-NaN values (R `scale`); `correlation_matrix()` keeps a diagonal of 1 (R `cor`);
+  `clamp()` returns NaN for any NaN argument.
+
+### Added
+
+- **`nan_utils.hpp`**: Helpers in `statcpp::detail` that implement the policy (detection,
+  removal, NaN-last ordering, rejection, and row-wise handling of matrices). They are
+  internal and not part of the public API.
+- **`testWithR/test_vs_r_nan.cpp`**: 23 R verification cases on inputs containing NA,
+  generated into `r_reference_nan.hpp`. Run against the v0.4.0 headers, every one fails or
+  hangs.
+- **Unit tests**: a "NaN Handling (v0.5.0)" section in each module's tests. 974 unit tests
+  plus 187 R verification tests, 1161 in total.
+
+### Documentation
+
+- Added `docs/NAN_POLICY.md` and `docs/NAN_INVENTORY.md` (and their Japanese versions): the
+  policy, the R behaviour it follows, and a per-function table of the v0.4.0 behaviour and
+  the v0.5.0 behaviour.
+
+### Upgrade notes
+
+- **Source compatibility**: no public function was added, removed or renamed, and no
+  signature changed.
+- **Result compatibility**: results change only for input containing NaN (and for
+  `moving_average()` with Inf, and `fillna_median()`, which is meant for input with NaN).
+  Code that relied on NaN propagating out of a test or a model now gets the result on
+  the remaining data; code that passes NaN to an integer-valued function or with a NaN
+  parameter now gets `std::invalid_argument`.
+- **Length changes**: functions that remove NaN return vectors of the reduced length where
+  the result is per observation (for example `compute_residual_diagnostics()` and
+  `compute_glm_residuals()`), as R's `na.omit` does.
+
 ## [0.4.0] - 2026-09-08
 
 Numerical corrections found by cross-verifying the whole library against R 4.4.2.

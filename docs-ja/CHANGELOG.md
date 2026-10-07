@@ -4,6 +4,84 @@ statcpp ライブラリの変更履歴を記録します.
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います.
 
+## [0.5.0] - 2026-10-07
+
+欠損値の扱いをライブラリ全体で統一. 全公開関数が, 対応する R の関数を既定の引数で呼んだときと同じように NaN を
+扱う([docs-ja/NAN_POLICY.md](NAN_POLICY.md)). v0.4.0 にはこの方針がなく, 全 391 関数を実測したところ, 153 関数が
+R と異なる値を返し(多くは黙って誤った値), 22 関数が未定義動作, 16 関数が無限ループになった. この 191 関数を
+すべて修正した. **公開シグネチャの変更はない**が, NaN を含む入力では結果が変わる. 末尾の「アップグレード時の注意」を参照.
+
+### Fixed (修正)
+
+- **無限ループ(16 関数)**: 同値をまとめるループが, `NaN == NaN` が偽のため NaN で前進しなかった.
+  `spearman_correlation()`, `mann_whitney_u_test()`, `wilcoxon_signed_rank_test()`, `kruskal_wallis_test()`,
+  `kaplan_meier()`, `nelson_aalen()` は NaN が 1 つでもあると停止しなかった. `gamma_rand()`, `poisson_rand()` など
+  乱数 8 関数は, NaN のパラメータを `std::*_distribution` に渡して停止しなかった.
+- **未定義動作(22 関数)**: NaN を整数にキャストしていた(`percentile()`, `trimmed_mean()`, `bootstrap` 系,
+  `bin_equal_width()`, `stratified_sample()`, `sample_size_for_moe_*()`, `discrete_uniform_quantile()`). または,
+  NaN を含むと strict weak ordering にならない `operator<` でソートしていた(`minimum()`, `maximum()`, `range()`,
+  `mad()`, `weighted_median()`, `holm_correction()`, `sort_values()`, `argsort()`).
+- **黙って誤った結論を返していた関数**: NaN が 1 つあると, `permutation_test_two_sample()`,
+  `permutation_test_paired()`, `permutation_test_correlation()` が p = 1/(B+1)(B = 500 で 0.002)を返し,
+  偽の有意になっていた. `shapiro_wilk_test()` は W = 1, p = 1, `lilliefors_test()` は D = 0, p = 1,
+  `chisq_test_independence()` は χ² = 0, p = 1, `tukey_hsd()` は p = 2.4e-14 を返していた.
+  `detect_outliers_iqr()` は全点を外れ値と判定し, GLM 系は係数が NaN や無意味な deviance のまま `converged = true` を返していた.
+- **推測統計は R と同じく NaN を除いて計算する**: t 検定, F 検定, Wilcoxon, Mann-Whitney, Kruskal-Wallis,
+  Shapiro-Wilk, Levene, Bartlett, 分散分析と共分散分析, 効果量, 信頼区間, Kaplan-Meier と Nelson-Aalen,
+  回帰, GLM, 交差検証. 対応のある関数は対ごとに, モデルは行ごとに除く(`na.omit`).
+- **記述統計は R と同じく NaN を返す**: `median()`, `minimum()`, `maximum()`, `range()`, `mad()`, `kendall_tau()`,
+  `spearman_correlation()`, `r_squared()` など. `r_squared()` は, 定数の応答と NaN の予測値の組で 1 を返していた.
+- **`data_wrangling.hpp` — `fillna_median()`**: ソート済みの入力を前提とする `median()` に未ソートの観測値を渡し,
+  誤った中央値で補完していた. `{9, NaN, 1, 5, 3}` を 3 で補完していたが, 4 で補完するようにした.
+- **`time_series.hpp` — `moving_average()`**: NaN があると以降の窓がすべて NaN になっていた. Inf も累積和で
+  Inf − Inf が NaN になり同じ結果になっていた. R の `stats::filter` と同じく, その値を含む窓だけを NaN や Inf にした.
+- **`data_wrangling.hpp` — `rolling_min()` / `rolling_max()`**: NaN を含む窓の結果が NaN の位置で変わっていた.
+  NaN を含む窓は NaN にした.
+- **`missing_data.hpp` — `multiple_imputation_bootstrap()`**: ブートストラップ標本に観測値がない列を黙って 0 で
+  補完していた. 元データの観測値から補完し, 列全体が欠損なら NaN のまま残すようにした.
+
+### Changed (変更)
+
+各関数は R の既定の NA 処理に従う. R から自明に決まらない判断と, R と意図的に異なる扱いは
+`docs-ja/NAN_POLICY.md` の第 5 節と第 9 節に載せた. 概要は次のとおり.
+
+- **NaN で `std::invalid_argument` を送出する**: 整数や列挙を返す関数(`value_counts()`, `label_encode()`,
+  `one_hot_encode()`, `bin_equal_*()`, `frequency_*()`, 離散分布の分位点と乱数, `sample_size_*()`, `interpret_*()`,
+  外れ値検出). R がエラーにする関数(`percentile()`, `iqr()`, `quartiles()` など `quantile` 系, `weighted_variance()`,
+  `weighted_covariance()`, `acf()`, `pacf()`, `chisq_*()`, 正則化回帰, `cv_ridge()`, `cv_lasso()`, `pca()`,
+  クラスタリング). 範囲検査のあるパラメータ(信頼水準, `alpha`, `tol`, `lambda`, `mu0` など)が NaN の場合.
+- **距離は R の `dist()` に従う**: `euclidean_distance()`, `manhattan_distance()`, `minkowski_distance()` は NaN の座標を
+  除き, 和を n / n_used 倍に補正する. コサイン系は NaN を含む組を除く.
+- **並べ替えと重複**: `sort_values()` は NaN を除く(R の `sort`). `argsort()` は NaN を末尾に置く(R の `order`).
+  `drop_duplicates()` と `get_duplicates()` は NaN 同士を同じ値とみなす(R の `unique`). `group_*()` はキーが NaN の行を除く
+  (R の `split`).
+- **要素ごとの結果**: 多重比較の補正は NaN の p 値を NaN のまま残し, 検定数に数えない(R の `p.adjust`).
+  `standardize()` は列の統計量を NaN 以外から求める(R の `scale`). `correlation_matrix()` は対角を 1 に保つ
+  (R の `cor`). `clamp()` はどの引数が NaN でも NaN を返す.
+
+### Added (追加)
+
+- **`nan_utils.hpp`**: 方針を実装する `statcpp::detail` の補助関数(判定, 除去, NaN を末尾に置く順序, 拒否,
+  行列の行単位の処理). 内部用で, 公開 API には含まない.
+- **`testWithR/test_vs_r_nan.cpp`**: NA を含む入力に対する R 照合 23 ケース. 参照値は `r_reference_nan.hpp` に生成する.
+  v0.4.0 のヘッダで実行すると, すべて失敗または停止する.
+- **単体テスト**: 各モジュールのテストに「NaN Handling (v0.5.0)」の節を追加. 単体テスト 974 件と R 照合テスト
+  187 件, 合計 1161 件.
+
+### Documentation (ドキュメント)
+
+- `docs-ja/NAN_POLICY.md` と `docs-ja/NAN_INVENTORY.md`(および英語版)を追加. 方針, 準拠する R の挙動, 関数ごとの
+  v0.4.0 の挙動と v0.5.0 の挙動の対応表を載せた.
+
+### アップグレード時の注意
+
+- **ソース互換性**: 公開関数の追加, 削除, 改名はなく, シグネチャも変わらない.
+- **結果の互換性**: 結果が変わるのは NaN を含む入力だけ(加えて Inf を含む `moving_average()` と, NaN を含む入力を
+  前提とする `fillna_median()`). 検定やモデルから NaN が伝播することを前提にしていたコードは, 残りのデータでの
+  結果を受け取る. 整数を返す関数に NaN を渡すコードや, NaN のパラメータを渡すコードは `std::invalid_argument` を受け取る.
+- **長さの変化**: NaN を除く関数のうち観測ごとの結果を返すもの(`compute_residual_diagnostics()`,
+  `compute_glm_residuals()` など)は, R の `na.omit` と同じく除去後の長さのベクトルを返す.
+
 ## [0.4.0] - 2026-09-08
 
 ライブラリ全体を R 4.4.2 と照合して発見した数値の是正. 0.3.0 の公開シグネチャは

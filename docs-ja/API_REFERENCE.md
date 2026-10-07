@@ -849,6 +849,28 @@ try {
 }
 ```
 
+### 欠損値(NaN)
+
+v0.5.0 から、すべての関数は欠損値を表す NaN を、対応する R の関数を既定の引数で呼んだときと同じように扱います。
+方針は [NAN_POLICY.md](NAN_POLICY.md)、関数ごとの対応は [NAN_INVENTORY.md](NAN_INVENTORY.md) を参照してください。
+
+| 関数の種類 | NaN を含むときの挙動 | R の対応 |
+| --- | --- | --- |
+| 記述統計、相関 | NaN を返す | `mean`、`median`、`cor` |
+| 検定、区間推定、モデル | NaN を除いて計算する(対応ありは対ごと、モデルは行ごと) | `t.test`、`lm`(`na.omit`) |
+| 要素ごと・窓ごとの関数 | 入力が NaN の箇所だけ NaN | `diff`、`stats::filter`、`scale` |
+| 整数・カテゴリを返す関数、分位点 | `std::invalid_argument` を投げる | `quantile`(エラー) |
+| 分布関数 | NaN を返す | `dnorm(NaN)` |
+| 範囲検査のあるパラメータ(信頼水準、`alpha`、`tol`)が NaN | `std::invalid_argument` を投げる | |
+
+```cpp
+const double nan = std::numeric_limits<double>::quiet_NaN();
+std::vector<double> x = {5.1, nan, 4.9, 5.3, 5.0};
+
+double m = statcpp::mean(x.begin(), x.end());          // NaN(R の mean(x) と同じ)
+auto t = statcpp::t_test(x.begin(), x.end(), 5.0);     // 4 個の値で計算(t.test(x, mu = 5) と同じ)
+```
+
 ## 使用例
 
 ### 基本的な統計分析

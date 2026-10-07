@@ -23,7 +23,7 @@ C++17 Header-only Statistics Library
 
 ## Overview
 
-statcpp is a header-only statistics library written in C++17. It provides 386 public functions (538 including overloads) across 31 header files, covering a wide range of statistical functionality from basic statistics to advanced hypothesis testing and regression analysis. The library includes 857 unit tests and 164 verification tests that compare every one of the 321 R-comparable functions against R 4.4.2.
+statcpp is a header-only statistics library written in C++17. It provides 386 public functions (538 including overloads) across 31 header files, covering a wide range of statistical functionality from basic statistics to advanced hypothesis testing and regression analysis. The library includes 974 unit tests and 187 verification tests that compare every one of the 321 R-comparable functions against R 4.4.2, including 23 cases on inputs with missing values.
 
 ### Key Features
 
@@ -32,7 +32,8 @@ statcpp is a header-only statistics library written in C++17. It provides 386 pu
 - **C++17 compliant**: Leverages modern C++ features
 - **STL-style**: Intuitive random access iterator-based API
 - **Projection support**: Directly process struct members and other data
-- **Comprehensive testing**: 857 unit tests with Google Test, plus 164 verification tests covering all 321 R-comparable functions against R 4.4.2
+- **Comprehensive testing**: 974 unit tests with Google Test, plus 187 verification tests covering all 321 R-comparable functions against R 4.4.2
+- **R-compatible missing values**: every function handles NaN as its R counterpart does with default arguments ([docs/NAN_POLICY.md](docs/NAN_POLICY.md))
 - **Cross-platform**: Tested on macOS and Linux
 - **Bilingual support**: English and Japanese commented headers available
 

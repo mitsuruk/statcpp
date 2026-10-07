@@ -92,7 +92,9 @@ Pure statistical functions operating on iterator pairs. Foundation for other fea
 - **Partial Correlation**: Can be substituted with linear regression residual correlation. Dedicated implementation is complex.
 - **Weighted Correlation Matrix**: Can be constructed from individual weighted covariances.
 - **Histogram Computation, Binned Statistics, Automatic Binning**: Visualization-oriented features. Outside scope of header-only library.
-- **NaN-aware Aggregations**: C++ design favors explicit NaN checking on user side.
+- **NaN-aware Aggregations**: Since v0.5.0 every function follows the default NA handling of its R
+  counterpart (`docs/NAN_POLICY.md`), so descriptive statistics return NaN as R's `mean(x)` does.
+  `na.rm = TRUE` style variants are still not provided; remove NaN explicitly with `dropna` first.
 - **Partial Selection**: Can use `std::nth_element` and other standard algorithms.
 - **Kernel Density Estimation (KDE)**: Complex algorithm. External library recommended.
 

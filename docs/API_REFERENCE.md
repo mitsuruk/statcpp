@@ -851,6 +851,29 @@ try {
 }
 ```
 
+### Missing Values (NaN)
+
+Since v0.5.0, every function handles NaN, which statcpp uses for a missing value, the
+way its R counterpart does with default arguments. See [NAN_POLICY.md](NAN_POLICY.md)
+for the policy and [NAN_INVENTORY.md](NAN_INVENTORY.md) for every function.
+
+| Kind of function | Behaviour on NaN | R equivalent |
+| --- | --- | --- |
+| Descriptive statistics, correlation | returns NaN | `mean`, `median`, `cor` |
+| Tests, intervals, models | removes NaN (pairs or rows where paired), then computes | `t.test`, `lm` (`na.omit`) |
+| Element-wise and window functions | NaN only where the input is NaN | `diff`, `stats::filter`, `scale` |
+| Integer or categorical results, quantiles | throws `std::invalid_argument` | `quantile` (error) |
+| Distribution functions | returns NaN | `dnorm(NaN)` |
+| A NaN range-checked parameter (confidence level, `alpha`, `tol`) | throws `std::invalid_argument` | |
+
+```cpp
+const double nan = std::numeric_limits<double>::quiet_NaN();
+std::vector<double> x = {5.1, nan, 4.9, 5.3, 5.0};
+
+double m = statcpp::mean(x.begin(), x.end());          // NaN, as R's mean(x)
+auto t = statcpp::t_test(x.begin(), x.end(), 5.0);     // computed on the 4 values, as t.test(x, mu = 5)
+```
+
 ## Usage Examples
 
 ### Basic Statistical Analysis
