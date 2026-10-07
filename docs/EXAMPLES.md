@@ -91,7 +91,7 @@ Sample programs demonstrating each feature of the statcpp library are provided i
 Build and run all sample programs at once:
 
 ```bash
-cd Examples
+cd examples
 ./build.sh
 ```
 
@@ -105,7 +105,7 @@ This script will:
 Build only a specific sample program:
 
 ```bash
-cd Examples
+cd examples
 
 # Using GCC
 g++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_statistics
@@ -122,7 +122,7 @@ clang++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_st
 Build all examples with CMake:
 
 ```bash
-cd Examples
+cd examples
 mkdir build
 cd build
 cmake ..

@@ -816,12 +816,14 @@ xdg-open doc/html/index.html
 
 ### イテレータベースのインターフェース
 
-すべての関数は STL スタイルのイテレータペア `(first, last)` を受け取ります。
+ほとんどの関数は STL スタイルのランダムアクセスイテレータペア `(first, last)` を受け取ります。
 
 ```cpp
 std::vector<double> data = {1.0, 2.0, 3.0, 4.0, 5.0};
 double avg = statcpp::mean(data.begin(), data.end());
 ```
+
+> **注:** 行列を扱う関数(GLM、計画行列を使う分散分析、重回帰、共分散行列など)は、イテレータペアではなく `std::vector<std::vector<double>>` を受け取ります。
 
 ### 射影対応
 

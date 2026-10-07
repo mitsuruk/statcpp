@@ -227,7 +227,7 @@ int main() {
 - **[ビルドとテスト](docs-ja/BUILDING.md)** - テストとサンプルのビルド方法
 - **[貢献ガイド](docs-ja/CONTRIBUTING.md)** - プロジェクトへの貢献方法
 - **[変更履歴](docs-ja/CHANGELOG.md)** - バージョン履歴
-- **[TODO](todo.md)** - 開発予定・改善項目
+- **[TODO](todo.ja.md)** - 開発予定・改善項目
 
 ### API ドキュメント
 

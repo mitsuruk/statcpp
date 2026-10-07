@@ -104,7 +104,7 @@ The project includes the following test suites:
 The simplest method:
 
 ```bash
-cd Examples
+cd examples
 ./build.sh
 ```
 
@@ -116,7 +116,7 @@ This script will:
 ### Method 2: Using CMake
 
 ```bash
-cd Examples
+cd examples
 mkdir build
 cd build
 cmake ..
@@ -131,7 +131,7 @@ cmake --build .
 ### Method 3: Compile Individually
 
 ```bash
-cd Examples
+cd examples
 
 # GCC
 g++ -std=c++17 -I../include example_basic_statistics.cpp -o example_basic_statistics

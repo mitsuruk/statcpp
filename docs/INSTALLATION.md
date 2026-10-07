@@ -39,7 +39,7 @@ cp -r statcpp/include-ja /path/to/your/project/include
 Specify the include path when compiling:
 
 ```bash
-g++ -std=c++17 -I/path/to/statcpp/include your_program.cpp -o your_program
+g++ -std=c++17 -I/path/to/your/project/include your_program.cpp -o your_program
 ```
 
 ### Method 2: Install with CMake
