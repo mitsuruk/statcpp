@@ -38,6 +38,8 @@ add_executable(statcpp_tests
     test_data_wrangling.cpp
     test_missing_data.cpp
     test_distance_metrics.cpp
+    # Module 7: Development Infrastructure
+    test_nan_utils.cpp
 )
 
 target_link_libraries(statcpp_tests PRIVATE

@@ -51,3 +51,4 @@
 
 // Module 7: Development Infrastructure
 #include "statcpp/numerical_utils.hpp"
+#include "statcpp/nan_utils.hpp"
