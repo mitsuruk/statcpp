@@ -51,6 +51,8 @@ struct kaplan_meier_result {
  * @param events Event occurrence flags (true = event occurred, false = censored)
  * @return Kaplan-Meier estimation result
  * @throws std::invalid_argument If times and events have different sizes or data is empty
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline kaplan_meier_result kaplan_meier(
     const std::vector<double>& times,
@@ -339,6 +341,8 @@ struct hazard_rate_result {
  * @param events Event occurrence flags (true = event occurred, false = censored)
  * @return Hazard rate estimation result
  * @throws std::invalid_argument If times and events have different sizes or data is empty
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline hazard_rate_result nelson_aalen(
     const std::vector<double>& times,

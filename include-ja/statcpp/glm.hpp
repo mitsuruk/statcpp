@@ -393,11 +393,14 @@ inline std::vector<double> solve_weighted_least_squares(
  * @return GLMの推定結果
  * @throws std::invalid_argument データが空の場合、XとYのサイズが一致しない場合、
  *         説明変数の数が不整合な場合、観測数が説明変数数以下の場合
+ * @throws std::invalid_argument tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @note IRLSアルゴリズムが max_iter 回以内に収束しなかった場合、
  *       converged は false に設定され、coefficient_se, z_statistics,
  *       p_values は NaN を含む場合があります。NaN は数値的問題により
  *       推定が不可能であることを示します（バグではありません）。
  *       これらのフィールドを使用する前に、必ず glm_result::converged を確認してください。
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline glm_result glm_fit(
     const std::vector<std::vector<double>>& X,
@@ -677,6 +680,9 @@ inline glm_result glm_fit(
  * @param tol 収束判定の許容誤差（デフォルト: 1e-8）
  * @return GLMの推定結果
  * @throws std::invalid_argument yが[0,1]の範囲外の場合、Xに切片列が含まれている場合
+ * @throws std::invalid_argument tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline glm_result logistic_regression(
     const std::vector<std::vector<double>>& X,
@@ -798,6 +804,9 @@ inline std::vector<std::pair<double, double>> odds_ratios_ci(
  * @param tol 収束判定の許容誤差（デフォルト: 1e-8）
  * @return GLMの推定結果
  * @throws std::invalid_argument yが負の場合、Xに切片列が含まれている場合
+ * @throws std::invalid_argument tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline glm_result poisson_regression(
     const std::vector<std::vector<double>>& X,
@@ -895,6 +904,8 @@ struct glm_residuals {
  * @param y 目的変数ベクトル
  * @return 各種残差を含む構造体
  * @throws std::invalid_argument XとYのサイズが一致しない場合
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline glm_residuals compute_glm_residuals(
     const glm_result& model,
@@ -956,6 +967,8 @@ inline glm_residuals compute_glm_residuals(
  * @param y 目的変数ベクトル
  * @return 過分散パラメータ（ピアソンカイ二乗統計量 / 残差自由度）
  * @throws std::invalid_argument モデルがポアソン分布でない場合
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline double overdispersion_test(const glm_result& model,
                                    const std::vector<std::vector<double>>& X,
@@ -1007,6 +1020,8 @@ inline double pseudo_r_squared_mcfadden(const glm_result& model)
  * @param y 目的変数ベクトル（非ガウス族の飽和モデル対数尤度計算に必要）
  * @param n サンプルサイズ
  * @return Nagelkerkeの疑似決定係数
+ *
+ * @note na.omit で推定したモデルに合わせて、NaN の応答を除き、その数だけ n を減らす(docs-ja/NAN_POLICY.md)。
  */
 inline double pseudo_r_squared_nagelkerke(const glm_result& model,
                                            const std::vector<double>& y,

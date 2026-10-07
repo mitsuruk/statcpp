@@ -69,6 +69,9 @@ struct test_result {
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（z統計量、p値、自由度=無限大）
  * @throws std::invalid_argument sigmaが正でない場合、または空の範囲の場合
+ * @throws std::invalid_argument mu0、sigma が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
@@ -126,6 +129,7 @@ test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（z統計量、p値、自由度=無限大）
  * @throws std::invalid_argument p0が(0,1)の範囲外、trialsが0、またはsuccessesがtrialsを超える場合
+ * @throws std::invalid_argument p0 が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline test_result z_test_proportion(std::size_t successes, std::size_t trials, double p0,
                                      alternative_hypothesis alt = alternative_hypothesis::two_sided)
@@ -236,6 +240,9 @@ inline test_result z_test_proportion_two_sample(std::size_t successes1, std::siz
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（t統計量、p値、自由度）
  * @throws std::invalid_argument 要素数が2未満、または分散が0の場合
+ * @throws std::invalid_argument mu0 が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 test_result t_test(Iterator first, Iterator last, double mu0,
@@ -295,6 +302,8 @@ test_result t_test(Iterator first, Iterator last, double mu0,
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（t統計量、p値、自由度）
  * @throws std::invalid_argument いずれかの標本の要素数が2未満、または分散が0の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 test_result t_test_two_sample(Iterator1 first1, Iterator1 last1,
@@ -362,6 +371,8 @@ test_result t_test_two_sample(Iterator1 first1, Iterator1 last1,
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（t統計量、p値、Welch近似自由度）
  * @throws std::invalid_argument いずれかの標本の要素数が2未満、または分散が0の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 test_result t_test_welch(Iterator1 first1, Iterator1 last1,
@@ -438,6 +449,8 @@ test_result t_test_welch(Iterator1 first1, Iterator1 last1,
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（t統計量、p値、自由度）
  * @throws std::invalid_argument 標本の長さが異なる、または2未満の場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 test_result t_test_paired(Iterator1 first1, Iterator1 last1,
@@ -493,6 +506,7 @@ test_result t_test_paired(Iterator1 first1, Iterator1 last1,
  * @param expected_last 期待度数の終了イテレータ
  * @return test_result 検定結果（カイ二乗統計量、p値、自由度）
  * @throws std::invalid_argument 観測と期待の長さが異なる、カテゴリ数が2未満、または期待度数が0以下の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator1, typename Iterator2>
 test_result chisq_test_gof(Iterator1 observed_first, Iterator1 observed_last,
@@ -546,6 +560,7 @@ test_result chisq_test_gof(Iterator1 observed_first, Iterator1 observed_last,
  * @param observed_last 観測度数の終了イテレータ
  * @return test_result 検定結果（カイ二乗統計量、p値、自由度）
  * @throws std::invalid_argument カテゴリ数が2未満の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_last)
@@ -592,6 +607,7 @@ test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_la
  * @param contingency_table 分割表（行優先の2次元配列）
  * @return test_result 検定結果（カイ二乗統計量、p値、自由度）
  * @throws std::invalid_argument 行数または列数が2未満、列数が不均一、負の値がある、またはテーブルが空の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline test_result chisq_test_independence(const std::vector<std::vector<double>>& contingency_table)
 {
@@ -673,6 +689,8 @@ inline test_result chisq_test_independence(const std::vector<std::vector<double>
  * @param alt 対立仮説の種類（デフォルト: 両側検定）
  * @return test_result 検定結果（F統計量、p値、df=df1、df2=df2）
  * @throws std::invalid_argument いずれかの標本の要素数が2未満、または第2標本の分散が0の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 test_result f_test(Iterator1 first1, Iterator1 last1,
@@ -736,6 +754,8 @@ test_result f_test(Iterator1 first1, Iterator1 last1,
  *
  * @param p_values 元のp値のベクトル
  * @return std::vector<double> 補正後のp値のベクトル
+ *
+ * @note R の p.adjust() と同じく、NaN の p 値は NaN のまま残し、検定数にも数えない(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> bonferroni_correction(const std::vector<double>& p_values)
 {
@@ -761,6 +781,8 @@ inline std::vector<double> bonferroni_correction(const std::vector<double>& p_va
  *
  * @param p_values 元のp値のベクトル
  * @return std::vector<double> 補正後のp値のベクトル
+ *
+ * @note R の p.adjust() と同じく、NaN の p 値は NaN のまま残し、検定数にも数えない(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> benjamini_hochberg_correction(const std::vector<double>& p_values)
 {
@@ -806,6 +828,8 @@ inline std::vector<double> benjamini_hochberg_correction(const std::vector<doubl
  *
  * @param p_values 元のp値のベクトル
  * @return std::vector<double> 補正後のp値のベクトル
+ *
+ * @note R の p.adjust() と同じく、NaN の p 値は NaN のまま残し、検定数にも数えない(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> holm_correction(const std::vector<double>& p_values)
 {

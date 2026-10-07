@@ -5,6 +5,7 @@
 
 **v0.5.0 で、判定が `FIX` / `FIX-UB` / `FIX-HANG` の 191 関数をすべて修正した。** 「現状」の列は v0.4.0 の実測値、
 「方針での挙動」の列は v0.5.0 の実装である。棚卸しの時点で候補が複数あった関数は、実装で確定した挙動に更新している。
+また `detect_outliers_zscore` は棚卸しでは `OK` と判定したが、外れ値検出の他の 2 関数に揃えて v0.5.0 で例外を送出するようにした。
 
 ## 凡例
 
@@ -289,14 +290,14 @@
 
 | 関数 | クラス | R の対応 | R(データ NA) | 現状(データ NaN) | 現状(パラメータ NaN) | 方針での挙動 | 判定 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `cohens_d` | C6 | effectsize::cohens_d(x,mu=) | DROP | NaN (both overloads) | mu0:NaN; sigma:NaN | DROP; params NaN | FIX |
+| `cohens_d` | C6 | effectsize::cohens_d(x,mu=) | DROP | NaN (both overloads) | mu0:NaN; sigma:NaN | DROP; mu0/sigma NaN THROW (#6) | FIX |
 | `cohens_d_two_sample` | C6 | effectsize::cohens_d(x,y) | DROP | NaN | - | DROP | FIX |
 | `cohens_h` | C7 | 2*asin(sqrt(p1))-2*asin(sqrt(p2)) | - | - | p1/p2:NaN | NaN | OK |
 | `d_to_r` | C7 | effectsize::d_to_r(d) | - | - | d:NaN | NaN | OK |
 | `eta_squared[effect_size]` | C7 | closed form ss_effect/ss_total | - | - | ss_effect/ss_total:NaN | NaN | OK |
 | `glass_delta` | C6 | effectsize::glass_delta(trt,ctrl) | DROP | NaN (either group) | - | DROP | FIX |
 | `hedges_correction_factor` | C7 | 1-3/(4*df-1) | - | - | df:NaN | NaN | OK |
-| `hedges_g` | C6 | effectsize::hedges_g(x,mu=) | DROP | NaN | mu0:NaN | DROP; mu0 NaN | FIX |
+| `hedges_g` | C6 | effectsize::hedges_g(x,mu=) | DROP | NaN | mu0:NaN | DROP; mu0 NaN THROW (#6) | FIX |
 | `hedges_g_two_sample` | C6 | effectsize::hedges_g(x,y) | DROP | NaN | - | DROP | FIX |
 | `interpret_cohens_d` | C3 | none (effectsize::interpret_cohens_d) | - | - | VALUE: large | THROW (§5 categorical output) | FIX |
 | `interpret_correlation` | C3 | none (effectsize::interpret_r) | - | - | VALUE: large | THROW (§5 categorical output) | FIX |
@@ -370,12 +371,12 @@
 | `adjusted_r_squared` | C1 | summary(lm)$adj.r.squared | DROP (lm); closed form NA | NaN (y or pred NaN) | n/a (num_predictors is size_t) | NaN (closed form from y and predictions) (#10) | FIX |
 | `compute_residual_diagnostics` | C6 | residuals/rstandard/hatvalues/cooks.distance(lm) | DROP (na.omit: length n-1) | MIXED: y NaN -> residuals/studentized/cooks ELEM, durbin_watson=0; x/X NaN -> residuals ELEM, studentized all 0, hat & cooks all NaN, durbin_watson=0 | n/a | DROP | FIX |
 | `compute_vif` | C6 | car::vif(lm) | DROP | NaN | n/a | DROP | FIX |
-| `confidence_interval_mean` | C6 | predict(lm, interval="confidence") | DROP | MIXED: training x NaN -> prediction finite, lower/upper/se NaN | x_new NaN -> all NaN; confidence NaN -> prediction & se finite, bounds NaN | DROP; params as R | FIX |
+| `confidence_interval_mean` | C6 | predict(lm, interval="confidence") | DROP | MIXED: training x NaN -> prediction finite, lower/upper/se NaN | x_new NaN -> all NaN; confidence NaN -> prediction & se finite, bounds NaN | DROP (training x); confidence NaN THROW (#6); x_new NaN -> NaN | FIX |
 | `correlation_matrix_determinant` | C1 | det(cor(X)) | NA | NaN | n/a | NaN | OK |
 | `multicollinearity_score` | C1 | 1 - abs(det(cor(X))) | NA | NaN | n/a | NaN | OK |
 | `multiple_linear_regression` | C6 | lm(y ~ x1 + x2) | DROP | NaN (y or X cell); df finite | n/a | DROP | FIX |
 | `predict` | C7 | predict(lm, newdata) | NA | NaN (x / x[j] NaN, both overloads) | n/a | NaN | OK |
-| `prediction_interval_simple` | C6 | predict(lm, interval="prediction") | DROP (fit from NA-x data equals clean) | MIXED: training x NaN -> prediction finite, lower/upper/se NaN | x_new NaN -> all NaN; confidence NaN -> prediction & se finite, bounds NaN | DROP; params as R | FIX |
+| `prediction_interval_simple` | C6 | predict(lm, interval="prediction") | DROP (fit from NA-x data equals clean) | MIXED: training x NaN -> prediction finite, lower/upper/se NaN | x_new NaN -> all NaN; confidence NaN -> prediction & se finite, bounds NaN | DROP (training x); confidence NaN THROW (#6); x_new NaN -> NaN | FIX |
 | `r_squared` | C1 | summary(lm)$r.squared | DROP (lm); closed form 1-SSE/SST gives NA | NaN (y or pred NaN) | n/a | NaN (closed form from y and predictions) (#10) | FIX |
 | `simple_linear_regression` | C6 | lm(y ~ x) | DROP | MIXED: y NaN -> coefs/t/p/R2/F NaN but ss_residual=residual_se=slope_se=intercept_se=0; x NaN -> NaN | n/a | DROP | FIX |
 
@@ -542,7 +543,7 @@
 | 関数 | クラス | R の対応 | R(データ NA) | 現状(データ NaN) | 現状(パラメータ NaN) | 方針での挙動 | 判定 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `bootstrap` | C6 | none (random) | n/a | MIXED: est/se/bias NaN, ci bounds partly finite (sort over NaN replicates) | UB: confidence NaN -> static_cast<size_t>(floor(NaN)) index | data passed to stat_func unchanged, as R boot (#16); confidence NaN THROW (#6) | FIX-UB |
-| `bootstrap_bca` | C6 | none (random) | n/a | UB: NaN data -> alpha1/alpha2 NaN -> static_cast<size_t> in clamp_index | UB: confidence NaN index cast | DROP / param THROW | FIX-UB |
+| `bootstrap_bca` | C6 | none (random) | n/a | UB: NaN data -> alpha1/alpha2 NaN -> static_cast<size_t> in clamp_index | UB: confidence NaN index cast | data passed to the statistic unchanged, as R's boot (#16); confidence NaN THROW (#6) | FIX-UB |
 | `bootstrap_mean` | C6 | none (random) | n/a | MIXED: est NaN, ci_lower finite, ci_upper NaN or finite depending on position | UB: confidence NaN index cast | DROP / param THROW | FIX-UB |
 | `bootstrap_median` | C6 | none (random) | n/a | POSDEP: mid est NaN, first est 4 (median of sorted vector with NaN), se NaN | UB: confidence NaN index cast | DROP / param THROW | FIX-UB |
 | `bootstrap_sample` | C2 | none (random) | n/a | ELEM (NaN copied into resample where drawn) | n/a | ELEM (pass-through) | OK |
@@ -557,11 +558,11 @@
 
 | 関数 | クラス | R の対応 | R(データ NA) | 現状(データ NaN) | 現状(パラメータ NaN) | 方針での挙動 | 判定 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `biweight_midvariance` | C1 | closed form (median, mad, c=9) | NA | POSDEP mid:VALUE(0) first:VALUE(0.239) + UB | c=NaN: VALUE 0 (all weights dropped) | NaN | FIX-UB |
+| `biweight_midvariance` | C1 | closed form (median, mad, c=9) | NA | POSDEP mid:VALUE(0) first:VALUE(0.239) + UB | c=NaN: VALUE 0 (all weights dropped) | NaN; c NaN THROW (#6) | FIX-UB |
 | `cooks_distance` | C2 | closed form res^2*h/(p*mse*(1-h)^2) (cooks.distance(lm)) | ELEM (res and hat) | ELEM (residuals and hat_values) | mse=NaN: NaN (all); p is size_t | ELEM; mse NaN: NaN | OK |
-| `detect_outliers_iqr` | C1 | closed form via quantile(x, c(.25,.75), type=7) | ERROR (quantile) | POSDEP mid:VALUE(fences collapse, all 15 points flagged) first:VALUE(shifted fences) + UB | k=NaN: NaN fences, 0 outliers | data THROW; k NaN: NaN fences | FIX-UB |
-| `detect_outliers_modified_zscore` | C1 | closed form via median/mad | NA (fences, count) | POSDEP mid:NaN fences first:VALUE(shifted) + UB | threshold=NaN: NaN fences, 0 outliers | NaN fences | FIX-UB |
-| `detect_outliers_zscore` | C1 | closed form (x-mean)/sd | NA (fences, count) | NaN fences, 0 outliers (mid and first) | threshold=NaN: NaN fences, 0 outliers | NaN fences (no outliers) | OK |
+| `detect_outliers_iqr` | C1 | closed form via quantile(x, c(.25,.75), type=7) | ERROR (quantile) | POSDEP mid:VALUE(fences collapse, all 15 points flagged) first:VALUE(shifted fences) + UB | k=NaN: NaN fences, 0 outliers | THROW (outlier flags, section 5); k NaN THROW | FIX-UB |
+| `detect_outliers_modified_zscore` | C1 | closed form via median/mad | NA (fences, count) | POSDEP mid:NaN fences first:VALUE(shifted) + UB | threshold=NaN: NaN fences, 0 outliers | THROW (outlier flags, section 5); threshold NaN THROW | FIX-UB |
+| `detect_outliers_zscore` | C1 | closed form (x-mean)/sd | NA (fences, count) | NaN fences, 0 outliers (mid and first) | threshold=NaN: NaN fences, 0 outliers | THROW (outlier flags, section 5); threshold NaN THROW (aligned in v0.5.0) | OK |
 | `dffits` | C2 | closed form res*sqrt(h)/(sqrt(mse)*(1-h)) (dffits(lm)) | ELEM (res and hat) | ELEM (residuals and hat_values) | mse=NaN: NaN (all) | ELEM; mse NaN: NaN | OK |
 | `hodges_lehmann` | C6 | wilcox.test(x, conf.int=TRUE)$estimate | DROP | POSDEP VALUE(3.05)/VALUE(2.925) + UB | - | DROP | FIX-UB |
 | `mad` | C1 | mad(x, constant=1) | NA | POSDEP mid:NaN first:VALUE(0.35) + UB | - | NaN | FIX-UB |

@@ -34,6 +34,8 @@ namespace statcpp {
  * @param b Upper bound (default: 1.0)
  * @return Probability density
  * @throws std::invalid_argument If a >= b
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double uniform_pdf(double x, double a = 0.0, double b = 1.0)
 {
@@ -102,6 +104,8 @@ inline double uniform_quantile(double p, double a = 0.0, double b = 1.0)
  * @param engine Random engine
  * @return Random number following uniform distribution
  * @throws std::invalid_argument If a >= b
+ *
+ * @note Returns NaN if a parameter is NaN, as R's runif() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double uniform_rand(double a, double b, Engine& engine)
@@ -123,6 +127,8 @@ double uniform_rand(double a, double b, Engine& engine)
  * @param a Lower bound (default: 0.0)
  * @param b Upper bound (default: 1.0)
  * @return Random number following uniform distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's runif() does (docs/NAN_POLICY.md).
  */
 inline double uniform_rand(double a = 0.0, double b = 1.0)
 {
@@ -212,6 +218,8 @@ inline double normal_quantile(double p, double mu = 0.0, double sigma = 1.0)
  * @param engine Random engine
  * @return Random number following normal distribution
  * @throws std::invalid_argument If sigma <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rnorm() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double normal_rand(double mu, double sigma, Engine& engine)
@@ -233,6 +241,8 @@ double normal_rand(double mu, double sigma, Engine& engine)
  * @param mu Mean (default: 0.0)
  * @param sigma Standard deviation (default: 1.0)
  * @return Random number following normal distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rnorm() does (docs/NAN_POLICY.md).
  */
 inline double normal_rand(double mu = 0.0, double sigma = 1.0)
 {
@@ -311,6 +321,8 @@ inline double exponential_quantile(double p, double lambda = 1.0)
  * @param engine Random engine
  * @return Random number following exponential distribution
  * @throws std::invalid_argument If lambda <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rexp() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double exponential_rand(double lambda, Engine& engine)
@@ -331,6 +343,8 @@ double exponential_rand(double lambda, Engine& engine)
  *
  * @param lambda Rate parameter (default: 1.0)
  * @return Random number following exponential distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rexp() does (docs/NAN_POLICY.md).
  */
 inline double exponential_rand(double lambda = 1.0)
 {
@@ -430,6 +444,8 @@ inline double gamma_quantile(double p, double shape, double rate = 1.0)
  * @param engine Random engine
  * @return Random number following gamma distribution
  * @throws std::invalid_argument If shape <= 0 or rate <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rgamma() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double gamma_rand(double shape, double rate, Engine& engine)
@@ -455,6 +471,8 @@ double gamma_rand(double shape, double rate, Engine& engine)
  * @param shape Shape parameter alpha
  * @param rate Rate parameter beta (default: 1.0)
  * @return Random number following gamma distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rgamma() does (docs/NAN_POLICY.md).
  */
 inline double gamma_rand(double shape, double rate = 1.0)
 {
@@ -559,6 +577,8 @@ inline double beta_quantile(double p, double alpha, double beta_param)
  * @param engine Random engine
  * @return Random number following beta distribution
  * @throws std::invalid_argument If alpha <= 0 or beta_param <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rbeta() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double beta_rand(double alpha, double beta_param, Engine& engine)
@@ -594,6 +614,8 @@ double beta_rand(double alpha, double beta_param, Engine& engine)
  * @param alpha Shape parameter alpha
  * @param beta_param Shape parameter beta
  * @return Random number following beta distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rbeta() does (docs/NAN_POLICY.md).
  */
 inline double beta_rand(double alpha, double beta_param)
 {
@@ -666,6 +688,8 @@ inline double chisq_quantile(double p, double df)
  * @param engine Random engine
  * @return Random number following chi-square distribution
  * @throws std::invalid_argument If df <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rchisq() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double chisq_rand(double df, Engine& engine)
@@ -685,6 +709,8 @@ double chisq_rand(double df, Engine& engine)
  *
  * @param df Degrees of freedom
  * @return Random number following chi-square distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rchisq() does (docs/NAN_POLICY.md).
  */
 inline double chisq_rand(double df)
 {
@@ -763,6 +789,8 @@ inline double t_cdf(double x, double df)
  *       the result is a finite value. Boundary values p = 0 or p = 1 may
  *       return +/-infinity as per the distribution definition. In practice,
  *       convergence is achieved for all typical input ranges.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double t_quantile(double p, double df)
 {
@@ -824,6 +852,8 @@ inline double t_quantile(double p, double df)
  * @param engine Random engine
  * @return Random number following t-distribution
  * @throws std::invalid_argument If df <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rt() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double t_rand(double df, Engine& engine)
@@ -844,6 +874,8 @@ double t_rand(double df, Engine& engine)
  *
  * @param df Degrees of freedom
  * @return Random number following t-distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rt() does (docs/NAN_POLICY.md).
  */
 inline double t_rand(double df)
 {
@@ -925,6 +957,8 @@ inline double f_cdf(double x, double df1, double df2)
  *       the result is a finite value. Boundary values p = 0 or p = 1 may
  *       return +/-infinity as per the distribution definition. In practice,
  *       convergence is achieved for all typical input ranges.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double f_quantile(double p, double df1, double df2)
 {
@@ -992,6 +1026,8 @@ inline double f_quantile(double p, double df1, double df2)
  * @param engine Random engine
  * @return Random number following F-distribution
  * @throws std::invalid_argument If df1 <= 0 or df2 <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rf() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double f_rand(double df1, double df2, Engine& engine)
@@ -1016,6 +1052,8 @@ double f_rand(double df1, double df2, Engine& engine)
  * @param df1 First degrees of freedom
  * @param df2 Second degrees of freedom
  * @return Random number following F-distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rf() does (docs/NAN_POLICY.md).
  */
 inline double f_rand(double df1, double df2)
 {
@@ -1106,6 +1144,8 @@ inline double lognormal_quantile(double p, double mu = 0.0, double sigma = 1.0)
  * @param engine Random engine
  * @return Random number following log-normal distribution
  * @throws std::invalid_argument If sigma <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rlnorm() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double lognormal_rand(double mu, double sigma, Engine& engine)
@@ -1127,6 +1167,8 @@ double lognormal_rand(double mu, double sigma, Engine& engine)
  * @param mu Log-mean (default: 0.0)
  * @param sigma Log-standard deviation (default: 1.0)
  * @return Random number following log-normal distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rlnorm() does (docs/NAN_POLICY.md).
  */
 inline double lognormal_rand(double mu = 0.0, double sigma = 1.0)
 {
@@ -1182,6 +1224,8 @@ inline double weibull_pdf(double x, double shape, double scale = 1.0)
  * @param scale Scale parameter lambda (default: 1.0)
  * @return Cumulative probability
  * @throws std::invalid_argument If shape <= 0 or scale <= 0
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double weibull_cdf(double x, double shape, double scale = 1.0)
 {
@@ -1238,6 +1282,8 @@ inline double weibull_quantile(double p, double shape, double scale = 1.0)
  * @param engine Random engine
  * @return Random number following Weibull distribution
  * @throws std::invalid_argument If shape <= 0 or scale <= 0
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rweibull() does (docs/NAN_POLICY.md).
  */
 template <typename Engine = default_random_engine>
 double weibull_rand(double shape, double scale, Engine& engine)
@@ -1262,6 +1308,8 @@ double weibull_rand(double shape, double scale, Engine& engine)
  * @param shape Shape parameter k
  * @param scale Scale parameter lambda (default: 1.0)
  * @return Random number following Weibull distribution
+ *
+ * @note Returns NaN if a parameter is NaN, as R's rweibull() does (docs/NAN_POLICY.md).
  */
 inline double weibull_rand(double shape, double scale = 1.0)
 {
@@ -1287,6 +1335,8 @@ inline double weibull_rand(double shape, double scale = 1.0)
  * @return Probability P(Q <= q)
  *
  * @throws std::invalid_argument If k < 2 or df <= 0
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double studentized_range_cdf(double q, double k, double df)
 {
@@ -1516,6 +1566,8 @@ inline double studentized_range_cdf(double q, double k, double df)
  *       the result is a finite value. Boundary values p = 0 or p = 1 may
  *       return +/-infinity as per the distribution definition. In practice,
  *       convergence is achieved for all typical input ranges.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double studentized_range_quantile(double p, double k, double df)
 {

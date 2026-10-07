@@ -650,6 +650,8 @@ inline multiple_imputation_result multiple_imputation_pmm(
  * @param seed 乱数シード（0の場合はランダムシード）
  * @return multiple_imputation_result 多重代入結果
  * @throws std::invalid_argument データが空の場合
+ *
+ * @note ブートストラップ標本に観測値がない列は元データの観測値から補完し、列全体が欠損なら NaN のまま残す(docs-ja/NAN_POLICY.md)。
  */
 inline multiple_imputation_result multiple_imputation_bootstrap(
     const std::vector<std::vector<double>>& data,

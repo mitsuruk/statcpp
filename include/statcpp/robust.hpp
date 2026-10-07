@@ -38,6 +38,8 @@ namespace statcpp {
  * @throws std::invalid_argument If range is empty
  *
  * @note Used as a robust estimator of variance.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double mad(Iterator first, Iterator last)
@@ -93,6 +95,8 @@ double mad(Iterator first, Iterator last)
  *       This factor is exact only when the data follows a normal distribution.
  *       For non-normal distributions, the standard deviation estimate using this
  *       factor is an approximation.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double mad_scaled(Iterator first, Iterator last)
@@ -128,6 +132,8 @@ struct outlier_detection_result {
  * @param k Fence multiplier (default: 1.5, use 3.0 for extreme outliers)
  * @return Outlier detection result
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If k is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note Standard box plots use k=1.5.
  */
@@ -190,7 +196,8 @@ outlier_detection_result detect_outliers_iqr(Iterator first, Iterator last, doub
  * @param last End of range
  * @param threshold Z-score threshold (default: 3.0)
  * @return Outlier detection result
- * @throws std::invalid_argument If range has less than 2 elements or standard deviation is zero
+ * @throws std::invalid_argument If range has less than 2 elements, standard deviation is zero,
+ *         or the data or threshold contain NaN (docs/NAN_POLICY.md section 5)
  *
  * @note Assumes normal distribution. Sensitive to outliers.
  */
@@ -201,6 +208,9 @@ outlier_detection_result detect_outliers_zscore(Iterator first, Iterator last, d
     if (n < 2) {
         throw std::invalid_argument("statcpp::detect_outliers_zscore: need at least 2 elements");
     }
+    // Per-point outlier flags cannot represent a missing value (docs/NAN_POLICY.md section 5)
+    detail::require_param_not_nan(threshold, "detect_outliers_zscore", "threshold");
+    detail::require_no_nan(first, last, "detect_outliers_zscore");
 
     double m = statcpp::mean(first, last);
     double s = statcpp::sample_stddev(first, last, m);
@@ -240,6 +250,8 @@ outlier_detection_result detect_outliers_zscore(Iterator first, Iterator last, d
  * @param threshold Modified Z-score threshold (default: 3.5)
  * @return Outlier detection result
  * @throws std::invalid_argument If range is empty or MAD is zero
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If threshold is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note More robust than standard Z-score. Less affected by outliers.
  */
@@ -307,8 +319,11 @@ outlier_detection_result detect_outliers_modified_zscore(Iterator first, Iterato
  * @param limits Proportion to replace from each tail (e.g., 0.05 = replace top and bottom 5%)
  * @return Winsorized data
  * @throws std::invalid_argument If range is empty or limits is invalid
+ * @throws std::invalid_argument If limits is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note Reduces the impact of outliers while preserving the number of data points.
+ *
+ * @note The limits are computed from the non-NaN values and NaN stays NaN (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 std::vector<double> winsorize(Iterator first, Iterator last, double limits = 0.05)
@@ -488,6 +503,8 @@ inline std::vector<double> dffits(
  * @throws std::invalid_argument If range is empty
  *
  * @note A robust location estimator. Less affected by outliers.
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double hodges_lehmann(Iterator first, Iterator last)
@@ -533,8 +550,11 @@ double hodges_lehmann(Iterator first, Iterator last)
  * @param c Tuning constant (default: 9.0)
  * @return Biweight midvariance
  * @throws std::invalid_argument If range has less than 2 elements
+ * @throws std::invalid_argument If c is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note A variance estimator less affected by outliers.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double biweight_midvariance(Iterator first, Iterator last, double c = 9.0)

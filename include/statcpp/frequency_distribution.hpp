@@ -72,6 +72,7 @@ struct frequency_table_result {
  * @param first Beginning iterator
  * @param last Ending iterator
  * @return Frequency table result
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto frequency_table(Iterator first, Iterator last)
@@ -125,6 +126,7 @@ auto frequency_table(Iterator first, Iterator last)
  * @param last Ending iterator
  * @param proj Projection function
  * @return Frequency table result
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto frequency_table(Iterator first, Iterator last, Projection proj)
@@ -182,6 +184,7 @@ auto frequency_table(Iterator first, Iterator last, Projection proj)
  * @param first Beginning iterator
  * @param last Ending iterator
  * @return Map of values and their frequencies
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto frequency_count(Iterator first, Iterator last)
@@ -209,6 +212,7 @@ auto frequency_count(Iterator first, Iterator last)
  * @param last Ending iterator
  * @param proj Projection function
  * @return Map of values and their frequencies
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto frequency_count(Iterator first, Iterator last, Projection proj)
@@ -242,6 +246,7 @@ auto frequency_count(Iterator first, Iterator last, Projection proj)
  * @param first Beginning iterator
  * @param last Ending iterator
  * @return Map of values and their relative frequencies
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto relative_frequency(Iterator first, Iterator last)
@@ -278,6 +283,7 @@ auto relative_frequency(Iterator first, Iterator last)
  * @param last Ending iterator
  * @param proj Projection function
  * @return Map of values and their relative frequencies
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto relative_frequency(Iterator first, Iterator last, Projection proj)
@@ -321,6 +327,7 @@ auto relative_frequency(Iterator first, Iterator last, Projection proj)
  * @param first Beginning iterator
  * @param last Ending iterator
  * @return Vector of (value, cumulative frequency) pairs
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto cumulative_frequency(Iterator first, Iterator last)
@@ -364,6 +371,7 @@ auto cumulative_frequency(Iterator first, Iterator last)
  * @param last Ending iterator
  * @param proj Projection function
  * @return Vector of (value, cumulative frequency) pairs
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto cumulative_frequency(Iterator first, Iterator last, Projection proj)
@@ -412,6 +420,7 @@ auto cumulative_frequency(Iterator first, Iterator last, Projection proj)
  * @param first Beginning iterator
  * @param last Ending iterator
  * @return Vector of (value, cumulative relative frequency) pairs
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto cumulative_relative_frequency(Iterator first, Iterator last)
@@ -451,6 +460,7 @@ auto cumulative_relative_frequency(Iterator first, Iterator last)
  * @param last Ending iterator
  * @param proj Projection function
  * @return Vector of (value, cumulative relative frequency) pairs
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto cumulative_relative_frequency(Iterator first, Iterator last, Projection proj)

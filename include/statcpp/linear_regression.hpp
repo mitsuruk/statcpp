@@ -124,6 +124,8 @@ struct residual_diagnostics {
  * @throws std::invalid_argument If x and y have different lengths
  * @throws std::invalid_argument If there are fewer than 3 observations
  * @throws std::invalid_argument If x has zero variance
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename IteratorX, typename IteratorY>
 simple_regression_result simple_linear_regression(IteratorX x_first, IteratorX x_last,
@@ -525,6 +527,9 @@ inline std::vector<std::vector<double>> inverse_cholesky(
  * @throws std::invalid_argument If X and Y have different numbers of observations
  * @throws std::invalid_argument If number of predictors is greater than or equal to number of observations
  * @throws std::invalid_argument If X contains an intercept column (all 1s column)
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline multiple_regression_result multiple_linear_regression(
     const std::vector<std::vector<double>>& X,
@@ -701,6 +706,9 @@ inline double predict(const multiple_regression_result& model, const std::vector
  * @param confidence Confidence level (default: 0.95)
  * @return prediction_interval Predicted value and prediction interval
  * @throws std::invalid_argument If confidence is outside (0, 1) range
+ * @throws std::invalid_argument If confidence is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename IteratorX>
 prediction_interval prediction_interval_simple(
@@ -756,6 +764,9 @@ prediction_interval prediction_interval_simple(
  * @param confidence Confidence level (default: 0.95)
  * @return prediction_interval Predicted value and confidence interval
  * @throws std::invalid_argument If confidence is outside (0, 1) range
+ * @throws std::invalid_argument If confidence is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename IteratorX>
 prediction_interval confidence_interval_mean(
@@ -816,6 +827,8 @@ prediction_interval confidence_interval_mean(
  * @param y_last Ending iterator for response variable
  * @return residual_diagnostics Residual diagnostics results
  * @throws std::invalid_argument If x and y have different lengths
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename IteratorX, typename IteratorY>
 residual_diagnostics compute_residual_diagnostics(
@@ -903,6 +916,9 @@ residual_diagnostics compute_residual_diagnostics(
  * @param y Response variable vector
  * @return residual_diagnostics Residual diagnostics results
  * @throws std::invalid_argument If X and y have different lengths
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline residual_diagnostics compute_residual_diagnostics(
     const multiple_regression_result& model,
@@ -1005,6 +1021,9 @@ inline residual_diagnostics compute_residual_diagnostics(
  * @return std::vector<double> VIF for each predictor
  * @throws std::invalid_argument If there are fewer than 3 observations
  * @throws std::invalid_argument If there are fewer than 2 predictors
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline std::vector<double> compute_vif(const std::vector<std::vector<double>>& X)
 {
@@ -1157,6 +1176,8 @@ inline double multicollinearity_score(const std::vector<std::vector<double>>& X)
  * @return double Coefficient of determination R^2
  * @throws std::invalid_argument If y and predictions have different lengths
  * @throws std::invalid_argument If there are fewer than 2 observations
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename IteratorY, typename IteratorPred>
 double r_squared(IteratorY y_first, IteratorY y_last,
@@ -1213,6 +1234,8 @@ double r_squared(IteratorY y_first, IteratorY y_last,
  * @return double Adjusted coefficient of determination
  * @throws std::invalid_argument If y and predictions have different lengths
  * @throws std::invalid_argument If number of observations is not greater than number of predictors + 1
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename IteratorY, typename IteratorPred>
 double adjusted_r_squared(IteratorY y_first, IteratorY y_last,

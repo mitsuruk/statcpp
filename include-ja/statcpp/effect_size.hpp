@@ -30,6 +30,9 @@ namespace statcpp {
  * @param sigma 母標準偏差
  * @return Cohen's d
  * @throws std::invalid_argument 空の範囲の場合、またはsigmaが正でない場合
+ * @throws std::invalid_argument mu0、sigma が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
@@ -65,6 +68,9 @@ double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
  * @param mu0 比較する母平均
  * @return Cohen's d
  * @throws std::invalid_argument 要素数が2未満の場合、または分散が0の場合
+ * @throws std::invalid_argument mu0 が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double cohens_d(Iterator first, Iterator last, double mu0)
@@ -104,6 +110,8 @@ double cohens_d(Iterator first, Iterator last, double mu0)
  * @param last2 第2サンプルの終了イテレータ
  * @return Cohen's d
  * @throws std::invalid_argument 各サンプルの要素数が2未満の場合、またはプール分散が0の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double cohens_d_two_sample(Iterator1 first1, Iterator1 last1,
@@ -166,6 +174,9 @@ inline double hedges_correction_factor(double df)
  * @param mu0 比較する母平均
  * @return Hedges' g
  * @throws std::invalid_argument 要素数が2未満の場合
+ * @throws std::invalid_argument mu0 が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double hedges_g(Iterator first, Iterator last, double mu0)
@@ -199,6 +210,8 @@ double hedges_g(Iterator first, Iterator last, double mu0)
  * @param last2 第2サンプルの終了イテレータ
  * @return Hedges' g
  * @throws std::invalid_argument 各サンプルの要素数が2未満の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double hedges_g_two_sample(Iterator1 first1, Iterator1 last1,
@@ -240,6 +253,8 @@ double hedges_g_two_sample(Iterator1 first1, Iterator1 last1,
  * @param treatment_last 実験群の終了イテレータ
  * @return Glass's Δ
  * @throws std::invalid_argument 対照群の要素数が2未満の場合、実験群が空の場合、または対照群の分散が0の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double glass_delta(Iterator1 control_first, Iterator1 control_last,
@@ -474,6 +489,7 @@ enum class effect_size_magnitude {
  *
  * @param d Cohen's d
  * @return 効果量の大きさ
+ * @throws std::invalid_argument d が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline effect_size_magnitude interpret_cohens_d(double d)
 {
@@ -493,6 +509,7 @@ inline effect_size_magnitude interpret_cohens_d(double d)
  *
  * @param r 相関係数
  * @return 効果量の大きさ
+ * @throws std::invalid_argument r が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline effect_size_magnitude interpret_correlation(double r)
 {
@@ -512,6 +529,7 @@ inline effect_size_magnitude interpret_correlation(double r)
  *
  * @param eta2 η²
  * @return 効果量の大きさ
+ * @throws std::invalid_argument eta2 が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline effect_size_magnitude interpret_eta_squared(double eta2)
 {

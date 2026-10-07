@@ -69,6 +69,7 @@ struct frequency_table_result {
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @return 度数表の結果
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto frequency_table(Iterator first, Iterator last)
@@ -122,6 +123,7 @@ auto frequency_table(Iterator first, Iterator last)
  * @param last 終了イテレータ
  * @param proj 射影関数
  * @return 度数表の結果
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto frequency_table(Iterator first, Iterator last, Projection proj)
@@ -179,6 +181,7 @@ auto frequency_table(Iterator first, Iterator last, Projection proj)
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @return 値と度数のマップ
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto frequency_count(Iterator first, Iterator last)
@@ -206,6 +209,7 @@ auto frequency_count(Iterator first, Iterator last)
  * @param last 終了イテレータ
  * @param proj 射影関数
  * @return 値と度数のマップ
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto frequency_count(Iterator first, Iterator last, Projection proj)
@@ -239,6 +243,7 @@ auto frequency_count(Iterator first, Iterator last, Projection proj)
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @return 値と相対度数のマップ
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto relative_frequency(Iterator first, Iterator last)
@@ -275,6 +280,7 @@ auto relative_frequency(Iterator first, Iterator last)
  * @param last 終了イテレータ
  * @param proj 射影関数
  * @return 値と相対度数のマップ
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto relative_frequency(Iterator first, Iterator last, Projection proj)
@@ -318,6 +324,7 @@ auto relative_frequency(Iterator first, Iterator last, Projection proj)
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @return (値, 累積度数) のペアのベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto cumulative_frequency(Iterator first, Iterator last)
@@ -361,6 +368,7 @@ auto cumulative_frequency(Iterator first, Iterator last)
  * @param last 終了イテレータ
  * @param proj 射影関数
  * @return (値, 累積度数) のペアのベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto cumulative_frequency(Iterator first, Iterator last, Projection proj)
@@ -409,6 +417,7 @@ auto cumulative_frequency(Iterator first, Iterator last, Projection proj)
  * @param first 開始イテレータ
  * @param last 終了イテレータ
  * @return (値, 累積相対度数) のペアのベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 auto cumulative_relative_frequency(Iterator first, Iterator last)
@@ -448,6 +457,7 @@ auto cumulative_relative_frequency(Iterator first, Iterator last)
  * @param last 終了イテレータ
  * @param proj 射影関数
  * @return (値, 累積相対度数) のペアのベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 auto cumulative_relative_frequency(Iterator first, Iterator last, Projection proj)

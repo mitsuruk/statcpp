@@ -179,6 +179,8 @@ inline double bic_linear(const multiple_regression_result& model, std::size_t n)
  * @param model Simple regression model
  * @return PRESS statistic
  * @throws std::invalid_argument If x and y have different lengths
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename IteratorX, typename IteratorY>
 double press_statistic(IteratorX x_first, IteratorX x_last,
@@ -300,6 +302,9 @@ inline std::vector<std::vector<std::size_t>> create_cv_folds(
  *       reproducible with the default. Pass shuffle = false for contiguous,
  *       deterministic folds.
  * @throws std::invalid_argument If X and y have different sizes
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline cv_result cross_validate_linear(
     const std::vector<std::vector<double>>& X,
@@ -378,6 +383,9 @@ inline cv_result cross_validate_linear(
  * @param X Predictor matrix (each row is one sample)
  * @param y Response variable vector
  * @return Cross-validation result
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline cv_result loocv_linear(
     const std::vector<std::vector<double>>& X,
@@ -481,6 +489,8 @@ inline std::vector<double> rescale_coefficients(
  * @param tol Convergence tolerance (default: 1e-6)
  * @return Regularized regression result
  * @throws std::invalid_argument If lambda is negative, data is empty, or X and y have different sizes
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If lambda or tol is NaN (docs/NAN_POLICY.md section 5)
  */
 inline regularized_regression_result ridge_regression(
     const std::vector<std::vector<double>>& X,
@@ -605,6 +615,8 @@ inline regularized_regression_result ridge_regression(
  * @param tol Convergence tolerance (default: 1e-6)
  * @return Regularized regression result
  * @throws std::invalid_argument If lambda is negative, data is empty, or X and y have different sizes
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If lambda or tol is NaN (docs/NAN_POLICY.md section 5)
  */
 inline regularized_regression_result lasso_regression(
     const std::vector<std::vector<double>>& X,
@@ -736,6 +748,8 @@ inline regularized_regression_result lasso_regression(
  * @param tol Convergence tolerance (default: 1e-6)
  * @return Regularized regression result
  * @throws std::invalid_argument If lambda is negative, alpha is outside [0,1], data is empty, or X and y have different sizes
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If alpha or lambda or tol is NaN (docs/NAN_POLICY.md section 5)
  */
 inline regularized_regression_result elastic_net_regression(
     const std::vector<std::vector<double>>& X,
@@ -871,6 +885,7 @@ inline regularized_regression_result elastic_net_regression(
  * @param lambda_grid Vector of lambda values to evaluate
  * @param k Number of folds (default: 5)
  * @return Pair of optimal lambda and cross-validation errors for each lambda
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::pair<double, std::vector<double>> cv_ridge(
     const std::vector<std::vector<double>>& X,
@@ -946,6 +961,7 @@ inline std::pair<double, std::vector<double>> cv_ridge(
  * @param lambda_grid Vector of lambda values to evaluate
  * @param k Number of folds (default: 5)
  * @return Pair of optimal lambda and cross-validation errors for each lambda
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::pair<double, std::vector<double>> cv_lasso(
     const std::vector<std::vector<double>>& X,
@@ -1020,6 +1036,7 @@ inline std::pair<double, std::vector<double>> cv_lasso(
  * @param n_lambda Grid size (default: 100)
  * @param lambda_min_ratio Ratio of lambda_min to lambda_max (default: 0.0001)
  * @return Vector of lambda values equally spaced on logarithmic scale
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::vector<double> generate_lambda_grid(
     const std::vector<std::vector<double>>& X,

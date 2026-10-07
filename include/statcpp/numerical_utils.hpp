@@ -195,6 +195,8 @@ inline double expm1_safe(double x)
  * @param max_val Maximum value
  * @return Clamped value
  * @throw std::invalid_argument if min_val > max_val
+ *
+ * @note Returns NaN if any argument is NaN, as R's pmin(pmax(x, lo), hi) does (docs/NAN_POLICY.md).
  */
 inline double clamp(double x, double min_val, double max_val)
 {

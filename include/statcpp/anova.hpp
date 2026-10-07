@@ -122,6 +122,8 @@ struct posthoc_result {
  * @throws std::invalid_argument If number of groups is less than 2
  * @throws std::invalid_argument If an empty group exists
  * @throws std::invalid_argument If total number of observations is less than or equal to number of groups
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline one_way_anova_result one_way_anova(const std::vector<std::vector<double>>& groups)
 {
@@ -223,6 +225,8 @@ inline one_way_anova_result one_way_anova(const std::vector<std::vector<double>>
  * @throws std::invalid_argument If number of levels for factor B is inconsistent
  * @throws std::invalid_argument If cell sizes are unequal
  * @throws std::invalid_argument If an empty cell exists
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline two_way_anova_result two_way_anova(
     const std::vector<std::vector<std::vector<double>>>& data)
@@ -394,6 +398,7 @@ inline two_way_anova_result two_way_anova(
  * @param alpha Significance level (default: 0.05)
  * @return posthoc_result Post-hoc comparison results (statistic field contains q statistic)
  * @throws std::invalid_argument If alpha is outside the range (0, 1)
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  */
 inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
                                  const std::vector<std::vector<double>>& groups,
@@ -469,6 +474,7 @@ inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
  * @param alpha Significance level (default: 0.05)
  * @return posthoc_result Post-hoc comparison results
  * @throws std::invalid_argument If alpha is outside the range (0, 1)
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  */
 inline posthoc_result bonferroni_posthoc(const one_way_anova_result& anova_result,
                                           double alpha = 0.05)
@@ -540,6 +546,7 @@ inline posthoc_result bonferroni_posthoc(const one_way_anova_result& anova_resul
  * @return posthoc_result Post-hoc comparison results
  * @throws std::invalid_argument If alpha is outside the range (0, 1)
  * @throws std::invalid_argument If control_group is an invalid index
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  */
 inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
                                        std::size_t control_group = 0,
@@ -618,6 +625,7 @@ inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
  * @param alpha Significance level (default: 0.05)
  * @return posthoc_result Post-hoc comparison results
  * @throws std::invalid_argument If alpha is outside the range (0, 1)
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  */
 inline posthoc_result scheffe_posthoc(const one_way_anova_result& anova_result,
                                        double alpha = 0.05)
@@ -716,6 +724,9 @@ struct ancova_result {
  * @throws std::invalid_argument If number of groups is less than 2
  * @throws std::invalid_argument If an empty group exists
  * @throws std::invalid_argument If number of observations is insufficient
+ *
+ * @note Observations with NaN in the response or the covariate are removed, as R's lm() (na.omit) does
+ *       (docs/NAN_POLICY.md).
  */
 inline ancova_result one_way_ancova(
     const std::vector<std::vector<std::pair<double, double>>>& groups)

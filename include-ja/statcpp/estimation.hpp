@@ -114,6 +114,9 @@ struct confidence_interval {
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 confidence_interval ci_mean(Iterator first, Iterator last, double confidence = 0.95)
@@ -156,6 +159,9 @@ confidence_interval ci_mean(Iterator first, Iterator last, double confidence = 0
  * @param proj 射影関数
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 confidence_interval ci_mean(Iterator first, Iterator last, double confidence, Projection proj)
@@ -201,6 +207,9 @@ confidence_interval ci_mean(Iterator first, Iterator last, double confidence, Pr
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、sigmaが正でない、または空の範囲の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 confidence_interval ci_mean_z(Iterator first, Iterator last, double sigma, double confidence = 0.95)
@@ -246,6 +255,7 @@ confidence_interval ci_mean_z(Iterator first, Iterator last, double sigma, doubl
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、試行回数が0、または成功回数が試行回数を超える場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline confidence_interval ci_proportion(std::size_t successes, std::size_t trials, double confidence = 0.95)
 {
@@ -284,6 +294,7 @@ inline confidence_interval ci_proportion(std::size_t successes, std::size_t tria
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、試行回数が0、または成功回数が試行回数を超える場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline confidence_interval ci_proportion_wilson(std::size_t successes, std::size_t trials, double confidence = 0.95)
 {
@@ -326,6 +337,9 @@ inline confidence_interval ci_proportion_wilson(std::size_t successes, std::size
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 confidence_interval ci_variance(Iterator first, Iterator last, double confidence = 0.95)
@@ -376,6 +390,9 @@ confidence_interval ci_variance(Iterator first, Iterator last, double confidence
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または各標本が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 confidence_interval ci_mean_diff(Iterator1 first1, Iterator1 last1,
@@ -434,6 +451,9 @@ confidence_interval ci_mean_diff(Iterator1 first1, Iterator1 last1,
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、各標本が2未満、または分散が両方とも0の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 confidence_interval ci_mean_diff_welch(Iterator1 first1, Iterator1 last1,
@@ -503,6 +523,9 @@ confidence_interval ci_mean_diff_welch(Iterator1 first1, Iterator1 last1,
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 誤差限界
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double margin_of_error_mean(Iterator first, Iterator last, double confidence = 0.95)
@@ -541,6 +564,9 @@ double margin_of_error_mean(Iterator first, Iterator last, double confidence = 0
  * @param proj 射影関数
  * @return 誤差限界
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または要素数が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 double margin_of_error_mean(Iterator first, Iterator last, double confidence, Projection proj)
@@ -640,6 +666,8 @@ inline double margin_of_error_proportion_worst_case(std::size_t n, double confid
  * @param p_estimate 事前の比率推定値（デフォルト: 0.5で最も保守的な見積もり）
  * @return 必要なサンプルサイズ
  * @throws std::invalid_argument パラメータが有効な範囲外の場合
+ * @throws std::invalid_argument confidence_level、margin_of_error、p_estimate が NaN の場合(docs-ja/NAN_POLICY.md 第
+ *         5 節)
  */
 inline std::size_t sample_size_for_moe_proportion(double margin_of_error,
                                                    double confidence_level = 0.95,
@@ -680,6 +708,7 @@ inline std::size_t sample_size_for_moe_proportion(double margin_of_error,
  * @param confidence_level 信頼水準（デフォルト: 0.95）
  * @return 必要なサンプルサイズ
  * @throws std::invalid_argument パラメータが有効な範囲外の場合
+ * @throws std::invalid_argument confidence_level、margin_of_error、sigma が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_for_moe_mean(double margin_of_error,
                                              double sigma,
@@ -725,6 +754,9 @@ inline std::size_t sample_size_for_moe_mean(double margin_of_error,
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return 信頼区間
  * @throws std::invalid_argument 信頼水準が (0, 1) の範囲外、または各標本が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 confidence_interval ci_mean_diff_pooled(Iterator1 first1, Iterator1 last1,

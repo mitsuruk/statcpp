@@ -647,6 +647,8 @@ std::vector<double> compute_ranks(Iterator first, Iterator last, Projection proj
  * @param last2 End iterator for the second data
  * @return Spearman's rank correlation coefficient (-1 to 1)
  * @throws std::invalid_argument If range is empty, lengths differ, or number of elements is less than 2
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double spearman_correlation(Iterator1 first1, Iterator1 last1,
@@ -692,6 +694,8 @@ double spearman_correlation(Iterator1 first1, Iterator1 last1,
  * @param proj2 Projection function for the second data
  * @return Spearman's rank correlation coefficient (-1 to 1)
  * @throws std::invalid_argument If range is empty, lengths differ, or number of elements is less than 2
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Projection1, typename Projection2>
 double spearman_correlation(Iterator1 first1, Iterator1 last1,
@@ -742,6 +746,8 @@ double spearman_correlation(Iterator1 first1, Iterator1 last1,
  * @param last2 End iterator for the second data
  * @return Kendall's tau-b (-1 to 1)
  * @throws std::invalid_argument If range is empty, lengths differ, or number of elements is less than 2
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2)
@@ -843,6 +849,8 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
  * @param proj2 Projection function for the second data
  * @return Kendall's tau-b (-1 to 1)
  * @throws std::invalid_argument If range is empty, lengths differ, or number of elements is less than 2
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Projection1, typename Projection2>
 double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2,
@@ -946,6 +954,8 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
  * @return Weighted covariance
  * @throws std::invalid_argument If range is empty, lengths differ, negative weight exists,
  *         or sum of weights is zero
+ * @throws std::invalid_argument If the data or the weights contain NaN, as R's cov.wt() does
+ *         (docs/NAN_POLICY.md)
  */
 template <typename Iterator1, typename Iterator2, typename WeightIterator>
 double weighted_covariance(Iterator1 first1, Iterator1 last1,
@@ -1046,6 +1056,8 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
  * @return Weighted covariance
  * @throws std::invalid_argument If range is empty, lengths differ, negative weight exists,
  *         or sum of weights is zero
+ * @throws std::invalid_argument If the data or the weights contain NaN, as R's cov.wt() does
+ *         (docs/NAN_POLICY.md)
  */
 template <typename Iterator1, typename Iterator2, typename WeightIterator,
           typename Projection1, typename Projection2>

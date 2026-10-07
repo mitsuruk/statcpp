@@ -76,7 +76,7 @@ R 照合テストに NA を含むケースを加えることで、本方針へ�
 
 | 対象 | R | statcpp | 理由 |
 | --- | --- | --- | --- |
-| 整数・列挙を返す関数(`bin_equal_width`、`bin_equal_freq`、`label_encode`、`one_hot_encode`、`value_counts`、`frequency_*`、離散分布の `*_quantile` / `*_rand`、`sample_size_*`、`interpret_*`) | NA を返す、または NA を除外する | `std::invalid_argument` を送出する | 戻り値の整数型・列挙型では NA を表せない。戻り値の型を変える API 変更は行わない |
+| 整数・列挙を返す関数(`bin_equal_width`、`bin_equal_freq`、`label_encode`、`one_hot_encode`、`value_counts`、`frequency_*`、離散分布の `*_quantile` / `*_rand`、`sample_size_*`、`interpret_*`、外れ値検出の `detect_outliers_*`) | NA を返す、または NA を除外する | `std::invalid_argument` を送出する | 戻り値の整数型・列挙型(外れ値検出では点ごとの外れ値フラグ)では NA を表せない。戻り値の型を変える API 変更は行わない |
 | 範囲検査のあるパラメータ(信頼水準、`alpha`、分位点の `p`、トリム率、`lambda`、`tol`、窓幅、抽出比率など)が NaN | 関数により NA またはエラー | `std::invalid_argument` を送出する | 範囲外の値と同じく不正なパラメータとして扱う。分布関数のパラメータは対象外(R どおり NaN を返す) |
 | `filter_range`、`validate_range` の境界が NaN | 対応なし | `std::invalid_argument` を送出する | 境界が NaN だと検証が素通りになる(現状は常に true を返す) |
 | `fillna_ffill`、`fillna_bfill`、`fillna_interpolate` | `zoo::na.locf` / `zoo::na.approx` の既定は端の NA を削除して長さが縮む | 長さを保ち、補完できない端の NaN は NaN のまま残す | 入力と要素が対応するベクトルを返す仕様を保つ |

@@ -86,6 +86,8 @@ inline std::vector<std::vector<double>> covariance_matrix(
  * @param data 行列データ（行=観測、列=変数）
  * @return 相関行列（p x p）
  * @throws std::invalid_argument データが空の場合、行の列数が一致しない場合、観測数が2未満の場合、または分散が0の変数がある場合
+ *
+ * @note R の cor() と同じく、NaN は要素ごとに伝播し、対角成分は 1 になる(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<std::vector<double>> correlation_matrix(
     const std::vector<std::vector<double>>& data)
@@ -143,6 +145,8 @@ inline std::vector<std::vector<double>> correlation_matrix(
  * @param data 行列データ（行=観測、列=変数）
  * @return 標準化されたデータ
  * @throws std::invalid_argument データが空の場合、行の列数が一致しない場合、観測数が2未満の場合、または分散が0の変数がある場合
+ *
+ * @note R の scale() と同じく、列の統計量は NaN 以外の値から求め、NaN のセルは NaN のまま残す(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<std::vector<double>> standardize(
     const std::vector<std::vector<double>>& data)
@@ -276,6 +280,8 @@ struct pca_result {
  * @param max_iter 最大反復回数（デフォルト: 1000）
  * @param tol 収束判定の閾値（デフォルト: 1e-10）
  * @return (固有値, 固有ベクトル)のペア
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::pair<double, std::vector<double>> power_iteration(
     const std::vector<std::vector<double>>& matrix,
@@ -340,6 +346,7 @@ inline std::pair<double, std::vector<double>> power_iteration(
  * @param n_components 抽出する主成分の数
  * @return PCA の結果
  * @throws std::invalid_argument データが空の場合、または行の列数が一致しない場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note この実装はデフレーション法により複数の主成分を抽出します。
  *       デフレーション法は多数の成分を抽出する際に数値誤差が蓄積する可能性があります。
@@ -406,6 +413,7 @@ inline pca_result pca(const std::vector<std::vector<double>>& data,
  * @param pca PCA の結果
  * @return 主成分空間に射影されたデータ（n x n_components）
  * @throws std::invalid_argument データが空の場合、PCAの成分が空の場合、またはデータとPCAの次元が一致しない場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note この関数はデータ自身の平均で中心化します。
  *       新しいデータ（テストデータ）に PCA を適用する場合は、

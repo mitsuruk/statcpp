@@ -51,6 +51,8 @@ struct kaplan_meier_result {
  * @param events イベント発生フラグ（true = イベント発生、false = 打ち切り）
  * @return Kaplan-Meier推定の結果
  * @throws std::invalid_argument timesとeventsのサイズが異なる場合、またはデータが空の場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline kaplan_meier_result kaplan_meier(
     const std::vector<double>& times,
@@ -339,6 +341,8 @@ struct hazard_rate_result {
  * @param events イベント発生フラグ（true = イベント発生、false = 打ち切り）
  * @return ハザード率の推定結果
  * @throws std::invalid_argument timesとeventsのサイズが異なる場合、またはデータが空の場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline hazard_rate_result nelson_aalen(
     const std::vector<double>& times,

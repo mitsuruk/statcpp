@@ -311,6 +311,8 @@ TEST(RobustNanTest, OutlierDetectionThrows) {
     EXPECT_THROW(statcpp::detect_outliers_iqr(clean.begin(), clean.end(), nan), std::invalid_argument);
     EXPECT_THROW(statcpp::detect_outliers_modified_zscore(with_nan.begin(), with_nan.end()), std::invalid_argument);
     EXPECT_THROW(statcpp::detect_outliers_modified_zscore(clean.begin(), clean.end(), nan), std::invalid_argument);
+    EXPECT_THROW(statcpp::detect_outliers_zscore(with_nan.begin(), with_nan.end()), std::invalid_argument);
+    EXPECT_THROW(statcpp::detect_outliers_zscore(clean.begin(), clean.end(), nan), std::invalid_argument);
 }
 
 /**

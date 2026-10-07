@@ -38,6 +38,8 @@ namespace statcpp {
  * @param b 第2ベクトル (second vector)
  * @return ユークリッド距離 (Euclidean distance)
  * @throws std::invalid_argument ベクトルの次元が一致しない場合 (if vector dimensions mismatch)
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double euclidean_distance(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -75,6 +77,8 @@ inline double euclidean_distance(const std::vector<double>& a, const std::vector
  * @param b 第2ベクトル (second vector)
  * @return マンハッタン距離 (Manhattan distance)
  * @throws std::invalid_argument ベクトルの次元が一致しない場合 (if vector dimensions mismatch)
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double manhattan_distance(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -125,6 +129,7 @@ struct kmeans_result {
  * @param data データ点のベクトル (vector of data points)
  * @param k クラスタ数 (number of clusters)
  * @return 初期クラスタ中心 (initial cluster centroids)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note Arthur & Vassilvitskii (2007) "k-means++: the advantages of careful seeding"
  */
@@ -198,6 +203,8 @@ inline std::vector<std::vector<double>> kmeans_plusplus_init(
  * @return クラスタリング結果 (clustering result)
  * @throws std::invalid_argument データが空、kが0、またはkがデータ数を超える場合
  *         (if data is empty, k is 0, or k exceeds number of data points)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline kmeans_result kmeans(
     const std::vector<std::vector<double>>& data,
@@ -334,6 +341,7 @@ struct dendrogram_node {
  * @param linkage 連結法の種類 (linkage type, default: single)
  * @return デンドログラム (dendrogram)
  * @throws std::invalid_argument データが空の場合 (if data is empty)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note O(n³) の計算量を持ちます。大規模データには適していません。
  * Has O(n³) time complexity. Not suitable for large datasets.
@@ -535,6 +543,7 @@ inline std::vector<std::size_t> cut_dendrogram(
  * @return シルエットスコア (-1〜1、1に近いほど良好) (silhouette score, -1 to 1, closer to 1 is better)
  * @throws std::invalid_argument データが空、またはサイズが一致しない場合
  *         (if data is empty or sizes don't match)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note スコアの解釈：0.7-1.0: 強い構造、0.5-0.7: 妥当な構造、0.25-0.5: 弱い構造、< 0.25: 構造なし
  * Score interpretation: 0.7-1.0: strong structure, 0.5-0.7: reasonable structure,

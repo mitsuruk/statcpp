@@ -166,6 +166,8 @@ double mean(Iterator first, Iterator last, Projection proj)
  * @param last End iterator
  * @return Median
  * @throws std::invalid_argument If range is empty
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double median(Iterator first, Iterator last)
@@ -205,6 +207,8 @@ double median(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Median of projected values
  * @throws std::invalid_argument If range is empty
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 double median(Iterator first, Iterator last, Projection proj)
@@ -247,6 +251,9 @@ double median(Iterator first, Iterator last, Projection proj)
  * @param last End iterator
  * @return Mode
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 auto mode(Iterator first, Iterator last)
@@ -291,6 +298,9 @@ auto mode(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Mode of projected values
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 auto mode(Iterator first, Iterator last, Projection proj)
@@ -339,6 +349,9 @@ auto mode(Iterator first, Iterator last, Projection proj)
  * @param last End iterator
  * @return Vector of modes (ascending order)
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 auto modes(Iterator first, Iterator last)
@@ -394,6 +407,9 @@ auto modes(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Vector of modes of projected values (ascending order)
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 auto modes(Iterator first, Iterator last, Projection proj)
@@ -595,6 +611,9 @@ double harmonic_mean(Iterator first, Iterator last, Projection proj)
  * @param proportion Exclusion ratio per side (0.0 to less than 0.5)
  * @return Trimmed mean
  * @throws std::invalid_argument If range is empty, proportion is out of range, or all elements are excluded
+ * @throws std::invalid_argument If proportion is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double trimmed_mean(Iterator first, Iterator last, double proportion)
@@ -646,6 +665,9 @@ double trimmed_mean(Iterator first, Iterator last, double proportion)
  * @param proj Projection function
  * @return Trimmed mean of projected values
  * @throws std::invalid_argument If range is empty, proportion is out of range, or all elements are excluded
+ * @throws std::invalid_argument If proportion is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 double trimmed_mean(Iterator first, Iterator last, double proportion, Projection proj)
@@ -1116,6 +1138,10 @@ double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weig
  * @param last End iterator
  * @return Index of the minimum value
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped and the index refers to the original data, as R's which.min() does
+ *       (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 std::size_t argmin(Iterator first, Iterator last)
@@ -1145,6 +1171,10 @@ std::size_t argmin(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Index of the minimum value
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped and the index refers to the original data, as R's which.min() does
+ *       (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 std::size_t argmin(Iterator first, Iterator last, Projection proj)
@@ -1176,6 +1206,10 @@ std::size_t argmin(Iterator first, Iterator last, Projection proj)
  * @param last End iterator
  * @return Index of the maximum value
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped and the index refers to the original data, as R's which.max() does
+ *       (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 std::size_t argmax(Iterator first, Iterator last)
@@ -1205,6 +1239,10 @@ std::size_t argmax(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Index of the maximum value
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If every value is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN values are skipped and the index refers to the original data, as R's which.max() does
+ *       (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 std::size_t argmax(Iterator first, Iterator last, Projection proj)

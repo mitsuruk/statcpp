@@ -130,6 +130,7 @@ inline double binomial_cdf(std::uint64_t k, std::uint64_t n, double p)
  * @param n Number of trials
  * @param p Probability of success in each trial
  * @return Quantile
+ * @throws std::invalid_argument If p or prob is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If prob or p is in an invalid range
  */
 inline std::uint64_t binomial_quantile(double prob, std::uint64_t n, double p)
@@ -170,6 +171,7 @@ inline std::uint64_t binomial_quantile(double prob, std::uint64_t n, double p)
  * @param p Probability of success in each trial
  * @param engine Random engine
  * @return Generated random number
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If p is outside [0, 1]
  */
 template <typename Engine = default_random_engine>
@@ -190,6 +192,7 @@ std::uint64_t binomial_rand(std::uint64_t n, double p, Engine& engine)
  * @param n Number of trials
  * @param p Probability of success in each trial
  * @return Generated random number
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::uint64_t binomial_rand(std::uint64_t n, double p)
 {
@@ -248,6 +251,7 @@ inline double poisson_cdf(std::uint64_t k, double lambda)
  * @param p Probability value
  * @param lambda Mean rate
  * @return Quantile
+ * @throws std::invalid_argument If lambda or p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If lambda is negative or p is in an invalid range
  */
 inline std::uint64_t poisson_quantile(double p, double lambda)
@@ -294,6 +298,7 @@ inline std::uint64_t poisson_quantile(double p, double lambda)
  * @param lambda Mean rate
  * @param engine Random engine
  * @return Generated random number
+ * @throws std::invalid_argument If lambda is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If lambda is negative
  */
 template <typename Engine = default_random_engine>
@@ -313,6 +318,7 @@ std::uint64_t poisson_rand(double lambda, Engine& engine)
  *
  * @param lambda Mean rate
  * @return Generated random number
+ * @throws std::invalid_argument If lambda is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::uint64_t poisson_rand(double lambda)
 {
@@ -370,6 +376,7 @@ inline double geometric_cdf(std::uint64_t k, double p)
  * @param prob Cumulative probability
  * @param p Probability of success in each trial
  * @return Smallest k such that P(X <= k) >= prob
+ * @throws std::invalid_argument If p or prob is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If prob is outside [0, 1] or p is outside (0, 1]
  */
 inline std::uint64_t geometric_quantile(double prob, double p)
@@ -401,6 +408,7 @@ inline std::uint64_t geometric_quantile(double prob, double p)
  * @param p Probability of success in each trial
  * @param engine Random engine
  * @return Generated random number
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If p is outside (0, 1]
  */
 template <typename Engine = default_random_engine>
@@ -420,6 +428,7 @@ std::uint64_t geometric_rand(double p, Engine& engine)
  *
  * @param p Probability of success in each trial
  * @return Generated random number
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::uint64_t geometric_rand(double p)
 {
@@ -502,6 +511,7 @@ inline double hypergeom_cdf(std::uint64_t k, std::uint64_t N, std::uint64_t K, s
  * @param K Number of success states in population
  * @param n Number of draws
  * @return Smallest k such that P(X <= k) >= p
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If parameters are outside valid range
  */
 inline std::uint64_t hypergeom_quantile(double p, std::uint64_t N, std::uint64_t K, std::uint64_t n)
@@ -664,6 +674,7 @@ inline double nbinom_cdf(std::uint64_t k, double r, double p)
  * @param r Number of successes required
  * @param p Probability of success
  * @return Smallest k such that P(X <= k) >= prob
+ * @throws std::invalid_argument If p or prob or r is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If parameters are outside valid range
  */
 inline std::uint64_t nbinom_quantile(double prob, double r, double p)
@@ -719,6 +730,7 @@ inline std::uint64_t nbinom_quantile(double prob, double r, double p)
  * @param p Probability of success
  * @param engine Random engine
  * @return Generated random number
+ * @throws std::invalid_argument If p or r is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If parameters are outside valid range
  */
 template <typename Engine = default_random_engine>
@@ -748,6 +760,7 @@ std::uint64_t nbinom_rand(double r, double p, Engine& engine)
  * @param r Number of successes required
  * @param p Probability of success
  * @return Generated random number
+ * @throws std::invalid_argument If p or r is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::uint64_t nbinom_rand(double r, double p)
 {
@@ -808,6 +821,7 @@ inline double bernoulli_cdf(std::uint64_t k, double p)
  * @param prob Cumulative probability
  * @param p Probability of success
  * @return Smallest k such that P(X <= k) >= prob
+ * @throws std::invalid_argument If p or prob is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::uint64_t bernoulli_quantile(double prob, double p)
 {
@@ -831,6 +845,7 @@ inline std::uint64_t bernoulli_quantile(double prob, double p)
  * @param p Probability of success
  * @param engine Random engine
  * @return Generated random number (0 or 1)
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If p is outside [0, 1]
  */
 template <typename Engine = default_random_engine>
@@ -850,6 +865,7 @@ std::uint64_t bernoulli_rand(double p, Engine& engine)
  *
  * @param p Probability of success
  * @return Generated random number (0 or 1)
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::uint64_t bernoulli_rand(double p)
 {
@@ -912,6 +928,7 @@ inline double discrete_uniform_cdf(std::int64_t k, std::int64_t a, std::int64_t 
  * @param a Lower bound (inclusive)
  * @param b Upper bound (inclusive)
  * @return Smallest k such that P(X <= k) >= p
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument If a > b or p is outside [0, 1]
  */
 inline std::int64_t discrete_uniform_quantile(double p, std::int64_t a, std::int64_t b)

@@ -94,6 +94,8 @@ and 9. In summary:
 - Added `docs/NAN_POLICY.md` and `docs/NAN_INVENTORY.md` (and their Japanese versions): the
   policy, the R behaviour it follows, and a per-function table of the v0.4.0 behaviour and
   the v0.5.0 behaviour.
+- The Doxygen comments of the 257 affected overloads (in both the English and the Japanese
+  headers) now state their NaN handling with `@throws` and `@note`.
 
 ### Upgrade notes
 

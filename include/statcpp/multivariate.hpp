@@ -86,6 +86,8 @@ inline std::vector<std::vector<double>> covariance_matrix(
  * @param data Matrix data (rows=observations, columns=variables)
  * @return Correlation matrix (p x p)
  * @throws std::invalid_argument If data is empty, rows have different column counts, there are fewer than 2 observations, or any variable has zero variance
+ *
+ * @note NaN propagates element-wise and the diagonal is 1, as R's cor() gives (docs/NAN_POLICY.md).
  */
 inline std::vector<std::vector<double>> correlation_matrix(
     const std::vector<std::vector<double>>& data)
@@ -143,6 +145,9 @@ inline std::vector<std::vector<double>> correlation_matrix(
  * @param data Matrix data (rows=observations, columns=variables)
  * @return Standardized data
  * @throws std::invalid_argument If data is empty, rows have different column counts, there are fewer than 2 observations, or any variable has zero variance
+ *
+ * @note Column statistics use the non-NaN values only and a NaN cell stays NaN, as R's scale() does
+ *       (docs/NAN_POLICY.md).
  */
 inline std::vector<std::vector<double>> standardize(
     const std::vector<std::vector<double>>& data)
@@ -277,6 +282,8 @@ struct pca_result {
  * @param max_iter Maximum number of iterations (default: 1000)
  * @param tol Convergence threshold (default: 1e-10)
  * @return Pair of (eigenvalue, eigenvector)
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If tol is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::pair<double, std::vector<double>> power_iteration(
     const std::vector<std::vector<double>>& matrix,
@@ -341,6 +348,7 @@ inline std::pair<double, std::vector<double>> power_iteration(
  * @param n_components Number of principal components to extract
  * @return PCA result
  * @throws std::invalid_argument If data is empty or rows have different column counts
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  *
  * @note This implementation uses the deflation method to extract multiple principal components.
  *       The deflation method may accumulate numerical errors when extracting many components.
@@ -408,6 +416,7 @@ inline pca_result pca(const std::vector<std::vector<double>>& data,
  * @param pca PCA result
  * @return Data projected onto principal component space (n x n_components)
  * @throws std::invalid_argument If data is empty, PCA components are empty, or dimensions don't match
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::vector<std::vector<double>> pca_transform(
     const std::vector<std::vector<double>>& data,

@@ -61,6 +61,8 @@ struct five_number_summary_result {
  * @param n Number of elements
  * @param p Position (0.0 to 1.0)
  * @return Interpolated value
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note Assumes sorted range.
  */
@@ -98,6 +100,8 @@ double interpolate_at(Iterator first, std::size_t n, double p)
  * @param p Position (0.0 to 1.0)
  * @param proj Projection function
  * @return Interpolated value
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  */
 template <typename Iterator, typename Projection>
 double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
@@ -137,6 +141,8 @@ double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
  * @param last End of range
  * @return Minimum value
  * @throws std::invalid_argument If range is empty
+ *
+ * @note Returns NaN if the data contain NaN, as R's min() does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 auto minimum(Iterator first, Iterator last)
@@ -163,6 +169,8 @@ auto minimum(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Minimum value
  * @throws std::invalid_argument If range is empty
+ *
+ * @note Returns NaN if the data contain NaN, as R's min() does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 auto minimum(Iterator first, Iterator last, Projection proj)
@@ -199,6 +207,8 @@ auto minimum(Iterator first, Iterator last, Projection proj)
  * @param last End of range
  * @return Maximum value
  * @throws std::invalid_argument If range is empty
+ *
+ * @note Returns NaN if the data contain NaN, as R's max() does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 auto maximum(Iterator first, Iterator last)
@@ -225,6 +235,8 @@ auto maximum(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Maximum value
  * @throws std::invalid_argument If range is empty
+ *
+ * @note Returns NaN if the data contain NaN, as R's max() does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 auto maximum(Iterator first, Iterator last, Projection proj)
@@ -263,6 +275,7 @@ auto maximum(Iterator first, Iterator last, Projection proj)
  * @param last End of sorted range
  * @return Quartiles
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  *
  * @note Equivalent to R's type=7 (default) or Excel's QUARTILE.INC.
  */
@@ -292,6 +305,7 @@ quartile_result quartiles(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Quartiles
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 quartile_result quartiles(Iterator first, Iterator last, Projection proj)
@@ -326,6 +340,8 @@ quartile_result quartiles(Iterator first, Iterator last, Projection proj)
  * @param p Percentile as proportion 0.0-1.0 (e.g., 90th percentile -> p = 0.9)
  * @return Percentile value
  * @throws std::invalid_argument If range is empty or p is out of range
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  */
 template <typename Iterator>
 double percentile(Iterator first, Iterator last, double p)
@@ -354,6 +370,8 @@ double percentile(Iterator first, Iterator last, double p)
  * @param proj Projection function
  * @return Percentile value
  * @throws std::invalid_argument If range is empty or p is out of range
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  */
 template <typename Iterator, typename Projection>
 double percentile(Iterator first, Iterator last, double p, Projection proj)
@@ -387,6 +405,7 @@ double percentile(Iterator first, Iterator last, double p, Projection proj)
  * @param last End of sorted range
  * @return Five-number summary
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  *
  * @note Provides basic statistics needed for box plot visualization.
  */
@@ -424,6 +443,7 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Five-number summary
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 five_number_summary_result five_number_summary(Iterator first, Iterator last, Projection proj)
@@ -468,6 +488,7 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last, Pr
  * @param weight_last End of weights
  * @return Weighted median
  * @throws std::invalid_argument If range is empty, sizes mismatch, weight is negative, or sum of weights is zero
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
@@ -551,6 +572,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @param weight_first Beginning of weights
  * @return Weighted median
  * @throws std::invalid_argument If range is empty, weight is negative, or sum of weights is zero
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_median(first, last, weight_first, weight_last) overload for range safety")]]
@@ -634,6 +656,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @param proj Projection function
  * @return Weighted median
  * @throws std::invalid_argument If range is empty, sizes mismatch, weight is negative, or sum of weights is zero
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
@@ -717,6 +740,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @param proj Projection function
  * @return Weighted median
  * @throws std::invalid_argument If range is empty, weight is negative, or sum of weights is zero
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_median(first, last, weight_first, weight_last, proj) overload for range safety")]]
@@ -803,6 +827,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @param p Percentile as proportion 0.0-1.0
  * @return Weighted percentile value
  * @throws std::invalid_argument If parameters are invalid or sizes mismatch
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, double p)
@@ -888,6 +913,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @param p Percentile as proportion 0.0-1.0
  * @return Weighted percentile value
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_percentile(first, last, weight_first, weight_last, p) overload for range safety")]]
@@ -973,6 +999,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @param proj Projection function
  * @return Weighted percentile value
  * @throws std::invalid_argument If parameters are invalid or sizes mismatch
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, double p, Projection proj)
@@ -1058,6 +1085,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @param proj Projection function
  * @return Weighted percentile value
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_percentile(first, last, weight_first, weight_last, p, proj) overload for range safety")]]

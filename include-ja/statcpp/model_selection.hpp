@@ -178,6 +178,8 @@ inline double bic_linear(const multiple_regression_result& model, std::size_t n)
  * @param model 単回帰モデル
  * @return PRESS統計量
  * @throws std::invalid_argument xとyの長さが異なる場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorX, typename IteratorY>
 double press_statistic(IteratorX x_first, IteratorX x_last,
@@ -298,6 +300,8 @@ inline std::vector<std::vector<std::size_t>> create_cv_folds(
  *       再現しません。連続した決定的なフォールドが必要な場合は shuffle = false を
  *       指定してください。
  * @throws std::invalid_argument Xとyのサイズが異なる場合
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline cv_result cross_validate_linear(
     const std::vector<std::vector<double>>& X,
@@ -376,6 +380,8 @@ inline cv_result cross_validate_linear(
  * @param X 説明変数行列（各行が1サンプル）
  * @param y 目的変数ベクタ
  * @return 交差検証の結果
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline cv_result loocv_linear(
     const std::vector<std::vector<double>>& X,
@@ -479,6 +485,8 @@ inline std::vector<double> rescale_coefficients(
  * @param tol 収束判定の許容誤差（デフォルト: 1e-6）
  * @return 正則化回帰の結果
  * @throws std::invalid_argument lambdaが負の場合、データが空の場合、Xとyのサイズが異なる場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument lambda、tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline regularized_regression_result ridge_regression(
     const std::vector<std::vector<double>>& X,
@@ -603,6 +611,8 @@ inline regularized_regression_result ridge_regression(
  * @param tol 収束判定の許容誤差（デフォルト: 1e-6）
  * @return 正則化回帰の結果
  * @throws std::invalid_argument lambdaが負の場合、データが空の場合、Xとyのサイズが異なる場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument lambda、tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline regularized_regression_result lasso_regression(
     const std::vector<std::vector<double>>& X,
@@ -734,6 +744,8 @@ inline regularized_regression_result lasso_regression(
  * @param tol 収束判定の許容誤差（デフォルト: 1e-6）
  * @return 正則化回帰の結果
  * @throws std::invalid_argument lambdaが負の場合、alphaが[0,1]の範囲外の場合、データが空の場合、Xとyのサイズが異なる場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument alpha、lambda、tol が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline regularized_regression_result elastic_net_regression(
     const std::vector<std::vector<double>>& X,
@@ -869,6 +881,7 @@ inline regularized_regression_result elastic_net_regression(
  * @param lambda_grid 評価するlambda値のベクタ
  * @param k フォールド数（デフォルト: 5）
  * @return 最適なlambdaと各lambdaに対する交差検証誤差のペア
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline std::pair<double, std::vector<double>> cv_ridge(
     const std::vector<std::vector<double>>& X,
@@ -944,6 +957,7 @@ inline std::pair<double, std::vector<double>> cv_ridge(
  * @param lambda_grid 評価するlambda値のベクタ
  * @param k フォールド数（デフォルト: 5）
  * @return 最適なlambdaと各lambdaに対する交差検証誤差のペア
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline std::pair<double, std::vector<double>> cv_lasso(
     const std::vector<std::vector<double>>& X,
@@ -1018,6 +1032,7 @@ inline std::pair<double, std::vector<double>> cv_lasso(
  * @param n_lambda グリッドのサイズ（デフォルト: 100）
  * @param lambda_min_ratio lambda_maxに対するlambda_minの比率（デフォルト: 0.0001）
  * @return 対数スケールで等間隔に配置されたlambda値のベクタ
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline std::vector<double> generate_lambda_grid(
     const std::vector<std::vector<double>>& X,

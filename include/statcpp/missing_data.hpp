@@ -642,6 +642,9 @@ inline multiple_imputation_result multiple_imputation_pmm(
  * @param seed Random seed (0 for random seed)
  * @return multiple_imputation_result Multiple imputation result
  * @throws std::invalid_argument If data is empty
+ *
+ * @note A column with no observed value in a bootstrap sample is imputed from the observed values of the
+ *       original data; an entirely missing column stays NaN (docs/NAN_POLICY.md).
  */
 inline multiple_imputation_result multiple_imputation_bootstrap(
     const std::vector<std::vector<double>>& data,

@@ -33,6 +33,8 @@ namespace statcpp {
  * @param last2 第2系列の終了イテレータ
  * @return ユークリッド距離
  * @throw std::invalid_argument 系列の長さが異なる場合
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double euclidean_distance(Iterator1 first1, Iterator1 last1,
@@ -76,6 +78,8 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief ユークリッド距離 (射影付き)
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double euclidean_distance(Iterator1 first1, Iterator1 last1,
@@ -134,6 +138,8 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
  * @param last2 第2系列の終了イテレータ
  * @return マンハッタン距離
  * @throw std::invalid_argument 系列の長さが異なる場合
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double manhattan_distance(Iterator1 first1, Iterator1 last1,
@@ -177,6 +183,8 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief マンハッタン距離 (射影付き)
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double manhattan_distance(Iterator1 first1, Iterator1 last1,
@@ -240,6 +248,8 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
  * @param last2 第2系列の終了イテレータ
  * @return コサイン類似度
  * @throw std::invalid_argument 系列の長さが異なる場合,またはゼロベクトルの場合
+ *
+ * @note NaN を含む組は除く(ペアワイズ除去)。使える組がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double cosine_similarity(Iterator1 first1, Iterator1 last1,
@@ -291,6 +301,8 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief コサイン類似度 (射影付き)
+ *
+ * @note NaN を含む組は除く(ペアワイズ除去)。使える組がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double cosine_similarity(Iterator1 first1, Iterator1 last1,
@@ -354,6 +366,8 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
  * @param first2 第2系列の開始イテレータ
  * @param last2 第2系列の終了イテレータ
  * @return コサイン距離
+ *
+ * @note NaN を含む組は除く(ペアワイズ除去)。使える組がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double cosine_distance(Iterator1 first1, Iterator1 last1,
@@ -364,6 +378,8 @@ double cosine_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief コサイン距離 (射影付き)
+ *
+ * @note NaN を含む組は除く(ペアワイズ除去)。使える組がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double cosine_distance(Iterator1 first1, Iterator1 last1,
@@ -466,7 +482,10 @@ inline double mahalanobis_distance(const std::vector<double>& x,
  * @param last2 第2系列の終了イテレータ
  * @param p ミンコフスキー距離の次数 (1以上)
  * @return ミンコフスキー距離
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument 系列の長さが異なる場合,またはp < 1の場合
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double minkowski_distance(Iterator1 first1, Iterator1 last1,
@@ -516,6 +535,10 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief ミンコフスキー距離 (射影付き)
+ *
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の dist() と同じく、差が NaN の座標を除き、和を n / n_used 倍に補正する。使える座標がなければ NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double minkowski_distance(Iterator1 first1, Iterator1 last1,

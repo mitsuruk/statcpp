@@ -50,6 +50,8 @@ namespace statcpp {
  * @return std::vector<double> 各要素に対応する順位のベクトル
  *
  * @note 空の範囲を渡した場合は空のベクトルを返します。
+ *
+ * @note R の rank(na.last = "keep") と同じく、NaN の順位は NaN のままにし、残りの値の中で順位を付ける(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 std::vector<double> compute_ranks_with_ties(Iterator first, Iterator last)
@@ -102,6 +104,7 @@ std::vector<double> compute_ranks_with_ties(Iterator first, Iterator last)
  *
  * @param sorted_values ソート済みの値のベクトル
  * @return std::vector<std::size_t> 同順位グループサイズのベクトル（t > 1 のみ）
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline std::vector<std::size_t> compute_tie_groups(const std::vector<double>& sorted_values)
 {
@@ -147,6 +150,8 @@ inline std::vector<std::size_t> compute_tie_groups(const std::vector<double>& so
  *
  * @note 帰無仮説: データは正規分布に従う
  * @note W統計量が1に近いほど正規性が高いことを示します
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 test_result shapiro_wilk_test(Iterator first, Iterator last)
@@ -321,6 +326,8 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
  *       矛盾しないことを示すのみで、正確なp値として読むべきではありません。
  * @note 慣用的な有意水準（0.10, 0.05, 0.01）はすべて公表された有効範囲内にあります。
  * @note 小標本ではShapiro-Wilk検定の使用を検討してください。
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 test_result lilliefors_test(Iterator first, Iterator last)
@@ -423,6 +430,8 @@ test_result ks_test_normal(Iterator first, Iterator last)
  *
  * @note 帰無仮説: 全てのグループの分散は等しい
  * @note F統計量が大きいほど分散の不均一性が大きいことを示します
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline test_result levene_test(const std::vector<std::vector<double>>& groups)
 {
@@ -519,6 +528,8 @@ inline test_result levene_test(const std::vector<std::vector<double>>& groups)
  *
  * @note 帰無仮説: 全てのグループの分散は等しい
  * @note 正規性からの乖離に敏感なため、正規性が疑わしい場合は levene_test を使用してください
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline test_result bartlett_test(const std::vector<std::vector<double>>& groups)
 {
@@ -603,9 +614,12 @@ inline test_result bartlett_test(const std::vector<std::vector<double>>& groups)
  *
  * @throws std::invalid_argument 要素数が2未満の場合
  * @throws std::invalid_argument 非ゼロの差が2未満の場合
+ * @throws std::invalid_argument mu0 が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note 帰無仮説: 中央値は mu0 に等しい
  * @note mu0 との差がゼロの観測値は除外されます
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 = 0.0,
@@ -725,6 +739,8 @@ test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 
  *
  * @note 帰無仮説: 2つの標本は同じ分布から抽出されている
  * @note U1 は第1標本の順位和から計算されます
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
@@ -865,6 +881,8 @@ test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
  *
  * @note 帰無仮説: 全てのグループは同じ分布から抽出されている
  * @note H統計量が大きいほどグループ間の差が大きいことを示します
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline test_result kruskal_wallis_test(const std::vector<std::vector<double>>& groups)
 {

@@ -308,6 +308,7 @@ std::vector<std::vector<T>> filter_rows(const std::vector<std::vector<T>>& data,
  * @param min_val 最小値
  * @param max_val 最大値
  * @return 範囲内の値のみのベクトル
+ * @throws std::invalid_argument min_val か max_val が NaN の場合。NaN のデータは比較により除かれる(docs-ja/NAN_POLICY.md)
  */
 template <typename T>
 std::vector<T> filter_range(const std::vector<T>& data, T min_val, T max_val)
@@ -418,6 +419,8 @@ inline std::vector<double> boxcox_transform(const std::vector<double>& data, dou
  *
  * @param data データベクトル
  * @return 順位のベクトル
+ *
+ * @note R の rank(na.last = "keep") と同じく、NaN の順位は NaN のままにする(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> rank_transform(const std::vector<double>& data)
 {
@@ -496,6 +499,8 @@ struct aggregation_result {
  * @param keys キーのベクトル
  * @param values 値のベクトル
  * @return グループ化結果
+ *
+ * @note R の split() と同じく、キーが NaN の行は除く(docs-ja/NAN_POLICY.md)。
  */
 template <typename K, typename V>
 group_result<K, V> group_by(const std::vector<K>& keys, const std::vector<V>& values)
@@ -522,6 +527,8 @@ group_result<K, V> group_by(const std::vector<K>& keys, const std::vector<V>& va
  * @param keys キーのベクトル
  * @param values 値のベクトル
  * @return グループごとの平均値
+ *
+ * @note R の tapply() と同じく、キーが NaN の行は除く(docs-ja/NAN_POLICY.md)。
  */
 template <typename K>
 aggregation_result<K> group_mean(const std::vector<K>& keys, const std::vector<double>& values)
@@ -542,6 +549,8 @@ aggregation_result<K> group_mean(const std::vector<K>& keys, const std::vector<d
  * @param keys キーのベクトル
  * @param values 値のベクトル
  * @return グループごとの合計値
+ *
+ * @note R の tapply() と同じく、キーが NaN の行は除く(docs-ja/NAN_POLICY.md)。
  */
 template <typename K>
 aggregation_result<K> group_sum(const std::vector<K>& keys, const std::vector<double>& values)
@@ -562,6 +571,8 @@ aggregation_result<K> group_sum(const std::vector<K>& keys, const std::vector<do
  * @param keys キーのベクトル
  * @param values 値のベクトル
  * @return グループごとの要素数
+ *
+ * @note R の tapply() と同じく、キーが NaN の行は除く(docs-ja/NAN_POLICY.md)。
  */
 template <typename K>
 aggregation_result<K> group_count(const std::vector<K>& keys, const std::vector<double>& values)
@@ -586,6 +597,8 @@ aggregation_result<K> group_count(const std::vector<K>& keys, const std::vector<
  * @param data データベクトル
  * @param ascending trueで昇順、falseで降順
  * @return ソートされたベクトル
+ *
+ * @note R の sort() と同じく、NaN を除去する(docs-ja/NAN_POLICY.md)。
  */
 template <typename T>
 std::vector<T> sort_values(const std::vector<T>& data, bool ascending = true)
@@ -606,6 +619,8 @@ std::vector<T> sort_values(const std::vector<T>& data, bool ascending = true)
  * @param data データベクトル
  * @param ascending trueで昇順、falseで降順
  * @return ソート順のインデックス
+ *
+ * @note R の order() と同じく、NaN を元の順序のまま末尾に置く(docs-ja/NAN_POLICY.md)。
  */
 template <typename T>
 std::vector<std::size_t> argsort(const std::vector<T>& data, bool ascending = true)
@@ -694,6 +709,9 @@ std::vector<T> sample_without_replacement(const std::vector<T>& data, std::size_
  * @param data データベクトル
  * @param sample_ratio サンプリング比率
  * @return 層化サンプリングされたデータ
+ * @throws std::invalid_argument 層のキーが NaN を含む場合、または sample_ratio が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note データ中の NaN は他の値と同じく抽出の対象になる(docs-ja/NAN_POLICY.md)。
  */
 template <typename K, typename V>
 std::vector<V> stratified_sample(const std::vector<K>& strata,
@@ -740,6 +758,8 @@ std::vector<V> stratified_sample(const std::vector<K>& strata,
  * @tparam T データ型
  * @param data データベクトル
  * @return 重複が削除されたデータ
+ *
+ * @note R の unique() と同じく、NaN 同士は等しいとみなす(docs-ja/NAN_POLICY.md)。
  */
 template <typename T>
 std::vector<T> drop_duplicates(const std::vector<T>& data)
@@ -770,6 +790,7 @@ std::vector<T> drop_duplicates(const std::vector<T>& data)
  * @tparam T データ型
  * @param data データベクトル
  * @return 値とその出現回数のマップ
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename T>
 std::map<T, std::size_t> value_counts(const std::vector<T>& data)
@@ -788,6 +809,8 @@ std::map<T, std::size_t> value_counts(const std::vector<T>& data)
  * @tparam T データ型
  * @param data データベクトル
  * @return 重複している値のベクトル
+ *
+ * @note R の duplicated() と同じく、NaN 同士は等しいとみなす(docs-ja/NAN_POLICY.md)。
  */
 template <typename T>
 std::vector<T> get_duplicates(const std::vector<T>& data)
@@ -900,6 +923,8 @@ inline std::vector<double> rolling_std(const std::vector<double>& data, std::siz
  * @param data データベクトル
  * @param window ウィンドウサイズ
  * @return 移動最小値のベクトル
+ *
+ * @note NaN を含む窓は、NaN の位置によらず NaN になる(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> rolling_min(const std::vector<double>& data, std::size_t window)
 {
@@ -924,6 +949,8 @@ inline std::vector<double> rolling_min(const std::vector<double>& data, std::siz
  * @param data データベクトル
  * @param window ウィンドウサイズ
  * @return 移動最大値のベクトル
+ *
+ * @note NaN を含む窓は、NaN の位置によらず NaN になる(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> rolling_max(const std::vector<double>& data, std::size_t window)
 {
@@ -1007,6 +1034,7 @@ struct label_encoding_result {
  * @tparam T データ型
  * @param data データベクトル
  * @return ラベルエンコーディング結果
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename T>
 label_encoding_result<T> label_encode(const std::vector<T>& data)
@@ -1041,6 +1069,7 @@ label_encoding_result<T> label_encode(const std::vector<T>& data)
  * @tparam T データ型
  * @param data データベクトル
  * @return ワンホットエンコードされた2次元ベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename T>
 std::vector<std::vector<double>> one_hot_encode(const std::vector<T>& data)
@@ -1064,6 +1093,7 @@ std::vector<std::vector<double>> one_hot_encode(const std::vector<T>& data)
  * @param data データベクトル
  * @param n_bins ビン数
  * @return ビン番号のベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline std::vector<std::size_t> bin_equal_width(const std::vector<double>& data, std::size_t n_bins)
 {
@@ -1104,6 +1134,7 @@ inline std::vector<std::size_t> bin_equal_width(const std::vector<double>& data,
  * @param data データベクトル
  * @param n_bins ビン数
  * @return ビン番号のベクトル
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 inline std::vector<std::size_t> bin_equal_freq(const std::vector<double>& data, std::size_t n_bins)
 {
@@ -1197,6 +1228,7 @@ inline validation_result validate_data(const std::vector<double>& data,
  * @param min_val 最小値
  * @param max_val 最大値
  * @return すべての値が範囲内の場合true
+ * @throws std::invalid_argument max_val、min_val が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline bool validate_range(const std::vector<double>& data,
                           double min_val = -std::numeric_limits<double>::infinity(),

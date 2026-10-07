@@ -64,6 +64,8 @@ struct five_number_summary_result {
  * @param n 要素数 (number of elements)
  * @param p 位置（0.0〜1.0）(position, 0.0 to 1.0)
  * @return 補間された値 (interpolated value)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note ソート済み範囲を前提とします。(Assumes sorted range)
  */
@@ -101,6 +103,8 @@ double interpolate_at(Iterator first, std::size_t n, double p)
  * @param p 位置（0.0〜1.0）(position, 0.0 to 1.0)
  * @param proj 射影関数 (projection function)
  * @return 補間された値 (interpolated value)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 template <typename Iterator, typename Projection>
 double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
@@ -140,6 +144,8 @@ double interpolate_at(Iterator first, std::size_t n, double p, Projection proj)
  * @param last 範囲の終了 (end of range)
  * @return 最小値 (minimum value)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ *
+ * @note R の min() と同じく、データが NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 auto minimum(Iterator first, Iterator last)
@@ -166,6 +172,8 @@ auto minimum(Iterator first, Iterator last)
  * @param proj 射影関数 (projection function)
  * @return 最小値 (minimum value)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ *
+ * @note R の min() と同じく、データが NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 auto minimum(Iterator first, Iterator last, Projection proj)
@@ -202,6 +210,8 @@ auto minimum(Iterator first, Iterator last, Projection proj)
  * @param last 範囲の終了 (end of range)
  * @return 最大値 (maximum value)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ *
+ * @note R の max() と同じく、データが NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 auto maximum(Iterator first, Iterator last)
@@ -228,6 +238,8 @@ auto maximum(Iterator first, Iterator last)
  * @param proj 射影関数 (projection function)
  * @return 最大値 (maximum value)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ *
+ * @note R の max() と同じく、データが NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 auto maximum(Iterator first, Iterator last, Projection proj)
@@ -267,6 +279,7 @@ auto maximum(Iterator first, Iterator last, Projection proj)
  * @param last 範囲の終了 (end of sorted range)
  * @return 四分位数 (quartiles)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note R の type=7（デフォルト）または Excel の QUARTILE.INC と同等です。
  * Equivalent to R's type=7 (default) or Excel's QUARTILE.INC.
@@ -297,6 +310,7 @@ quartile_result quartiles(Iterator first, Iterator last)
  * @param proj 射影関数 (projection function)
  * @return 四分位数 (quartiles)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 quartile_result quartiles(Iterator first, Iterator last, Projection proj)
@@ -334,6 +348,8 @@ quartile_result quartiles(Iterator first, Iterator last, Projection proj)
  * @return パーセンタイル値 (percentile value)
  * @throws std::invalid_argument 範囲が空、または p が範囲外の場合
  *         (if range is empty or p is out of range)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 template <typename Iterator>
 double percentile(Iterator first, Iterator last, double p)
@@ -363,6 +379,8 @@ double percentile(Iterator first, Iterator last, double p)
  * @return パーセンタイル値 (percentile value)
  * @throws std::invalid_argument 範囲が空、または p が範囲外の場合
  *         (if range is empty or p is out of range)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 template <typename Iterator, typename Projection>
 double percentile(Iterator first, Iterator last, double p, Projection proj)
@@ -397,6 +415,7 @@ double percentile(Iterator first, Iterator last, double p, Projection proj)
  * @param last 範囲の終了 (end of sorted range)
  * @return 五数要約 (five-number summary)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  *
  * @note 箱ひげ図の描画に必要な基本統計量を提供します。
  * Provides basic statistics needed for box plot visualization.
@@ -435,6 +454,7 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last)
  * @param proj 射影関数 (projection function)
  * @return 五数要約 (five-number summary)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 five_number_summary_result five_number_summary(Iterator first, Iterator last, Projection proj)
@@ -481,6 +501,7 @@ five_number_summary_result five_number_summary(Iterator first, Iterator last, Pr
  * @return 重み付き中央値 (weighted median)
  * @throws std::invalid_argument 範囲が空、サイズ不一致、重みが負、または重みの総和が0の場合
  *         (if range is empty, sizes mismatch, weight is negative, or sum of weights is zero)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
@@ -565,6 +586,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @return 重み付き中央値 (weighted median)
  * @throws std::invalid_argument 範囲が空、重みが負、または重みの総和が0の場合
  *         (if range is empty, weight is negative, or sum of weights is zero)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_median(first, last, weight_first, weight_last) overload for range safety")]]
@@ -649,6 +671,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @return 重み付き中央値 (weighted median)
  * @throws std::invalid_argument 範囲が空、サイズ不一致、重みが負、または重みの総和が0の場合
  *         (if range is empty, sizes mismatch, weight is negative, or sum of weights is zero)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_median(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
@@ -732,6 +755,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @return 重み付き中央値 (weighted median)
  * @throws std::invalid_argument 範囲が空、重みが負、または重みの総和が0の場合
  *         (if range is empty, weight is negative, or sum of weights is zero)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_median(first, last, weight_first, weight_last, proj) overload for range safety")]]
@@ -819,6 +843,7 @@ double weighted_median(Iterator first, Iterator last, WeightIterator weight_firs
  * @return 重み付きパーセンタイル値 (weighted percentile value)
  * @throws std::invalid_argument パラメータが無効、またはサイズ不一致の場合
  *         (if parameters are invalid or sizes mismatch)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, double p)
@@ -905,6 +930,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @param p パーセンタイル（0.0〜1.0）(percentile as proportion 0.0-1.0)
  * @return 重み付きパーセンタイル値 (weighted percentile value)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_percentile(first, last, weight_first, weight_last, p) overload for range safety")]]
@@ -992,6 +1018,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @return 重み付きパーセンタイル値 (weighted percentile value)
  * @throws std::invalid_argument パラメータが無効、またはサイズ不一致の場合
  *         (if parameters are invalid or sizes mismatch)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, double p, Projection proj)
@@ -1077,6 +1104,7 @@ double weighted_percentile(Iterator first, Iterator last, WeightIterator weight_
  * @param proj 射影関数 (projection function)
  * @return 重み付きパーセンタイル値 (weighted percentile value)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_percentile(first, last, weight_first, weight_last, p, proj) overload for range safety")]]

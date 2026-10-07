@@ -129,6 +129,7 @@ inline double binomial_cdf(std::uint64_t k, std::uint64_t n, double p)
  * @param n 試行回数
  * @param p 各試行の成功確率
  * @return 分位点
+ * @throws std::invalid_argument p、prob が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument probまたはpが不正な範囲の場合
  */
 inline std::uint64_t binomial_quantile(double prob, std::uint64_t n, double p)
@@ -169,6 +170,7 @@ inline std::uint64_t binomial_quantile(double prob, std::uint64_t n, double p)
  * @param p 各試行の成功確率
  * @param engine 乱数エンジン
  * @return 生成された乱数
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument pが[0, 1]の範囲外の場合
  */
 template <typename Engine = default_random_engine>
@@ -189,6 +191,7 @@ std::uint64_t binomial_rand(std::uint64_t n, double p, Engine& engine)
  * @param n 試行回数
  * @param p 各試行の成功確率
  * @return 生成された乱数
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::uint64_t binomial_rand(std::uint64_t n, double p)
 {
@@ -247,6 +250,7 @@ inline double poisson_cdf(std::uint64_t k, double lambda)
  * @param p 確率値
  * @param lambda 平均発生率
  * @return 分位点
+ * @throws std::invalid_argument lambda、p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument lambdaが負、またはpが不正な範囲の場合
  */
 inline std::uint64_t poisson_quantile(double p, double lambda)
@@ -293,6 +297,7 @@ inline std::uint64_t poisson_quantile(double p, double lambda)
  * @param lambda 平均発生率
  * @param engine 乱数エンジン
  * @return 生成された乱数
+ * @throws std::invalid_argument lambda が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument lambdaが負の場合
  */
 template <typename Engine = default_random_engine>
@@ -312,6 +317,7 @@ std::uint64_t poisson_rand(double lambda, Engine& engine)
  *
  * @param lambda 平均発生率
  * @return 生成された乱数
+ * @throws std::invalid_argument lambda が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::uint64_t poisson_rand(double lambda)
 {
@@ -369,6 +375,7 @@ inline double geometric_cdf(std::uint64_t k, double p)
  * @param prob 確率値
  * @param p 各試行の成功確率
  * @return 分位点
+ * @throws std::invalid_argument p、prob が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument pまたはprobが不正な範囲の場合
  */
 inline std::uint64_t geometric_quantile(double prob, double p)
@@ -400,6 +407,7 @@ inline std::uint64_t geometric_quantile(double prob, double p)
  * @param p 各試行の成功確率
  * @param engine 乱数エンジン
  * @return 生成された乱数
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument pが(0, 1]の範囲外の場合
  */
 template <typename Engine = default_random_engine>
@@ -419,6 +427,7 @@ std::uint64_t geometric_rand(double p, Engine& engine)
  *
  * @param p 各試行の成功確率
  * @return 生成された乱数
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::uint64_t geometric_rand(double p)
 {
@@ -501,6 +510,7 @@ inline double hypergeom_cdf(std::uint64_t k, std::uint64_t N, std::uint64_t K, s
  * @param K 成功状態の数
  * @param n 抽出数
  * @return 分位点
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument パラメータが不正な範囲の場合
  */
 inline std::uint64_t hypergeom_quantile(double p, std::uint64_t N, std::uint64_t K, std::uint64_t n)
@@ -662,6 +672,7 @@ inline double nbinom_cdf(std::uint64_t k, double r, double p)
  * @param r 成功回数
  * @param p 各試行の成功確率
  * @return 分位点
+ * @throws std::invalid_argument p、prob、r が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument パラメータが不正な範囲の場合
  */
 inline std::uint64_t nbinom_quantile(double prob, double r, double p)
@@ -717,6 +728,7 @@ inline std::uint64_t nbinom_quantile(double prob, double r, double p)
  * @param p 各試行の成功確率
  * @param engine 乱数エンジン
  * @return 生成された乱数
+ * @throws std::invalid_argument p、r が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument パラメータが不正な範囲の場合
  */
 template <typename Engine = default_random_engine>
@@ -746,6 +758,7 @@ std::uint64_t nbinom_rand(double r, double p, Engine& engine)
  * @param r 成功回数
  * @param p 各試行の成功確率
  * @return 生成された乱数
+ * @throws std::invalid_argument p、r が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::uint64_t nbinom_rand(double r, double p)
 {
@@ -806,6 +819,7 @@ inline double bernoulli_cdf(std::uint64_t k, double p)
  * @param prob 確率値
  * @param p 成功確率
  * @return P(X <= k) >= prob となる最小のk
+ * @throws std::invalid_argument p、prob が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::uint64_t bernoulli_quantile(double prob, double p)
 {
@@ -829,6 +843,7 @@ inline std::uint64_t bernoulli_quantile(double prob, double p)
  * @param p 成功確率
  * @param engine 乱数エンジン
  * @return 生成された乱数（0または1）
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument pが[0, 1]の範囲外の場合
  */
 template <typename Engine = default_random_engine>
@@ -848,6 +863,7 @@ std::uint64_t bernoulli_rand(double p, Engine& engine)
  *
  * @param p 成功確率
  * @return 生成された乱数（0または1）
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::uint64_t bernoulli_rand(double p)
 {
@@ -910,6 +926,7 @@ inline double discrete_uniform_cdf(std::int64_t k, std::int64_t a, std::int64_t 
  * @param a 範囲の下限
  * @param b 範囲の上限
  * @return 分位点
+ * @throws std::invalid_argument p が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  * @throw std::invalid_argument a > bまたはpが不正な範囲の場合
  */
 inline std::int64_t discrete_uniform_quantile(double p, std::int64_t a, std::int64_t b)

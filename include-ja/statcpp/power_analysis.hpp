@@ -153,10 +153,13 @@ inline const char* alternative_to_string(alternative_hypothesis alt) {
  *                    (type of alternative hypothesis, default: "two.sided")
  * @return 検出力 (0.0〜1.0) (statistical power, 0.0 to 1.0)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note この関数は正規分布近似を使用します。厳密には非心t分布を使用すべきですが、
  *       サンプルサイズが大きい場合（n > 30程度）は十分な精度が得られます。
  *       小サンプルでは検出力がやや過大評価される可能性があります。
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double power_t_test_one_sample(double effect_size, std::size_t n,
                                       double alpha = 0.05,
@@ -201,6 +204,7 @@ inline double power_t_test_one_sample(double effect_size, std::size_t n,
  * @param alternative 対立仮説の種類（デフォルト: "two.sided"）(type of alternative hypothesis, default: "two.sided")
  * @return 必要なサンプルサイズ (required sample size)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument alpha、effect_size、power が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_t_test_one_sample(double effect_size, double power = 0.80,
                                                   double alpha = 0.05,
@@ -261,10 +265,13 @@ inline std::size_t sample_size_t_test_one_sample(double effect_size, double powe
  * @param alternative 対立仮説の種類（デフォルト: "two.sided"）(type of alternative hypothesis, default: "two.sided")
  * @return 検出力 (0.0〜1.0) (statistical power, 0.0 to 1.0)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note この関数は正規分布近似を使用します。厳密には非心t分布を使用すべきですが、
  *       合計サンプルサイズが大きい場合（n1 + n2 > 60程度）は十分な精度が得られます。
  *       小サンプルでは検出力がやや過大評価される可能性があります。
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::size_t n2,
                                       double alpha = 0.05,
@@ -314,6 +321,7 @@ inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::s
  * @return 群1の必要なサンプルサイズ（群2のサイズは n1 * ratio）
  *         (required sample size for group 1, group 2 size is n1 * ratio)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument alpha、effect_size、power、ratio が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_t_test_two_sample(double effect_size, double power = 0.80,
                                                   double alpha = 0.05, double ratio = 1.0,
@@ -380,6 +388,9 @@ inline std::size_t sample_size_t_test_two_sample(double effect_size, double powe
  *                    (type of alternative hypothesis, default: "two.sided")
  * @return 検出力 (0.0〜1.0) (statistical power, 0.0 to 1.0)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double power_prop_test(double p1, double p2, std::size_t n,
                               double alpha = 0.05,
@@ -441,6 +452,7 @@ inline double power_prop_test(double p1, double p2, std::size_t n,
  *                    (type of alternative hypothesis, default: "two.sided")
  * @return 各群の必要なサンプルサイズ (required sample size per group)
  * @throws std::invalid_argument パラメータが無効な場合 (if parameters are invalid)
+ * @throws std::invalid_argument alpha、p1、p2、power が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_prop_test(double p1, double p2, double power = 0.80,
                                          double alpha = 0.05,
@@ -508,6 +520,7 @@ inline std::size_t sample_size_prop_test(double p1, double p2, double power = 0.
  * @param alpha 有意水準 (significance level, default: 0.05)
  * @param alternative 対立仮説の種類 (type of alternative hypothesis, default: "two.sided")
  * @return 検出力分析の結果 (power analysis result)
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline power_result power_analysis_t_one_sample(double effect_size, std::size_t n,
                                                  double alpha = 0.05,
@@ -531,6 +544,7 @@ inline power_result power_analysis_t_one_sample(double effect_size, std::size_t 
  * @param alpha 有意水準 (significance level, default: 0.05)
  * @param alternative 対立仮説の種類 (type of alternative hypothesis, default: "two.sided")
  * @return 検出力分析の結果 (power analysis result)
+ * @throws std::invalid_argument alpha、effect_size、power が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline power_result power_analysis_t_one_sample_n(double effect_size, double power = 0.80,
                                                    double alpha = 0.05,
@@ -556,6 +570,10 @@ inline power_result power_analysis_t_one_sample_n(double effect_size, double pow
 /**
  * @brief 1標本t検定の検出力を計算（enum版）
  *        (Calculate power for one-sample t-test, enum overload)
+ *
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double power_t_test_one_sample(double effect_size, std::size_t n,
                                       double alpha,
@@ -567,6 +585,8 @@ inline double power_t_test_one_sample(double effect_size, std::size_t n,
 /**
  * @brief 1標本t検定の必要サンプルサイズを計算（enum版）
  *        (Calculate required sample size for one-sample t-test, enum overload)
+ *
+ * @throws std::invalid_argument alpha、effect_size、power が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_t_test_one_sample(double effect_size, double power,
                                                   double alpha,
@@ -578,6 +598,10 @@ inline std::size_t sample_size_t_test_one_sample(double effect_size, double powe
 /**
  * @brief 2標本t検定の検出力を計算（enum版）
  *        (Calculate power for two-sample t-test, enum overload)
+ *
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::size_t n2,
                                       double alpha,
@@ -589,6 +613,8 @@ inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::s
 /**
  * @brief 2標本t検定の必要サンプルサイズを計算（enum版）
  *        (Calculate required sample size for two-sample t-test, enum overload)
+ *
+ * @throws std::invalid_argument alpha、effect_size、power、ratio が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_t_test_two_sample(double effect_size, double power,
                                                   double alpha, double ratio,
@@ -600,6 +626,10 @@ inline std::size_t sample_size_t_test_two_sample(double effect_size, double powe
 /**
  * @brief 2標本比率検定の検出力を計算（enum版）
  *        (Calculate power for two-sample proportion test, enum overload)
+ *
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double power_prop_test(double p1, double p2, std::size_t n,
                               double alpha,
@@ -611,6 +641,8 @@ inline double power_prop_test(double p1, double p2, std::size_t n,
 /**
  * @brief 2標本比率検定の必要サンプルサイズを計算（enum版）
  *        (Calculate required sample size for two-sample proportion test, enum overload)
+ *
+ * @throws std::invalid_argument alpha、p1、p2、power が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline std::size_t sample_size_prop_test(double p1, double p2, double power,
                                          double alpha,
@@ -622,6 +654,8 @@ inline std::size_t sample_size_prop_test(double p1, double p2, double power,
 /**
  * @brief 1標本t検定のパワー解析（enum版、構造体を返す）
  *        (Power analysis for one-sample t-test, enum overload, returning struct)
+ *
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline power_result power_analysis_t_one_sample(double effect_size, std::size_t n,
                                                  double alpha,
@@ -633,6 +667,8 @@ inline power_result power_analysis_t_one_sample(double effect_size, std::size_t 
 /**
  * @brief 1標本t検定のパワー解析・サンプルサイズ計算（enum版、構造体を返す）
  *        (Power analysis for one-sample t-test, sample size, enum overload, returning struct)
+ *
+ * @throws std::invalid_argument alpha、effect_size、power が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline power_result power_analysis_t_one_sample_n(double effect_size, double power,
                                                    double alpha,

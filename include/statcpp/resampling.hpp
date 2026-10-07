@@ -136,6 +136,9 @@ bootstrap_sample(Iterator first, Iterator last)
  * @return bootstrap_result structure containing bootstrap estimation results
  * @throws std::invalid_argument If confidence is outside (0, 1)
  * @throws std::invalid_argument If number of input elements is less than 2
+ * @throws std::invalid_argument If confidence is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note The data are passed to the statistic unchanged, as R's boot() does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Statistic, typename Engine = default_random_engine>
 bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
@@ -219,6 +222,8 @@ bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
  * @return bootstrap_result structure containing bootstrap estimation results
  * @throws std::invalid_argument If confidence is outside (0, 1)
  * @throws std::invalid_argument If number of input elements is less than 2
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Engine = default_random_engine>
 bootstrap_result bootstrap_mean(Iterator first, Iterator last,
@@ -250,6 +255,8 @@ bootstrap_result bootstrap_mean(Iterator first, Iterator last,
  * @return bootstrap_result structure containing bootstrap estimation results
  * @throws std::invalid_argument If confidence is outside (0, 1)
  * @throws std::invalid_argument If number of input elements is less than 2
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Engine = default_random_engine>
 bootstrap_result bootstrap_median(Iterator first, Iterator last,
@@ -285,6 +292,8 @@ bootstrap_result bootstrap_median(Iterator first, Iterator last,
  * @return bootstrap_result structure containing bootstrap estimation results
  * @throws std::invalid_argument If confidence is outside (0, 1)
  * @throws std::invalid_argument If number of input elements is less than 2
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Engine = default_random_engine>
 bootstrap_result bootstrap_stddev(Iterator first, Iterator last,
@@ -323,6 +332,9 @@ bootstrap_result bootstrap_stddev(Iterator first, Iterator last,
  * @return bootstrap_result structure containing bootstrap estimation results
  * @throws std::invalid_argument If confidence is outside (0, 1)
  * @throws std::invalid_argument If number of input elements is less than 3
+ * @throws std::invalid_argument If confidence is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note The data are passed to the statistic unchanged, as R's boot() does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Statistic, typename Engine = default_random_engine>
 bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_func,
@@ -470,6 +482,8 @@ struct permutation_result {
  * @param engine Reference to random engine
  * @return permutation_result structure containing permutation test results
  * @throws std::invalid_argument If either sample is empty
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Engine = default_random_engine>
 permutation_result permutation_test_two_sample(Iterator1 first1, Iterator1 last1,
@@ -558,6 +572,8 @@ permutation_result permutation_test_two_sample(Iterator1 first1, Iterator1 last1
  * @return permutation_result structure containing permutation test results
  * @throws std::invalid_argument If the two samples have different lengths
  * @throws std::invalid_argument If samples are empty
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Engine = default_random_engine>
 permutation_result permutation_test_paired(Iterator1 first1, Iterator1 last1,
@@ -652,6 +668,8 @@ permutation_result permutation_test_paired(Iterator1 first1, Iterator1 last1,
  * @return permutation_result structure containing permutation test results
  * @throws std::invalid_argument If the two variables have different lengths
  * @throws std::invalid_argument If number of data pairs is less than 3
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Engine = default_random_engine>
 permutation_result permutation_test_correlation(Iterator1 first1, Iterator1 last1,

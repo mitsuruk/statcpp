@@ -69,6 +69,9 @@ struct test_result {
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (z-statistic, p-value, df=infinity)
  * @throws std::invalid_argument If sigma is not positive or range is empty
+ * @throws std::invalid_argument If mu0 or sigma is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
@@ -126,6 +129,7 @@ test_result z_test(Iterator first, Iterator last, double mu0, double sigma,
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (z-statistic, p-value, df=infinity)
  * @throws std::invalid_argument If p0 is outside (0,1), trials is 0, or successes exceeds trials
+ * @throws std::invalid_argument If p0 is NaN (docs/NAN_POLICY.md section 5)
  */
 inline test_result z_test_proportion(std::size_t successes, std::size_t trials, double p0,
                                      alternative_hypothesis alt = alternative_hypothesis::two_sided)
@@ -236,6 +240,9 @@ inline test_result z_test_proportion_two_sample(std::size_t successes1, std::siz
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (t-statistic, p-value, degrees of freedom)
  * @throws std::invalid_argument If number of elements is less than 2 or variance is zero
+ * @throws std::invalid_argument If mu0 is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 test_result t_test(Iterator first, Iterator last, double mu0,
@@ -295,6 +302,8 @@ test_result t_test(Iterator first, Iterator last, double mu0,
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (t-statistic, p-value, degrees of freedom)
  * @throws std::invalid_argument If either sample has less than 2 elements or variance is zero
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 test_result t_test_two_sample(Iterator1 first1, Iterator1 last1,
@@ -362,6 +371,8 @@ test_result t_test_two_sample(Iterator1 first1, Iterator1 last1,
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (t-statistic, p-value, Welch approximation degrees of freedom)
  * @throws std::invalid_argument If either sample has less than 2 elements or variance is zero
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 test_result t_test_welch(Iterator1 first1, Iterator1 last1,
@@ -438,6 +449,8 @@ test_result t_test_welch(Iterator1 first1, Iterator1 last1,
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (t-statistic, p-value, degrees of freedom)
  * @throws std::invalid_argument If sample lengths differ or are less than 2
+ *
+ * @note Pairs containing NaN are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 test_result t_test_paired(Iterator1 first1, Iterator1 last1,
@@ -493,6 +506,7 @@ test_result t_test_paired(Iterator1 first1, Iterator1 last1,
  * @param expected_last End iterator of expected frequencies
  * @return test_result Test result (chi-square statistic, p-value, degrees of freedom)
  * @throws std::invalid_argument If observed and expected lengths differ, fewer than 2 categories, or expected frequency is non-positive
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator1, typename Iterator2>
 test_result chisq_test_gof(Iterator1 observed_first, Iterator1 observed_last,
@@ -546,6 +560,7 @@ test_result chisq_test_gof(Iterator1 observed_first, Iterator1 observed_last,
  * @param observed_last End iterator of observed frequencies
  * @return test_result Test result (chi-square statistic, p-value, degrees of freedom)
  * @throws std::invalid_argument If fewer than 2 categories
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_last)
@@ -592,6 +607,7 @@ test_result chisq_test_gof_uniform(Iterator observed_first, Iterator observed_la
  * @param contingency_table Contingency table (2D array in row-major order)
  * @return test_result Test result (chi-square statistic, p-value, degrees of freedom)
  * @throws std::invalid_argument If rows or columns are less than 2, column counts are inconsistent, negative values exist, or table is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline test_result chisq_test_independence(const std::vector<std::vector<double>>& contingency_table)
 {
@@ -673,6 +689,8 @@ inline test_result chisq_test_independence(const std::vector<std::vector<double>
  * @param alt Type of alternative hypothesis (default: two-sided)
  * @return test_result Test result (F-statistic, p-value, df=df1, df2=df2)
  * @throws std::invalid_argument If either sample has less than 2 elements or second sample variance is zero
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 test_result f_test(Iterator1 first1, Iterator1 last1,
@@ -736,6 +754,9 @@ test_result f_test(Iterator1 first1, Iterator1 last1,
  *
  * @param p_values Vector of original p-values
  * @return std::vector<double> Vector of corrected p-values
+ *
+ * @note NaN p-values stay NaN and are not counted in the number of tests, as R's p.adjust() does
+ *       (docs/NAN_POLICY.md).
  */
 inline std::vector<double> bonferroni_correction(const std::vector<double>& p_values)
 {
@@ -761,6 +782,9 @@ inline std::vector<double> bonferroni_correction(const std::vector<double>& p_va
  *
  * @param p_values Vector of original p-values
  * @return std::vector<double> Vector of corrected p-values
+ *
+ * @note NaN p-values stay NaN and are not counted in the number of tests, as R's p.adjust() does
+ *       (docs/NAN_POLICY.md).
  */
 inline std::vector<double> benjamini_hochberg_correction(const std::vector<double>& p_values)
 {
@@ -806,6 +830,9 @@ inline std::vector<double> benjamini_hochberg_correction(const std::vector<doubl
  *
  * @param p_values Vector of original p-values
  * @return std::vector<double> Vector of corrected p-values
+ *
+ * @note NaN p-values stay NaN and are not counted in the number of tests, as R's p.adjust() does
+ *       (docs/NAN_POLICY.md).
  */
 inline std::vector<double> holm_correction(const std::vector<double>& p_values)
 {

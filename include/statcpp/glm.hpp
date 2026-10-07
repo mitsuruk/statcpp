@@ -393,11 +393,15 @@ inline std::vector<double> solve_weighted_least_squares(
  * @return GLM estimation results
  * @throws std::invalid_argument If data is empty, X and Y sizes don't match,
  *         number of predictors is inconsistent, or number of observations is not greater than number of predictors
+ * @throws std::invalid_argument If tol is NaN (docs/NAN_POLICY.md section 5)
  * @note If the IRLS algorithm does not converge within max_iter iterations,
  *       converged is set to false and coefficient_se, z_statistics, and
  *       p_values may contain NaN values. NaN indicates that the corresponding
  *       estimate is undefined due to numerical issues (not a bug).
  *       Always check glm_result::converged before using these fields.
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline glm_result glm_fit(
     const std::vector<std::vector<double>>& X,
@@ -678,6 +682,10 @@ inline glm_result glm_fit(
  * @param tol Convergence tolerance (default: 1e-8)
  * @return GLM estimation results
  * @throws std::invalid_argument If y is outside [0,1] range or X contains an intercept column
+ * @throws std::invalid_argument If tol is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline glm_result logistic_regression(
     const std::vector<std::vector<double>>& X,
@@ -798,6 +806,10 @@ inline std::vector<std::pair<double, double>> odds_ratios_ci(
  * @param tol Convergence tolerance (default: 1e-8)
  * @return GLM estimation results
  * @throws std::invalid_argument If y is negative or X contains an intercept column
+ * @throws std::invalid_argument If tol is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline glm_result poisson_regression(
     const std::vector<std::vector<double>>& X,
@@ -895,6 +907,9 @@ struct glm_residuals {
  * @param y Response variable vector
  * @return Structure containing various residuals
  * @throws std::invalid_argument If X and Y sizes don't match
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline glm_residuals compute_glm_residuals(
     const glm_result& model,
@@ -956,6 +971,9 @@ inline glm_residuals compute_glm_residuals(
  * @param y Response variable vector
  * @return Overdispersion parameter (Pearson chi-square statistic / residual degrees of freedom)
  * @throws std::invalid_argument If model is not Poisson
+ *
+ * @note Observations (rows) containing NaN are removed before computing, as R's na.omit does
+ *       (docs/NAN_POLICY.md).
  */
 inline double overdispersion_test(const glm_result& model,
                                    const std::vector<std::vector<double>>& X,
@@ -1009,6 +1027,9 @@ inline double pseudo_r_squared_mcfadden(const glm_result& model)
  * @param y Response variable vector (needed to compute saturated LL for non-Gaussian)
  * @param n Sample size
  * @return Nagelkerke's pseudo R-squared
+ *
+ * @note NaN responses are removed and n is reduced by their number, matching a model fitted with na.omit
+ *       (docs/NAN_POLICY.md).
  */
 inline double pseudo_r_squared_nagelkerke(const glm_result& model,
                                            const std::vector<double>& y,

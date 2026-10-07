@@ -123,6 +123,8 @@ struct residual_diagnostics {
  * @throws std::invalid_argument xとyの長さが異なる場合
  * @throws std::invalid_argument 観測数が3未満の場合
  * @throws std::invalid_argument xの分散が0の場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorX, typename IteratorY>
 simple_regression_result simple_linear_regression(IteratorX x_first, IteratorX x_last,
@@ -524,6 +526,8 @@ inline std::vector<std::vector<double>> inverse_cholesky(
  * @throws std::invalid_argument XとYの観測数が異なる場合
  * @throws std::invalid_argument 説明変数の数が観測数以上の場合
  * @throws std::invalid_argument Xに切片列（全て1の列）が含まれている場合
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline multiple_regression_result multiple_linear_regression(
     const std::vector<std::vector<double>>& X,
@@ -700,6 +704,9 @@ inline double predict(const multiple_regression_result& model, const std::vector
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return prediction_interval 予測値と予測区間
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorX>
 prediction_interval prediction_interval_simple(
@@ -755,6 +762,9 @@ prediction_interval prediction_interval_simple(
  * @param confidence 信頼水準（デフォルト: 0.95）
  * @return prediction_interval 予測値と信頼区間
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorX>
 prediction_interval confidence_interval_mean(
@@ -815,6 +825,8 @@ prediction_interval confidence_interval_mean(
  * @param y_last 目的変数の終了イテレータ
  * @return residual_diagnostics 残差診断の結果
  * @throws std::invalid_argument xとyの長さが異なる場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorX, typename IteratorY>
 residual_diagnostics compute_residual_diagnostics(
@@ -902,6 +914,8 @@ residual_diagnostics compute_residual_diagnostics(
  * @param y 目的変数のベクトル
  * @return residual_diagnostics 残差診断の結果
  * @throws std::invalid_argument Xとyの長さが異なる場合
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline residual_diagnostics compute_residual_diagnostics(
     const multiple_regression_result& model,
@@ -1004,6 +1018,8 @@ inline residual_diagnostics compute_residual_diagnostics(
  * @return std::vector<double> 各説明変数のVIF
  * @throws std::invalid_argument 観測数が3未満の場合
  * @throws std::invalid_argument 説明変数が2未満の場合
+ *
+ * @note R の na.omit と同じく、NaN を含む観測(行)を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline std::vector<double> compute_vif(const std::vector<std::vector<double>>& X)
 {
@@ -1156,6 +1172,8 @@ inline double multicollinearity_score(const std::vector<std::vector<double>>& X)
  * @return double 決定係数 R^2
  * @throws std::invalid_argument yと予測値の長さが異なる場合
  * @throws std::invalid_argument 観測数が2未満の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorY, typename IteratorPred>
 double r_squared(IteratorY y_first, IteratorY y_last,
@@ -1212,6 +1230,8 @@ double r_squared(IteratorY y_first, IteratorY y_last,
  * @return double 自由度調整済み決定係数
  * @throws std::invalid_argument yと予測値の長さが異なる場合
  * @throws std::invalid_argument 観測数が説明変数の数+1以下の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename IteratorY, typename IteratorPred>
 double adjusted_r_squared(IteratorY y_first, IteratorY y_last,

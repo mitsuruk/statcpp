@@ -30,6 +30,9 @@ namespace statcpp {
  * @param last2 End of second sequence
  * @return Euclidean distance
  * @throw std::invalid_argument if sequences have different lengths
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double euclidean_distance(Iterator1 first1, Iterator1 last1,
@@ -73,6 +76,9 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief Euclidean distance with projection
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double euclidean_distance(Iterator1 first1, Iterator1 last1,
@@ -131,6 +137,9 @@ double euclidean_distance(Iterator1 first1, Iterator1 last1,
  * @param last2 End of second sequence
  * @return Manhattan distance
  * @throw std::invalid_argument if sequences have different lengths
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double manhattan_distance(Iterator1 first1, Iterator1 last1,
@@ -174,6 +183,9 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief Manhattan distance with projection
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double manhattan_distance(Iterator1 first1, Iterator1 last1,
@@ -237,6 +249,8 @@ double manhattan_distance(Iterator1 first1, Iterator1 last1,
  * @param last2 End of second sequence
  * @return Cosine similarity
  * @throw std::invalid_argument if sequences have different lengths or if either vector has zero norm
+ *
+ * @note Pairs containing NaN are skipped (pairwise deletion); NaN if no pair is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double cosine_similarity(Iterator1 first1, Iterator1 last1,
@@ -288,6 +302,8 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief Cosine similarity with projection
+ *
+ * @note Pairs containing NaN are skipped (pairwise deletion); NaN if no pair is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double cosine_similarity(Iterator1 first1, Iterator1 last1,
@@ -351,6 +367,8 @@ double cosine_similarity(Iterator1 first1, Iterator1 last1,
  * @param first2 Beginning of second sequence
  * @param last2 End of second sequence
  * @return Cosine distance
+ *
+ * @note Pairs containing NaN are skipped (pairwise deletion); NaN if no pair is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double cosine_distance(Iterator1 first1, Iterator1 last1,
@@ -361,6 +379,8 @@ double cosine_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief Cosine distance with projection
+ *
+ * @note Pairs containing NaN are skipped (pairwise deletion); NaN if no pair is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double cosine_distance(Iterator1 first1, Iterator1 last1,
@@ -463,7 +483,11 @@ inline double mahalanobis_distance(const std::vector<double>& x,
  * @param last2 End of second sequence
  * @param p The order of the Minkowski distance (must be >= 1)
  * @return Minkowski distance
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
  * @throw std::invalid_argument if sequences have different lengths or p < 1
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double minkowski_distance(Iterator1 first1, Iterator1 last1,
@@ -513,6 +537,11 @@ double minkowski_distance(Iterator1 first1, Iterator1 last1,
 
 /**
  * @brief Minkowski distance with projection
+ *
+ * @throws std::invalid_argument If p is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2, typename Proj1, typename Proj2>
 double minkowski_distance(Iterator1 first1, Iterator1 last1,

@@ -41,6 +41,8 @@ namespace statcpp {
  *
  * @note ロバストなスケール（散布度）推定量として使用されます。
  * Used as a robust scale (dispersion) estimator.
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double mad(Iterator first, Iterator last)
@@ -100,6 +102,8 @@ double mad(Iterator first, Iterator last)
  *
  *       Scale factor derivation: For standard normal N(0,1), the median of |X|
  *       is Φ⁻¹(0.75) ≈ 0.6745, so σ ≈ MAD × 1.4826.
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double mad_scaled(Iterator first, Iterator last)
@@ -137,6 +141,8 @@ struct outlier_detection_result {
  *          (fence multiplier, default: 1.5, use 3.0 for extreme outliers)
  * @return 外れ値検出結果 (outlier detection result)
  * @throws std::invalid_argument 範囲が空の場合 (if range is empty)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument k が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note 標準的な箱ひげ図では k=1.5 を使用します。
  * Standard box plots use k=1.5.
@@ -202,7 +208,8 @@ outlier_detection_result detect_outliers_iqr(Iterator first, Iterator last, doub
  * @param threshold Z-score の閾値（デフォルト 3.0）
  *                  (Z-score threshold, default: 3.0)
  * @return 外れ値検出結果 (outlier detection result)
- * @throws std::invalid_argument 範囲が2未満、または標準偏差が0の場合
+ * @throws std::invalid_argument 範囲が2未満、標準偏差が0、またはデータか threshold に NaN を含む場合
+ *         (docs-ja/NAN_POLICY.md 第 5 節)
  *         (if range has less than 2 elements or standard deviation is zero)
  *
  * @note 正規分布を仮定します。外れ値に対して敏感です。
@@ -215,6 +222,9 @@ outlier_detection_result detect_outliers_zscore(Iterator first, Iterator last, d
     if (n < 2) {
         throw std::invalid_argument("statcpp::detect_outliers_zscore: need at least 2 elements");
     }
+    // 点ごとの外れ値フラグでは欠損値を表せない(docs-ja/NAN_POLICY.md 第 5 節)
+    detail::require_param_not_nan(threshold, "detect_outliers_zscore", "threshold");
+    detail::require_no_nan(first, last, "detect_outliers_zscore");
 
     double m = statcpp::mean(first, last);
     double s = statcpp::sample_stddev(first, last, m);
@@ -257,6 +267,8 @@ outlier_detection_result detect_outliers_zscore(Iterator first, Iterator last, d
  * @return 外れ値検出結果 (outlier detection result)
  * @throws std::invalid_argument 範囲が空、または MAD が 0 の場合
  *         (if range is empty or MAD is zero)
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
+ * @throws std::invalid_argument threshold が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note 通常の Z-score よりもロバストです。外れ値の影響を受けにくいです。
  * More robust than standard Z-score. Less affected by outliers.
@@ -328,9 +340,12 @@ outlier_detection_result detect_outliers_modified_zscore(Iterator first, Iterato
  * @return ウィンザー化されたデータ (winsorized data)
  * @throws std::invalid_argument 範囲が空、または limits が無効な場合
  *         (if range is empty or limits is invalid)
+ * @throws std::invalid_argument limits が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note 外れ値の影響を軽減しながらデータ点数を保持します。
  * Reduces the impact of outliers while preserving the number of data points.
+ *
+ * @note 限界値は NaN 以外の値から求め、NaN は NaN のまま残す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 std::vector<double> winsorize(Iterator first, Iterator last, double limits = 0.05)
@@ -517,6 +532,8 @@ inline std::vector<double> dffits(
  *
  * @note ロバストな位置推定量です。外れ値の影響を受けにくいです。
  * A robust location estimator. Less affected by outliers.
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double hodges_lehmann(Iterator first, Iterator last)
@@ -563,9 +580,12 @@ double hodges_lehmann(Iterator first, Iterator last)
  * @param c チューニング定数（デフォルト 9.0）(tuning constant, default: 9.0)
  * @return Biweight Midvariance (biweight midvariance)
  * @throws std::invalid_argument 範囲が2未満の場合 (if range has less than 2 elements)
+ * @throws std::invalid_argument c が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  *
  * @note 外れ値の影響を受けにくい分散推定量です。
  * A variance estimator less affected by outliers.
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double biweight_midvariance(Iterator first, Iterator last, double c = 9.0)

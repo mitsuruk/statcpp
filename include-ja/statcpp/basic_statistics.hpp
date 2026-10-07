@@ -165,6 +165,8 @@ double mean(Iterator first, Iterator last, Projection proj)
  * @param last 終了イテレータ
  * @return 中央値
  * @throws std::invalid_argument 空の範囲の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double median(Iterator first, Iterator last)
@@ -204,6 +206,8 @@ double median(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 射影後の中央値
  * @throws std::invalid_argument 空の範囲の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 double median(Iterator first, Iterator last, Projection proj)
@@ -246,6 +250,9 @@ double median(Iterator first, Iterator last, Projection proj)
  * @param last 終了イテレータ
  * @return 最頻値
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note NaN は飛ばして数える(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 auto mode(Iterator first, Iterator last)
@@ -290,6 +297,9 @@ auto mode(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 射影後の最頻値
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note NaN は飛ばして数える(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 auto mode(Iterator first, Iterator last, Projection proj)
@@ -338,6 +348,9 @@ auto mode(Iterator first, Iterator last, Projection proj)
  * @param last 終了イテレータ
  * @return 最頻値のvector（昇順）
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note NaN は飛ばして数える(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 auto modes(Iterator first, Iterator last)
@@ -393,6 +406,9 @@ auto modes(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 射影後の最頻値のvector（昇順）
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note NaN は飛ばして数える(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 auto modes(Iterator first, Iterator last, Projection proj)
@@ -593,6 +609,9 @@ double harmonic_mean(Iterator first, Iterator last, Projection proj)
  * @param proportion 片側の除外割合（0.0〜0.5未満）
  * @return トリム平均
  * @throws std::invalid_argument 空の範囲の場合、proportionが範囲外の場合、またはすべての要素が除外される場合
+ * @throws std::invalid_argument proportion が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double trimmed_mean(Iterator first, Iterator last, double proportion)
@@ -644,6 +663,9 @@ double trimmed_mean(Iterator first, Iterator last, double proportion)
  * @param proj 射影関数
  * @return 射影後のトリム平均
  * @throws std::invalid_argument 空の範囲の場合、proportionが範囲外の場合、またはすべての要素が除外される場合
+ * @throws std::invalid_argument proportion が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 double trimmed_mean(Iterator first, Iterator last, double proportion, Projection proj)
@@ -1114,6 +1136,9 @@ double weighted_harmonic_mean(Iterator first, Iterator last, WeightIterator weig
  * @param last 終了イテレータ
  * @return 最小値のインデックス
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note R の which.min() と同じく、NaN を飛ばし、元のデータでの位置を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 std::size_t argmin(Iterator first, Iterator last)
@@ -1143,6 +1168,9 @@ std::size_t argmin(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 最小値のインデックス
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note R の which.min() と同じく、NaN を飛ばし、元のデータでの位置を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 std::size_t argmin(Iterator first, Iterator last, Projection proj)
@@ -1174,6 +1202,9 @@ std::size_t argmin(Iterator first, Iterator last, Projection proj)
  * @param last 終了イテレータ
  * @return 最大値のインデックス
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note R の which.max() と同じく、NaN を飛ばし、元のデータでの位置を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 std::size_t argmax(Iterator first, Iterator last)
@@ -1203,6 +1234,9 @@ std::size_t argmax(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 最大値のインデックス
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument すべての値が NaN の場合(docs-ja/NAN_POLICY.md)
+ *
+ * @note R の which.max() と同じく、NaN を飛ばし、元のデータでの位置を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 std::size_t argmax(Iterator first, Iterator last, Projection proj)

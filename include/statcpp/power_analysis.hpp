@@ -150,10 +150,13 @@ inline const char* alternative_to_string(alternative_hypothesis alt) {
  * @param alternative Type of alternative hypothesis: "two.sided", "greater", "less" (default: "two.sided")
  * @return Statistical power (0.0 to 1.0)
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note This function uses normal distribution approximation. Strictly speaking, the noncentral
  *       t-distribution should be used, but for large sample sizes (n > 30 approximately),
  *       sufficient accuracy is obtained. For small samples, power may be slightly overestimated.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double power_t_test_one_sample(double effect_size, std::size_t n,
                                       double alpha = 0.05,
@@ -198,6 +201,7 @@ inline double power_t_test_one_sample(double effect_size, std::size_t n,
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Required sample size
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If alpha or effect_size or power is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::size_t sample_size_t_test_one_sample(double effect_size, double power = 0.80,
                                                   double alpha = 0.05,
@@ -258,10 +262,13 @@ inline std::size_t sample_size_t_test_one_sample(double effect_size, double powe
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Statistical power (0.0 to 1.0)
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note This function uses normal distribution approximation. Strictly speaking, the noncentral
  *       t-distribution should be used, but for large total sample sizes (n1 + n2 > 60 approximately),
  *       sufficient accuracy is obtained. For small samples, power may be slightly overestimated.
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::size_t n2,
                                       double alpha = 0.05,
@@ -307,6 +314,8 @@ inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::s
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Required sample size for group 1 (group 2 size is n1 * ratio)
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If alpha or effect_size or power or ratio is NaN (docs/NAN_POLICY.md section
+ *         5)
  */
 inline std::size_t sample_size_t_test_two_sample(double effect_size, double power = 0.80,
                                                   double alpha = 0.05, double ratio = 1.0,
@@ -372,6 +381,9 @@ inline std::size_t sample_size_t_test_two_sample(double effect_size, double powe
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Statistical power (0.0 to 1.0)
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double power_prop_test(double p1, double p2, std::size_t n,
                               double alpha = 0.05,
@@ -431,6 +443,7 @@ inline double power_prop_test(double p1, double p2, std::size_t n,
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Required sample size per group
  * @throws std::invalid_argument If parameters are invalid
+ * @throws std::invalid_argument If alpha or p1 or p2 or power is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::size_t sample_size_prop_test(double p1, double p2, double power = 0.80,
                                          double alpha = 0.05,
@@ -496,6 +509,7 @@ inline std::size_t sample_size_prop_test(double p1, double p2, double power = 0.
  * @param alpha Significance level (default: 0.05)
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Power analysis result
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  */
 inline power_result power_analysis_t_one_sample(double effect_size, std::size_t n,
                                                  double alpha = 0.05,
@@ -518,6 +532,7 @@ inline power_result power_analysis_t_one_sample(double effect_size, std::size_t 
  * @param alpha Significance level (default: 0.05)
  * @param alternative Type of alternative hypothesis (default: "two.sided")
  * @return Power analysis result
+ * @throws std::invalid_argument If alpha or effect_size or power is NaN (docs/NAN_POLICY.md section 5)
  */
 inline power_result power_analysis_t_one_sample_n(double effect_size, double power = 0.80,
                                                    double alpha = 0.05,
@@ -547,6 +562,9 @@ inline power_result power_analysis_t_one_sample_n(double effect_size, double pow
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Statistical power (0.0 to 1.0)
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double power_t_test_one_sample(double effect_size, std::size_t n,
                                       double alpha,
@@ -563,6 +581,7 @@ inline double power_t_test_one_sample(double effect_size, std::size_t n,
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Required sample size
+ * @throws std::invalid_argument If alpha or effect_size or power is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::size_t sample_size_t_test_one_sample(double effect_size, double power,
                                                   double alpha,
@@ -580,6 +599,9 @@ inline std::size_t sample_size_t_test_one_sample(double effect_size, double powe
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Statistical power (0.0 to 1.0)
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::size_t n2,
                                       double alpha,
@@ -597,6 +619,8 @@ inline double power_t_test_two_sample(double effect_size, std::size_t n1, std::s
  * @param ratio Ratio n2/n1 (default: 1.0)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Required sample size for group 1
+ * @throws std::invalid_argument If alpha or effect_size or power or ratio is NaN (docs/NAN_POLICY.md section
+ *         5)
  */
 inline std::size_t sample_size_t_test_two_sample(double effect_size, double power,
                                                   double alpha, double ratio,
@@ -614,6 +638,9 @@ inline std::size_t sample_size_t_test_two_sample(double effect_size, double powe
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Statistical power (0.0 to 1.0)
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 inline double power_prop_test(double p1, double p2, std::size_t n,
                               double alpha,
@@ -631,6 +658,7 @@ inline double power_prop_test(double p1, double p2, std::size_t n,
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Required sample size per group
+ * @throws std::invalid_argument If alpha or p1 or p2 or power is NaN (docs/NAN_POLICY.md section 5)
  */
 inline std::size_t sample_size_prop_test(double p1, double p2, double power,
                                          double alpha,
@@ -647,6 +675,7 @@ inline std::size_t sample_size_prop_test(double p1, double p2, double power,
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Power analysis result
+ * @throws std::invalid_argument If alpha is NaN (docs/NAN_POLICY.md section 5)
  */
 inline power_result power_analysis_t_one_sample(double effect_size, std::size_t n,
                                                  double alpha,
@@ -663,6 +692,7 @@ inline power_result power_analysis_t_one_sample(double effect_size, std::size_t 
  * @param alpha Significance level (default: 0.05)
  * @param alt Type of alternative hypothesis (default: two_sided)
  * @return Power analysis result
+ * @throws std::invalid_argument If alpha or effect_size or power is NaN (docs/NAN_POLICY.md section 5)
  */
 inline power_result power_analysis_t_one_sample_n(double effect_size, double power,
                                                    double alpha,

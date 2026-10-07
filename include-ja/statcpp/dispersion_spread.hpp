@@ -46,6 +46,8 @@ namespace statcpp {
  * @param last 終了イテレータ
  * @return 範囲（最大値 - 最小値）
  * @throws std::invalid_argument 空の範囲の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 double range(Iterator first, Iterator last)
@@ -73,6 +75,8 @@ double range(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 射影後の範囲（最大値 - 最小値）
  * @throws std::invalid_argument 空の範囲の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Projection>
 double range(Iterator first, Iterator last, Projection proj)
@@ -960,6 +964,7 @@ double coefficient_of_variation(Iterator first, Iterator last, Projection proj, 
  * @param last 終了イテレータ
  * @return 四分位範囲（Q3 - Q1）
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 double iqr(Iterator first, Iterator last)
@@ -988,6 +993,7 @@ double iqr(Iterator first, Iterator last)
  * @param proj 射影関数
  * @return 射影後の四分位範囲（Q3 - Q1）
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 double iqr(Iterator first, Iterator last, Projection proj)
@@ -1139,6 +1145,7 @@ double mean_absolute_deviation(Iterator first, Iterator last, Projection proj, d
  * @param weight_last 重みの終了イテレータ
  * @return 重み付き分散
  * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
@@ -1219,6 +1226,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param weight_first 重みの開始イテレータ
  * @return 重み付き分散
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_variance(first, last, weight_first, weight_last) overload for range safety")]]
@@ -1298,6 +1306,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param proj 射影関数
  * @return 射影後の重み付き分散
  * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
@@ -1378,6 +1387,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param proj 射影関数
  * @return 射影後の重み付き分散
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_variance(first, last, weight_first, weight_last, proj) overload for range safety")]]
@@ -1452,6 +1462,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param weight_last 重みの終了イテレータ
  * @return 重み付き標準偏差
  * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
@@ -1477,6 +1488,7 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param weight_first 重みの開始イテレータ
  * @return 重み付き標準偏差
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_stddev(first, last, weight_first, weight_last) overload for range safety")]]
@@ -1505,6 +1517,7 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param proj 射影関数
  * @return 射影後の重み付き標準偏差
  * @throws std::invalid_argument 空の範囲の場合、データと重みの範囲の長さが異なる場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
@@ -1532,6 +1545,7 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param proj 射影関数
  * @return 射影後の重み付き標準偏差
  * @throws std::invalid_argument 空の範囲の場合、負の重みがある場合、重みの合計が0の場合、有効サンプルサイズが不足している場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_stddev(first, last, weight_first, weight_last, proj) overload for range safety")]]

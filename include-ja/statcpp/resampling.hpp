@@ -135,6 +135,9 @@ bootstrap_sample(Iterator first, Iterator last)
  * @return ブートストラップ推定結果を格納したbootstrap_result構造体
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
  * @throws std::invalid_argument 入力要素数が2未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の boot() と同じく、データはそのまま統計量関数に渡す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Statistic, typename Engine = default_random_engine>
 bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
@@ -217,6 +220,8 @@ bootstrap_result bootstrap(Iterator first, Iterator last, Statistic stat_func,
  * @return ブートストラップ推定結果を格納したbootstrap_result構造体
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
  * @throws std::invalid_argument 入力要素数が2未満の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Engine = default_random_engine>
 bootstrap_result bootstrap_mean(Iterator first, Iterator last,
@@ -247,6 +252,8 @@ bootstrap_result bootstrap_mean(Iterator first, Iterator last,
  * @return ブートストラップ推定結果を格納したbootstrap_result構造体
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
  * @throws std::invalid_argument 入力要素数が2未満の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Engine = default_random_engine>
 bootstrap_result bootstrap_median(Iterator first, Iterator last,
@@ -281,6 +288,8 @@ bootstrap_result bootstrap_median(Iterator first, Iterator last,
  * @return ブートストラップ推定結果を格納したbootstrap_result構造体
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
  * @throws std::invalid_argument 入力要素数が2未満の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Engine = default_random_engine>
 bootstrap_result bootstrap_stddev(Iterator first, Iterator last,
@@ -318,6 +327,9 @@ bootstrap_result bootstrap_stddev(Iterator first, Iterator last,
  * @return ブートストラップ推定結果を格納したbootstrap_result構造体
  * @throws std::invalid_argument confidenceが(0, 1)の範囲外の場合
  * @throws std::invalid_argument 入力要素数が3未満の場合
+ * @throws std::invalid_argument confidence が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
+ *
+ * @note R の boot() と同じく、データはそのまま統計量関数に渡す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator, typename Statistic, typename Engine = default_random_engine>
 bootstrap_result bootstrap_bca(Iterator first, Iterator last, Statistic stat_func,
@@ -464,6 +476,8 @@ struct permutation_result {
  * @param engine 乱数エンジンへの参照
  * @return 置換検定結果を格納したpermutation_result構造体
  * @throws std::invalid_argument いずれかのサンプルが空の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Engine = default_random_engine>
 permutation_result permutation_test_two_sample(Iterator1 first1, Iterator1 last1,
@@ -552,6 +566,8 @@ permutation_result permutation_test_two_sample(Iterator1 first1, Iterator1 last1
  * @return 置換検定結果を格納したpermutation_result構造体
  * @throws std::invalid_argument 2つのサンプルの長さが異なる場合
  * @throws std::invalid_argument サンプルが空の場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Engine = default_random_engine>
 permutation_result permutation_test_paired(Iterator1 first1, Iterator1 last1,
@@ -646,6 +662,8 @@ permutation_result permutation_test_paired(Iterator1 first1, Iterator1 last1,
  * @return 置換検定結果を格納したpermutation_result構造体
  * @throws std::invalid_argument 2つの変数の長さが異なる場合
  * @throws std::invalid_argument データペア数が3未満の場合
+ *
+ * @note R の既定と同じく、NaN を含む組を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Engine = default_random_engine>
 permutation_result permutation_test_correlation(Iterator1 first1, Iterator1 last1,

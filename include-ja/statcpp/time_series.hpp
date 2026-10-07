@@ -41,6 +41,7 @@ namespace statcpp {
  * @param lag ラグ（時間差）
  * @return 自己相関係数 [-1, 1]
  * @throws std::invalid_argument 空の範囲の場合、ラグがデータ長以上の場合、または分散が0の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 double autocorrelation(Iterator first, Iterator last, std::size_t lag)
@@ -95,6 +96,7 @@ double autocorrelation(Iterator first, Iterator last, std::size_t lag)
  * @param max_lag 最大ラグ
  * @return 自己相関係数のベクトル
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
@@ -134,6 +136,7 @@ std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
  * @param max_lag 最大ラグ
  * @return 偏自己相関係数のベクトル
  * @throws std::invalid_argument 空の範囲の場合
+ * @throws std::invalid_argument データが NaN を含む場合(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator>
 std::vector<double> pacf(Iterator first, Iterator last, std::size_t max_lag)
@@ -330,6 +333,8 @@ double mape(Iterator1 first1, Iterator1 last1, Iterator2 first2)
  * @param window ウィンドウサイズ
  * @return 移動平均のベクトル
  * @throws std::invalid_argument 空の範囲の場合、またはウィンドウサイズが無効な場合
+ *
+ * @note R の stats::filter と同じく、NaN を含む窓は NaN、Inf を含む窓は Inf になり、他の窓には影響しない(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator>
 std::vector<double> moving_average(Iterator first, Iterator last, std::size_t window)

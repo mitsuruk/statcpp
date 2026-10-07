@@ -121,6 +121,8 @@ struct posthoc_result {
  * @throws std::invalid_argument 群数が2未満の場合
  * @throws std::invalid_argument 空の群が存在する場合
  * @throws std::invalid_argument 総観測数が群数以下の場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline one_way_anova_result one_way_anova(const std::vector<std::vector<double>>& groups)
 {
@@ -222,6 +224,8 @@ inline one_way_anova_result one_way_anova(const std::vector<std::vector<double>>
  * @throws std::invalid_argument 要因Bの水準数が一貫していない場合
  * @throws std::invalid_argument セルサイズが不均等な場合
  * @throws std::invalid_argument 空のセルが存在する場合
+ *
+ * @note R の既定と同じく、NaN を除去してから計算する(docs-ja/NAN_POLICY.md)。
  */
 inline two_way_anova_result two_way_anova(
     const std::vector<std::vector<std::vector<double>>>& data)
@@ -392,6 +396,7 @@ inline two_way_anova_result two_way_anova(
  * @param alpha 有意水準（デフォルト: 0.05）
  * @return posthoc_result 事後比較の結果（statistic フィールドはq統計量）
  * @throws std::invalid_argument alphaが(0, 1)の範囲外の場合
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
                                  const std::vector<std::vector<double>>& groups,
@@ -467,6 +472,7 @@ inline posthoc_result tukey_hsd(const one_way_anova_result& anova_result,
  * @param alpha 有意水準（デフォルト: 0.05）
  * @return posthoc_result 事後比較の結果
  * @throws std::invalid_argument alphaが(0, 1)の範囲外の場合
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline posthoc_result bonferroni_posthoc(const one_way_anova_result& anova_result,
                                           double alpha = 0.05)
@@ -538,6 +544,7 @@ inline posthoc_result bonferroni_posthoc(const one_way_anova_result& anova_resul
  * @return posthoc_result 事後比較の結果
  * @throws std::invalid_argument alphaが(0, 1)の範囲外の場合
  * @throws std::invalid_argument control_groupが無効なインデックスの場合
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
                                        std::size_t control_group = 0,
@@ -616,6 +623,7 @@ inline posthoc_result dunnett_posthoc(const one_way_anova_result& anova_result,
  * @param alpha 有意水準（デフォルト: 0.05）
  * @return posthoc_result 事後比較の結果
  * @throws std::invalid_argument alphaが(0, 1)の範囲外の場合
+ * @throws std::invalid_argument alpha が NaN の場合(docs-ja/NAN_POLICY.md 第 5 節)
  */
 inline posthoc_result scheffe_posthoc(const one_way_anova_result& anova_result,
                                        double alpha = 0.05)
@@ -714,6 +722,8 @@ struct ancova_result {
  * @throws std::invalid_argument 群数が2未満の場合
  * @throws std::invalid_argument 空の群が存在する場合
  * @throws std::invalid_argument 観測数が不十分な場合
+ *
+ * @note R の lm()(na.omit)と同じく、応答変数か共変量が NaN の観測を除く(docs-ja/NAN_POLICY.md)。
  */
 inline ancova_result one_way_ancova(
     const std::vector<std::vector<std::pair<double, double>>>& groups)

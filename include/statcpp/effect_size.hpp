@@ -31,6 +31,9 @@ namespace statcpp {
  * @param sigma Population standard deviation
  * @return Cohen's d
  * @throws std::invalid_argument If the range is empty or sigma is not positive
+ * @throws std::invalid_argument If mu0 or sigma is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
@@ -66,6 +69,9 @@ double cohens_d(Iterator first, Iterator last, double mu0, double sigma)
  * @param mu0 Population mean to compare against
  * @return Cohen's d
  * @throws std::invalid_argument If there are fewer than 2 elements or variance is zero
+ * @throws std::invalid_argument If mu0 is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double cohens_d(Iterator first, Iterator last, double mu0)
@@ -105,6 +111,8 @@ double cohens_d(Iterator first, Iterator last, double mu0)
  * @param last2 Ending iterator of second sample
  * @return Cohen's d
  * @throws std::invalid_argument If either sample has fewer than 2 elements or pooled variance is zero
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double cohens_d_two_sample(Iterator1 first1, Iterator1 last1,
@@ -167,6 +175,9 @@ inline double hedges_correction_factor(double df)
  * @param mu0 Population mean to compare against
  * @return Hedges' g
  * @throws std::invalid_argument If there are fewer than 2 elements
+ * @throws std::invalid_argument If mu0 is NaN (docs/NAN_POLICY.md section 5)
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double hedges_g(Iterator first, Iterator last, double mu0)
@@ -200,6 +211,8 @@ double hedges_g(Iterator first, Iterator last, double mu0)
  * @param last2 Ending iterator of second sample
  * @return Hedges' g
  * @throws std::invalid_argument If either sample has fewer than 2 elements
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double hedges_g_two_sample(Iterator1 first1, Iterator1 last1,
@@ -241,6 +254,8 @@ double hedges_g_two_sample(Iterator1 first1, Iterator1 last1,
  * @param treatment_last Ending iterator of treatment group
  * @return Glass's Delta
  * @throws std::invalid_argument If control group has fewer than 2 elements, treatment group is empty, or control group has zero variance
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 double glass_delta(Iterator1 control_first, Iterator1 control_last,
@@ -475,6 +490,7 @@ enum class effect_size_magnitude {
  *
  * @param d Cohen's d
  * @return Effect size magnitude
+ * @throws std::invalid_argument If d is NaN (docs/NAN_POLICY.md section 5)
  */
 inline effect_size_magnitude interpret_cohens_d(double d)
 {
@@ -494,6 +510,7 @@ inline effect_size_magnitude interpret_cohens_d(double d)
  *
  * @param r Correlation coefficient
  * @return Effect size magnitude
+ * @throws std::invalid_argument If r is NaN (docs/NAN_POLICY.md section 5)
  */
 inline effect_size_magnitude interpret_correlation(double r)
 {
@@ -513,6 +530,7 @@ inline effect_size_magnitude interpret_correlation(double r)
  *
  * @param eta2 Eta-squared
  * @return Effect size magnitude
+ * @throws std::invalid_argument If eta2 is NaN (docs/NAN_POLICY.md section 5)
  */
 inline effect_size_magnitude interpret_eta_squared(double eta2)
 {

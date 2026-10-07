@@ -645,6 +645,8 @@ std::vector<double> compute_ranks(Iterator first, Iterator last, Projection proj
  * @param last2 2番目のデータの終了イテレータ
  * @return スピアマン順位相関係数（-1 から 1）
  * @throws std::invalid_argument 空の範囲、長さが異なる場合、または要素数が2未満の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double spearman_correlation(Iterator1 first1, Iterator1 last1,
@@ -690,6 +692,8 @@ double spearman_correlation(Iterator1 first1, Iterator1 last1,
  * @param proj2 2番目のデータの射影関数
  * @return スピアマン順位相関係数（-1 から 1）
  * @throws std::invalid_argument 空の範囲、長さが異なる場合、または要素数が2未満の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Projection1, typename Projection2>
 double spearman_correlation(Iterator1 first1, Iterator1 last1,
@@ -740,6 +744,8 @@ double spearman_correlation(Iterator1 first1, Iterator1 last1,
  * @param last2 2番目のデータの終了イテレータ
  * @return ケンドールのτ_b（-1 から 1）
  * @throws std::invalid_argument 空の範囲、長さが異なる場合、または要素数が2未満の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2>
 double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2)
@@ -838,6 +844,8 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
  * @param proj2 2番目のデータの射影関数
  * @return ケンドールのτ_b（-1 から 1）
  * @throws std::invalid_argument 空の範囲、長さが異なる場合、または要素数が2未満の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Iterator1, typename Iterator2, typename Projection1, typename Projection2>
 double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2,
@@ -940,6 +948,7 @@ double kendall_tau(Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator
  * @return 重み付き共分散
  * @throws std::invalid_argument 空の範囲、長さが異なる場合、負の重み、
  *         または重みの合計が0の場合
+ * @throws std::invalid_argument データか重みが NaN を含む場合(R の cov.wt() と同じ)(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator1, typename Iterator2, typename WeightIterator>
 double weighted_covariance(Iterator1 first1, Iterator1 last1,
@@ -1039,6 +1048,7 @@ double weighted_covariance(Iterator1 first1, Iterator1 last1,
  * @return 重み付き共分散
  * @throws std::invalid_argument 空の範囲、長さが異なる場合、負の重み、
  *         または重みの合計が0の場合
+ * @throws std::invalid_argument データか重みが NaN を含む場合(R の cov.wt() と同じ)(docs-ja/NAN_POLICY.md)
  */
 template <typename Iterator1, typename Iterator2, typename WeightIterator,
           typename Projection1, typename Projection2>

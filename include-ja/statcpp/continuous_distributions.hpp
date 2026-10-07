@@ -33,6 +33,8 @@ namespace statcpp {
  * @param b 上限（デフォルト: 1.0）
  * @return 確率密度
  * @throws std::invalid_argument a >= b の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double uniform_pdf(double x, double a = 0.0, double b = 1.0)
 {
@@ -101,6 +103,8 @@ inline double uniform_quantile(double p, double a = 0.0, double b = 1.0)
  * @param engine 乱数エンジン
  * @return 一様分布に従う乱数
  * @throws std::invalid_argument a >= b の場合
+ *
+ * @note R の runif() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double uniform_rand(double a, double b, Engine& engine)
@@ -122,6 +126,8 @@ double uniform_rand(double a, double b, Engine& engine)
  * @param a 下限（デフォルト: 0.0）
  * @param b 上限（デフォルト: 1.0）
  * @return 一様分布に従う乱数
+ *
+ * @note R の runif() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double uniform_rand(double a = 0.0, double b = 1.0)
 {
@@ -210,6 +216,8 @@ inline double normal_quantile(double p, double mu = 0.0, double sigma = 1.0)
  * @param engine 乱数エンジン
  * @return 正規分布に従う乱数
  * @throws std::invalid_argument sigma <= 0 の場合
+ *
+ * @note R の rnorm() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double normal_rand(double mu, double sigma, Engine& engine)
@@ -231,6 +239,8 @@ double normal_rand(double mu, double sigma, Engine& engine)
  * @param mu 平均（デフォルト: 0.0）
  * @param sigma 標準偏差（デフォルト: 1.0）
  * @return 正規分布に従う乱数
+ *
+ * @note R の rnorm() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double normal_rand(double mu = 0.0, double sigma = 1.0)
 {
@@ -309,6 +319,8 @@ inline double exponential_quantile(double p, double lambda = 1.0)
  * @param engine 乱数エンジン
  * @return 指数分布に従う乱数
  * @throws std::invalid_argument lambda <= 0 の場合
+ *
+ * @note R の rexp() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double exponential_rand(double lambda, Engine& engine)
@@ -329,6 +341,8 @@ double exponential_rand(double lambda, Engine& engine)
  *
  * @param lambda 率パラメータ（デフォルト: 1.0）
  * @return 指数分布に従う乱数
+ *
+ * @note R の rexp() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double exponential_rand(double lambda = 1.0)
 {
@@ -428,6 +442,8 @@ inline double gamma_quantile(double p, double shape, double rate = 1.0)
  * @param engine 乱数エンジン
  * @return ガンマ分布に従う乱数
  * @throws std::invalid_argument shape <= 0 または rate <= 0 の場合
+ *
+ * @note R の rgamma() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double gamma_rand(double shape, double rate, Engine& engine)
@@ -453,6 +469,8 @@ double gamma_rand(double shape, double rate, Engine& engine)
  * @param shape 形状パラメータ α
  * @param rate 率パラメータ β（デフォルト: 1.0）
  * @return ガンマ分布に従う乱数
+ *
+ * @note R の rgamma() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double gamma_rand(double shape, double rate = 1.0)
 {
@@ -557,6 +575,8 @@ inline double beta_quantile(double p, double alpha, double beta_param)
  * @param engine 乱数エンジン
  * @return ベータ分布に従う乱数
  * @throws std::invalid_argument alpha <= 0 または beta_param <= 0 の場合
+ *
+ * @note R の rbeta() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double beta_rand(double alpha, double beta_param, Engine& engine)
@@ -592,6 +612,8 @@ double beta_rand(double alpha, double beta_param, Engine& engine)
  * @param alpha 形状パラメータ α
  * @param beta_param 形状パラメータ β
  * @return ベータ分布に従う乱数
+ *
+ * @note R の rbeta() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double beta_rand(double alpha, double beta_param)
 {
@@ -664,6 +686,8 @@ inline double chisq_quantile(double p, double df)
  * @param engine 乱数エンジン
  * @return χ²分布に従う乱数
  * @throws std::invalid_argument df <= 0 の場合
+ *
+ * @note R の rchisq() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double chisq_rand(double df, Engine& engine)
@@ -683,6 +707,8 @@ double chisq_rand(double df, Engine& engine)
  *
  * @param df 自由度
  * @return χ²分布に従う乱数
+ *
+ * @note R の rchisq() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double chisq_rand(double df)
 {
@@ -759,6 +785,8 @@ inline double t_cdf(double x, double df)
  *       （例外は送出されません）。内部点（0 < p < 1）では戻り値は有限値です。
  *       境界値 p = 0 または p = 1 では、分布の定義に従い +/-infinity を
  *       返す場合があります。実用上、一般的な入力範囲では常に収束します。
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double t_quantile(double p, double df)
 {
@@ -820,6 +848,8 @@ inline double t_quantile(double p, double df)
  * @param engine 乱数エンジン
  * @return t分布に従う乱数
  * @throws std::invalid_argument df <= 0 の場合
+ *
+ * @note R の rt() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double t_rand(double df, Engine& engine)
@@ -840,6 +870,8 @@ double t_rand(double df, Engine& engine)
  *
  * @param df 自由度
  * @return t分布に従う乱数
+ *
+ * @note R の rt() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double t_rand(double df)
 {
@@ -919,6 +951,8 @@ inline double f_cdf(double x, double df1, double df2)
  *       （例外は送出されません）。内部点（0 < p < 1）では戻り値は有限値です。
  *       境界値 p = 0 または p = 1 では、分布の定義に従い +/-infinity を
  *       返す場合があります。実用上、一般的な入力範囲では常に収束します。
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double f_quantile(double p, double df1, double df2)
 {
@@ -986,6 +1020,8 @@ inline double f_quantile(double p, double df1, double df2)
  * @param engine 乱数エンジン
  * @return F分布に従う乱数
  * @throws std::invalid_argument df1 <= 0 または df2 <= 0 の場合
+ *
+ * @note R の rf() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double f_rand(double df1, double df2, Engine& engine)
@@ -1010,6 +1046,8 @@ double f_rand(double df1, double df2, Engine& engine)
  * @param df1 第1自由度
  * @param df2 第2自由度
  * @return F分布に従う乱数
+ *
+ * @note R の rf() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double f_rand(double df1, double df2)
 {
@@ -1100,6 +1138,8 @@ inline double lognormal_quantile(double p, double mu = 0.0, double sigma = 1.0)
  * @param engine 乱数エンジン
  * @return 対数正規分布に従う乱数
  * @throws std::invalid_argument sigma <= 0 の場合
+ *
+ * @note R の rlnorm() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double lognormal_rand(double mu, double sigma, Engine& engine)
@@ -1121,6 +1161,8 @@ double lognormal_rand(double mu, double sigma, Engine& engine)
  * @param mu 対数平均（デフォルト: 0.0）
  * @param sigma 対数標準偏差（デフォルト: 1.0）
  * @return 対数正規分布に従う乱数
+ *
+ * @note R の rlnorm() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double lognormal_rand(double mu = 0.0, double sigma = 1.0)
 {
@@ -1176,6 +1218,8 @@ inline double weibull_pdf(double x, double shape, double scale = 1.0)
  * @param scale 尺度パラメータ λ（デフォルト: 1.0）
  * @return 累積確率
  * @throws std::invalid_argument shape <= 0 または scale <= 0 の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double weibull_cdf(double x, double shape, double scale = 1.0)
 {
@@ -1232,6 +1276,8 @@ inline double weibull_quantile(double p, double shape, double scale = 1.0)
  * @param engine 乱数エンジン
  * @return ワイブル分布に従う乱数
  * @throws std::invalid_argument shape <= 0 または scale <= 0 の場合
+ *
+ * @note R の rweibull() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 template <typename Engine = default_random_engine>
 double weibull_rand(double shape, double scale, Engine& engine)
@@ -1256,6 +1302,8 @@ double weibull_rand(double shape, double scale, Engine& engine)
  * @param shape 形状パラメータ k
  * @param scale 尺度パラメータ λ（デフォルト: 1.0）
  * @return ワイブル分布に従う乱数
+ *
+ * @note R の rweibull() と同じく、パラメータが NaN なら NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double weibull_rand(double shape, double scale = 1.0)
 {
@@ -1280,6 +1328,8 @@ inline double weibull_rand(double shape, double scale = 1.0)
  * @return 確率 P(Q <= q)
  *
  * @throws std::invalid_argument k < 2 または df <= 0 の場合
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double studentized_range_cdf(double q, double k, double df)
 {
@@ -1503,6 +1553,8 @@ inline double studentized_range_cdf(double q, double k, double df)
  *       （例外は送出されません）。内部点（0 < p < 1）では戻り値は有限値です。
  *       境界値 p = 0 または p = 1 では、分布の定義に従い +/-infinity を
  *       返す場合があります。実用上、一般的な入力範囲では常に収束します。
+ *
+ * @note R と同じく、入力が NaN を含めば NaN を返す(docs-ja/NAN_POLICY.md)。
  */
 inline double studentized_range_quantile(double p, double k, double df)
 {

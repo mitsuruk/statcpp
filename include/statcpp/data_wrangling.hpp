@@ -308,6 +308,8 @@ std::vector<std::vector<T>> filter_rows(const std::vector<std::vector<T>>& data,
  * @param min_val Minimum value
  * @param max_val Maximum value
  * @return Vector of values within the range
+ * @throws std::invalid_argument If min_val or max_val is NaN; NaN data values are dropped by the comparison
+ *         (docs/NAN_POLICY.md)
  */
 template <typename T>
 std::vector<T> filter_range(const std::vector<T>& data, T min_val, T max_val)
@@ -418,6 +420,8 @@ inline std::vector<double> boxcox_transform(const std::vector<double>& data, dou
  *
  * @param data Data vector
  * @return Vector of ranks
+ *
+ * @note NaN keeps a NaN rank, as R's rank(na.last = "keep") does (docs/NAN_POLICY.md).
  */
 inline std::vector<double> rank_transform(const std::vector<double>& data)
 {
@@ -496,6 +500,8 @@ struct aggregation_result {
  * @param keys Vector of keys
  * @param values Vector of values
  * @return Grouping result
+ *
+ * @note Rows whose key is NaN are dropped, as R's split() does (docs/NAN_POLICY.md).
  */
 template <typename K, typename V>
 group_result<K, V> group_by(const std::vector<K>& keys, const std::vector<V>& values)
@@ -522,6 +528,8 @@ group_result<K, V> group_by(const std::vector<K>& keys, const std::vector<V>& va
  * @param keys Vector of keys
  * @param values Vector of values
  * @return Mean value for each group
+ *
+ * @note Rows whose key is NaN are dropped, as R's tapply() does (docs/NAN_POLICY.md).
  */
 template <typename K>
 aggregation_result<K> group_mean(const std::vector<K>& keys, const std::vector<double>& values)
@@ -542,6 +550,8 @@ aggregation_result<K> group_mean(const std::vector<K>& keys, const std::vector<d
  * @param keys Vector of keys
  * @param values Vector of values
  * @return Sum for each group
+ *
+ * @note Rows whose key is NaN are dropped, as R's tapply() does (docs/NAN_POLICY.md).
  */
 template <typename K>
 aggregation_result<K> group_sum(const std::vector<K>& keys, const std::vector<double>& values)
@@ -562,6 +572,8 @@ aggregation_result<K> group_sum(const std::vector<K>& keys, const std::vector<do
  * @param keys Vector of keys
  * @param values Vector of values
  * @return Element count for each group
+ *
+ * @note Rows whose key is NaN are dropped, as R's tapply() does (docs/NAN_POLICY.md).
  */
 template <typename K>
 aggregation_result<K> group_count(const std::vector<K>& keys, const std::vector<double>& values)
@@ -586,6 +598,8 @@ aggregation_result<K> group_count(const std::vector<K>& keys, const std::vector<
  * @param data Data vector
  * @param ascending true for ascending, false for descending
  * @return Sorted vector
+ *
+ * @note NaN values are removed, as R's sort() does (docs/NAN_POLICY.md).
  */
 template <typename T>
 std::vector<T> sort_values(const std::vector<T>& data, bool ascending = true)
@@ -606,6 +620,8 @@ std::vector<T> sort_values(const std::vector<T>& data, bool ascending = true)
  * @param data Data vector
  * @param ascending true for ascending, false for descending
  * @return Indices in sorted order
+ *
+ * @note NaN values are placed last in their original order, as R's order() does (docs/NAN_POLICY.md).
  */
 template <typename T>
 std::vector<std::size_t> argsort(const std::vector<T>& data, bool ascending = true)
@@ -694,6 +710,9 @@ std::vector<T> sample_without_replacement(const std::vector<T>& data, std::size_
  * @param data Data vector
  * @param sample_ratio Sampling ratio
  * @return Stratified sampled data
+ * @throws std::invalid_argument If the strata contain NaN or sample_ratio is NaN (docs/NAN_POLICY.md)
+ *
+ * @note NaN in the data is sampled like any other value (docs/NAN_POLICY.md).
  */
 template <typename K, typename V>
 std::vector<V> stratified_sample(const std::vector<K>& strata,
@@ -740,6 +759,8 @@ std::vector<V> stratified_sample(const std::vector<K>& strata,
  * @tparam T Data type
  * @param data Data vector
  * @return Data with duplicates removed
+ *
+ * @note NaN values are treated as equal to each other, as R's unique() does (docs/NAN_POLICY.md).
  */
 template <typename T>
 std::vector<T> drop_duplicates(const std::vector<T>& data)
@@ -770,6 +791,7 @@ std::vector<T> drop_duplicates(const std::vector<T>& data)
  * @tparam T Data type
  * @param data Data vector
  * @return Map of values and their occurrence counts
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename T>
 std::map<T, std::size_t> value_counts(const std::vector<T>& data)
@@ -788,6 +810,8 @@ std::map<T, std::size_t> value_counts(const std::vector<T>& data)
  * @tparam T Data type
  * @param data Data vector
  * @return Vector of duplicate values
+ *
+ * @note NaN values are treated as equal to each other, as R's duplicated() does (docs/NAN_POLICY.md).
  */
 template <typename T>
 std::vector<T> get_duplicates(const std::vector<T>& data)
@@ -901,6 +925,8 @@ inline std::vector<double> rolling_std(const std::vector<double>& data, std::siz
  * @param data Data vector
  * @param window Window size
  * @return Vector of moving minimums
+ *
+ * @note A window containing NaN gives NaN, wherever the NaN is (docs/NAN_POLICY.md).
  */
 inline std::vector<double> rolling_min(const std::vector<double>& data, std::size_t window)
 {
@@ -925,6 +951,8 @@ inline std::vector<double> rolling_min(const std::vector<double>& data, std::siz
  * @param data Data vector
  * @param window Window size
  * @return Vector of moving maximums
+ *
+ * @note A window containing NaN gives NaN, wherever the NaN is (docs/NAN_POLICY.md).
  */
 inline std::vector<double> rolling_max(const std::vector<double>& data, std::size_t window)
 {
@@ -1009,6 +1037,7 @@ struct label_encoding_result {
  * @tparam T Data type
  * @param data Data vector
  * @return Label encoding result
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename T>
 label_encoding_result<T> label_encode(const std::vector<T>& data)
@@ -1043,6 +1072,7 @@ label_encoding_result<T> label_encode(const std::vector<T>& data)
  * @tparam T Data type
  * @param data Data vector
  * @return One-hot encoded 2-dimensional vector
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename T>
 std::vector<std::vector<double>> one_hot_encode(const std::vector<T>& data)
@@ -1066,6 +1096,7 @@ std::vector<std::vector<double>> one_hot_encode(const std::vector<T>& data)
  * @param data Data vector
  * @param n_bins Number of bins
  * @return Vector of bin numbers
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::vector<std::size_t> bin_equal_width(const std::vector<double>& data, std::size_t n_bins)
 {
@@ -1106,6 +1137,7 @@ inline std::vector<std::size_t> bin_equal_width(const std::vector<double>& data,
  * @param data Data vector
  * @param n_bins Number of bins
  * @return Vector of bin numbers
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::vector<std::size_t> bin_equal_freq(const std::vector<double>& data, std::size_t n_bins)
 {
@@ -1199,6 +1231,7 @@ inline validation_result validate_data(const std::vector<double>& data,
  * @param min_val Minimum value
  * @param max_val Maximum value
  * @return true if all values are within range
+ * @throws std::invalid_argument If max_val or min_val is NaN (docs/NAN_POLICY.md section 5)
  */
 inline bool validate_range(const std::vector<double>& data,
                           double min_val = -std::numeric_limits<double>::infinity(),

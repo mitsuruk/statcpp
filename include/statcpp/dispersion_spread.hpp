@@ -47,6 +47,8 @@ namespace statcpp {
  * @param last End iterator
  * @return Range (maximum - minimum)
  * @throws std::invalid_argument If the range is empty
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 double range(Iterator first, Iterator last)
@@ -74,6 +76,8 @@ double range(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Range of projected values (maximum - minimum)
  * @throws std::invalid_argument If the range is empty
+ *
+ * @note Returns NaN if the input contains NaN, as R does (docs/NAN_POLICY.md).
  */
 template <typename Iterator, typename Projection>
 double range(Iterator first, Iterator last, Projection proj)
@@ -961,6 +965,7 @@ double coefficient_of_variation(Iterator first, Iterator last, Projection proj, 
  * @param last End iterator
  * @return Interquartile range (Q3 - Q1)
  * @throws std::invalid_argument If the range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 double iqr(Iterator first, Iterator last)
@@ -989,6 +994,7 @@ double iqr(Iterator first, Iterator last)
  * @param proj Projection function
  * @return Interquartile range of projected values (Q3 - Q1)
  * @throws std::invalid_argument If the range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename Projection>
 double iqr(Iterator first, Iterator last, Projection proj)
@@ -1140,6 +1146,7 @@ double mean_absolute_deviation(Iterator first, Iterator last, Projection proj, d
  * @param weight_last End iterator for weights
  * @return Weighted variance
  * @throws std::invalid_argument If range is empty, data and weight ranges differ in length, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
@@ -1220,6 +1227,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param weight_first Begin iterator for weights
  * @return Weighted variance
  * @throws std::invalid_argument If range is empty, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_variance(first, last, weight_first, weight_last) overload for range safety")]]
@@ -1299,6 +1307,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param proj Projection function
  * @return Weighted variance of projected values
  * @throws std::invalid_argument If range is empty, data and weight ranges differ in length, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_variance(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
@@ -1379,6 +1388,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param proj Projection function
  * @return Weighted variance of projected values
  * @throws std::invalid_argument If range is empty, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_variance(first, last, weight_first, weight_last, proj) overload for range safety")]]
@@ -1453,6 +1463,7 @@ double weighted_variance(Iterator first, Iterator last, WeightIterator weight_fi
  * @param weight_last End iterator for weights
  * @return Weighted standard deviation
  * @throws std::invalid_argument If range is empty, data and weight ranges differ in length, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last)
@@ -1478,6 +1489,7 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param weight_first Begin iterator for weights
  * @return Weighted standard deviation
  * @throws std::invalid_argument If range is empty, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator>
 [[deprecated("Use weighted_stddev(first, last, weight_first, weight_last) overload for range safety")]]
@@ -1506,6 +1518,7 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param proj Projection function
  * @return Weighted standard deviation of projected values
  * @throws std::invalid_argument If range is empty, data and weight ranges differ in length, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_first, WeightIterator weight_last, Projection proj)
@@ -1533,6 +1546,7 @@ double weighted_stddev(Iterator first, Iterator last, WeightIterator weight_firs
  * @param proj Projection function
  * @return Weighted standard deviation of projected values
  * @throws std::invalid_argument If range is empty, negative weights exist, sum of weights is zero, or insufficient effective sample size
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator, typename WeightIterator, typename Projection>
 [[deprecated("Use weighted_stddev(first, last, weight_first, weight_last, proj) overload for range safety")]]

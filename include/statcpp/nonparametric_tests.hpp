@@ -52,6 +52,9 @@ namespace statcpp {
  * @return std::vector<double> Vector of ranks corresponding to each element
  *
  * @note Returns an empty vector if an empty range is passed.
+ *
+ * @note NaN keeps a NaN rank and the other values are ranked among themselves, as R's rank(na.last = "keep")
+ *       does (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 std::vector<double> compute_ranks_with_ties(Iterator first, Iterator last)
@@ -104,6 +107,7 @@ std::vector<double> compute_ranks_with_ties(Iterator first, Iterator last)
  *
  * @param sorted_values Sorted vector of values
  * @return std::vector<std::size_t> Vector of tie group sizes (only groups with t > 1)
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 inline std::vector<std::size_t> compute_tie_groups(const std::vector<double>& sorted_values)
 {
@@ -149,6 +153,8 @@ inline std::vector<std::size_t> compute_tie_groups(const std::vector<double>& so
  *
  * @note Null hypothesis: Data follows a normal distribution
  * @note W statistic closer to 1 indicates higher normality
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 test_result shapiro_wilk_test(Iterator first, Iterator last)
@@ -323,6 +329,8 @@ test_result shapiro_wilk_test(Iterator first, Iterator last)
  *       sample is consistent with normality and should not be read as an accurate p-value.
  * @note All conventional significance levels (0.10, 0.05, 0.01) lie inside the published range.
  * @note For small samples, consider using the Shapiro-Wilk test as an alternative.
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 test_result lilliefors_test(Iterator first, Iterator last)
@@ -425,6 +433,8 @@ test_result ks_test_normal(Iterator first, Iterator last)
  *
  * @note Null hypothesis: All groups have equal variance
  * @note Larger F statistic indicates greater heterogeneity of variance
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline test_result levene_test(const std::vector<std::vector<double>>& groups)
 {
@@ -521,6 +531,8 @@ inline test_result levene_test(const std::vector<std::vector<double>>& groups)
  *
  * @note Null hypothesis: All groups have equal variance
  * @note Sensitive to departures from normality; use levene_test if normality is questionable
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline test_result bartlett_test(const std::vector<std::vector<double>>& groups)
 {
@@ -605,9 +617,12 @@ inline test_result bartlett_test(const std::vector<std::vector<double>>& groups)
  *
  * @throws std::invalid_argument If there are fewer than 2 elements
  * @throws std::invalid_argument If there are fewer than 2 non-zero differences
+ * @throws std::invalid_argument If mu0 is NaN (docs/NAN_POLICY.md section 5)
  *
  * @note Null hypothesis: Median equals mu0
  * @note Observations with zero difference from mu0 are excluded
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 = 0.0,
@@ -728,6 +743,8 @@ test_result wilcoxon_signed_rank_test(Iterator first, Iterator last, double mu0 
  *
  * @note Null hypothesis: Two samples are drawn from the same distribution
  * @note U1 is calculated from the rank sum of the first sample
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 template <typename Iterator1, typename Iterator2>
 test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
@@ -869,6 +886,8 @@ test_result mann_whitney_u_test(Iterator1 first1, Iterator1 last1,
  *
  * @note Null hypothesis: All groups are drawn from the same distribution
  * @note Larger H statistic indicates greater differences between groups
+ *
+ * @note NaN values are removed before computing, as R does by default (docs/NAN_POLICY.md).
  */
 inline test_result kruskal_wallis_test(const std::vector<std::vector<double>>& groups)
 {

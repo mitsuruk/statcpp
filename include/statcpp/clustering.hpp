@@ -36,6 +36,9 @@ namespace statcpp {
  * @param b Second vector
  * @return Euclidean distance
  * @throws std::invalid_argument If vector dimensions mismatch
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 inline double euclidean_distance(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -72,6 +75,9 @@ inline double euclidean_distance(const std::vector<double>& a, const std::vector
  * @param b Second vector
  * @return Manhattan distance
  * @throws std::invalid_argument If vector dimensions mismatch
+ *
+ * @note Coordinates whose difference is NaN are skipped and the sum is scaled by n / n_used, as R's dist()
+ *       does; NaN if no coordinate is usable (docs/NAN_POLICY.md).
  */
 inline double manhattan_distance(const std::vector<double>& a, const std::vector<double>& b)
 {
@@ -121,6 +127,7 @@ struct kmeans_result {
  * @param data Vector of data points
  * @param k Number of clusters
  * @return Initial cluster centroids
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  *
  * @note Arthur & Vassilvitskii (2007) "k-means++: the advantages of careful seeding"
  */
@@ -192,6 +199,8 @@ inline std::vector<std::vector<double>> kmeans_plusplus_init(
  * @param tol Convergence tolerance (default: 1e-6)
  * @return Clustering result
  * @throws std::invalid_argument If data is empty, k is 0, or k exceeds number of data points
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
+ * @throws std::invalid_argument If tol is NaN (docs/NAN_POLICY.md section 5)
  */
 inline kmeans_result kmeans(
     const std::vector<std::vector<double>>& data,
@@ -327,6 +336,7 @@ struct dendrogram_node {
  * @param linkage Linkage type (default: single)
  * @return Dendrogram
  * @throws std::invalid_argument If data is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  *
  * @note Has O(n^3) time complexity. Not suitable for large datasets.
  */
@@ -524,6 +534,7 @@ inline std::vector<std::size_t> cut_dendrogram(
  * @param labels Cluster labels
  * @return Silhouette score (-1 to 1, closer to 1 is better)
  * @throws std::invalid_argument If data is empty or sizes don't match
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  *
  * @note Score interpretation: 0.7-1.0: strong structure, 0.5-0.7: reasonable structure,
  * 0.25-0.5: weak structure, < 0.25: no substantial structure

@@ -41,6 +41,7 @@ namespace statcpp {
  * @param lag Lag (time difference)
  * @return Autocorrelation coefficient [-1, 1]
  * @throws std::invalid_argument If range is empty, lag is >= data length, or variance is zero
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 double autocorrelation(Iterator first, Iterator last, std::size_t lag)
@@ -95,6 +96,7 @@ double autocorrelation(Iterator first, Iterator last, std::size_t lag)
  * @param max_lag Maximum lag
  * @return Vector of autocorrelation coefficients
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
@@ -134,6 +136,7 @@ std::vector<double> acf(Iterator first, Iterator last, std::size_t max_lag)
  * @param max_lag Maximum lag
  * @return Vector of partial autocorrelation coefficients
  * @throws std::invalid_argument If range is empty
+ * @throws std::invalid_argument If the data contain NaN (docs/NAN_POLICY.md)
  */
 template <typename Iterator>
 std::vector<double> pacf(Iterator first, Iterator last, std::size_t max_lag)
@@ -330,6 +333,9 @@ double mape(Iterator1 first1, Iterator1 last1, Iterator2 first2)
  * @param window Window size
  * @return Vector of moving averages
  * @throws std::invalid_argument If range is empty or window size is invalid
+ *
+ * @note A window containing NaN gives NaN and a window containing Inf gives Inf; the other windows are
+ *       unaffected, as R's stats::filter gives (docs/NAN_POLICY.md).
  */
 template <typename Iterator>
 std::vector<double> moving_average(Iterator first, Iterator last, std::size_t window)
