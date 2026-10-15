@@ -55,6 +55,8 @@ inline constexpr double log_sqrt_2_pi = 0.91893853320467274178;
  *
  * @note Reference: Numerical Recipes, Press et al.
  * @note g=7 の Lanczos 係数を使用 (Uses Lanczos coefficients for g=7)
+ * @warning Γ(x) < 0 となる x では NaN を返します。詳細は lgamma() を参照。
+ * Returns NaN where Γ(x) < 0. See lgamma() for details.
  */
 inline double lgamma_impl(double x)
 {
@@ -99,6 +101,14 @@ inline double lgamma_impl(double x)
  * @param x 引数 (argument)
  * @return log(Γ(x))
  * @throws std::domain_error x が非正の整数の場合 (if x is a non-positive integer)
+ *
+ * @warning Γ(x) < 0 となる負の非整数 x、つまり (-1, 0), (-3, -2), (-5, -4), ... では、
+ * log|Γ(x)| ではなく NaN を返します。x < 0.5 で使う反射公式が log(π / sin(πx)) を取り、
+ * この区間では sin(πx) が負になるためです。std::lgamma はこの区間で log|Γ(x)| を返します
+ * (x = -0.5 で 1.2655...)。正の x と、Γ(x) > 0 となる (-2, -1) などの区間は影響を受けません。
+ * Returns NaN, not log|Γ(x)|, for negative non-integer x where Γ(x) < 0,
+ * that is x in (-1, 0), (-3, -2), (-5, -4), ... The reflection formula takes
+ * log(π / sin(πx)), and sin(πx) is negative on these intervals.
  */
 inline double lgamma(double x)
 {
@@ -117,6 +127,12 @@ inline double lgamma(double x)
  *
  * @note 小さい正の整数については階乗を直接計算します。
  * For small positive integers, computes factorial directly.
+ *
+ * @warning 非整数の x は exp(lgamma(x)) で計算するため、結果が負になることはありません。
+ * Γ(x) < 0 となる (-1, 0), (-3, -2), ... では NaN を返します
+ * (x = -0.5 で NaN。真の値は -3.5449...)。負の引数が必要な場合は std::tgamma を使ってください。
+ * Non-integer x is computed as exp(lgamma(x)), so the result is never negative.
+ * Where Γ(x) < 0 it returns NaN. Use std::tgamma when negative arguments are needed.
  */
 inline double tgamma(double x)
 {

@@ -53,6 +53,7 @@ inline constexpr double log_sqrt_2_pi = 0.91893853320467274178;
  *
  * @note Reference: Numerical Recipes, Press et al.
  * @note Uses Lanczos coefficients for g=7
+ * @warning Returns NaN where Gamma(x) < 0. See lgamma() for details.
  */
 inline double lgamma_impl(double x)
 {
@@ -96,6 +97,13 @@ inline double lgamma_impl(double x)
  * @param x Argument
  * @return log(Gamma(x))
  * @throws std::domain_error If x is a non-positive integer
+ *
+ * @warning Returns NaN, not log|Gamma(x)|, for negative non-integer x where
+ *          Gamma(x) < 0, that is x in (-1, 0), (-3, -2), (-5, -4), ...
+ *          For x < 0.5 the reflection formula takes log(pi / sin(pi * x)), and
+ *          sin(pi * x) is negative on these intervals. std::lgamma returns
+ *          log|Gamma(x)| there (x = -0.5 gives 1.2655...). Positive x and the
+ *          intervals where Gamma(x) > 0, such as (-2, -1), are not affected.
  */
 inline double lgamma(double x)
 {
@@ -112,6 +120,11 @@ inline double lgamma(double x)
  * @throws std::domain_error If x is a non-positive integer
  *
  * @note For small positive integers, computes factorial directly.
+ *
+ * @warning Non-integer x is computed as exp(lgamma(x)), so the result is never
+ *          negative. Where Gamma(x) < 0, that is x in (-1, 0), (-3, -2), ...,
+ *          it returns NaN (x = -0.5 gives NaN; the true value is -3.5449...).
+ *          Use std::tgamma when negative arguments are needed.
  */
 inline double tgamma(double x)
 {
