@@ -4,6 +4,16 @@ This document records the change history of the statcpp library.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Documentation
+
+- **`lgamma()` / `tgamma()`**: Documented that both return NaN for negative non-integer x
+  where Gamma(x) < 0, i.e. x in (-1, 0), (-3, -2), ... The cause is the reflection
+  formula in `lgamma_impl()`, which takes the log of a negative number on those intervals,
+  and `tgamma()` being computed as exp(`lgamma()`). The behaviour is unchanged; the note
+  was added to the Doxygen comments and to [API_REFERENCE.md](API_REFERENCE.md).
+
 ## [0.5.0] - 2026-10-07
 
 A library-wide policy for missing values. Every public function now handles NaN the

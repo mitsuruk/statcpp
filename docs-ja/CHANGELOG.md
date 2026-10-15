@@ -4,6 +4,14 @@ statcpp ライブラリの変更履歴を記録します.
 
 このプロジェクトは [Semantic Versioning](https://semver.org/) に従います.
 
+## [Unreleased]
+
+### Documentation (ドキュメント)
+
+- **`lgamma()` / `tgamma()`**: Γ(x) < 0 となる負の非整数 x((-1, 0), (-3, -2), ...)で, どちらも NaN を返すことを明記.
+  原因は, `lgamma_impl()` の反射公式がこの区間で負の数の対数を取ることと, `tgamma()` を exp(`lgamma()`) で
+  計算していること. 動作は変更していない. Doxygen コメントと [API_REFERENCE.md](API_REFERENCE.md) に注記した.
+
 ## [0.5.0] - 2026-10-07
 
 欠損値の扱いをライブラリ全体で統一. 全公開関数が, 対応する R の関数を既定の引数で呼んだときと同じように NaN を

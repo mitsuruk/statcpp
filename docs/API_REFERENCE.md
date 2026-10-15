@@ -185,6 +185,15 @@ Special functions used in statistical computations.
 internal bodies of `betainc` and `lgamma`. They are not part of the intended
 public interface and may change without notice.
 
+**Known limitation of `lgamma` / `tgamma`**: Both return NaN for negative
+non-integer x where Gamma(x) < 0, that is x in (-1, 0), (-3, -2), (-5, -4), ...
+`lgamma` uses the reflection formula log(pi / sin(pi x)) for x < 0.5, and
+sin(pi x) is negative on these intervals. `tgamma` is computed as
+exp(`lgamma`), so it never returns a negative value. For example, x = -0.5
+gives NaN from both, while `std::lgamma` gives 1.2655 and `std::tgamma`
+gives -3.5449. Positive x and the intervals where Gamma(x) > 0, such as (-2, -1),
+are not affected. Use `std::lgamma` / `std::tgamma` for negative arguments.
+
 > `norm_sf` computes the upper tail directly through `erfc`. Forming it as
 > `1 - norm_cdf(x)` loses all significance above about x = 8 and returns exactly
 > zero from x = 8.30, so use `norm_sf` whenever an upper tail probability is needed.
